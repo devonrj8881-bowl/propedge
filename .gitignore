@@ -1,0 +1,23 @@
+# OS & IDE
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Deployment
+deploy/
+node_modules/
+dist/
+
+# Logs
+*.log
+*.logs
+
+# Temp files
+.deploy-state
+.deployment-check-log
+.deployment-report.txt
+.deployment-tracking
+.last-deploy-attempt
+.last-deploy-check

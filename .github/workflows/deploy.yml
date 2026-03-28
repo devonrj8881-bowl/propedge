@@ -1,0 +1,37 @@
+name: Deploy to Netlify
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Netlify
+        run: |
+          # Install Netlify CLI
+          npm install -g netlify-cli
+
+          # Create deploy directory with proper structure
+          mkdir -p deploy
+          cp propedge_v3.html deploy/index.html
+
+          # Deploy using Netlify CLI
+          netlify deploy --prod --dir=deploy --site=${{ secrets.NETLIFY_SITE_ID }}
+
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+
+      - name: Deployment Summary
+        run: |
+          echo "✅ Deployment complete!"
+          echo "Live URL: https://propedgemasters.netlify.app"
+          echo "Changes should be live in 10-30 seconds"
