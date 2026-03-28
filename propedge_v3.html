@@ -2600,7 +2600,11 @@
       const displayProps = props.slice(0, currentLimit);
       const hasMore = props.length > currentLimit;
 
-      const cardsHtml = displayProps.map(p => {
+      console.log(`Rendering ${displayProps.length} props out of ${props.length}`);
+
+      let cardsHtml = '';
+      try {
+        cardsHtml = displayProps.map(p => {
         const gameInfo = getGameInfo(p.team, p.league);
         const inParlay = state.parlay.find(x => x.id === p.id);
         const fdLine = getFanDuelLine(p);
@@ -2705,8 +2709,13 @@
             </div>
           </div>
         `;
-      }).join('');
+        }).join('');
+      } catch (err) {
+        console.error('Error rendering prop cards:', err);
+        cardsHtml = `<div style="color: red; padding: 20px;">Error rendering props: ${err.message}</div>`;
+      }
 
+      console.log(`Setting container with ${cardsHtml.length} chars of HTML`);
       container.innerHTML = `
         <div class="props-grid">
           ${cardsHtml}
