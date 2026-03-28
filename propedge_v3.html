@@ -1828,7 +1828,7 @@
         for (const currentLeague of leagues) {
           try {
             console.log(`Loading data for ${currentLeague}...`);
-            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tqx=out:csv&sheet=${currentLeague}`;
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${currentLeague}`;
             const response = await fetch(url);
             if (response.ok) {
               const csv = await response.text();
