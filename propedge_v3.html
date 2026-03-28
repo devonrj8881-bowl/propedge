@@ -1825,19 +1825,20 @@
         const leagues = ['NBA', 'NHL', 'MLB', 'NFL'];
         let allProps = [];
 
-        for (const league of leagues) {
+        for (const currentLeague of leagues) {
           try {
-            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${league}`;
+            console.log(`Loading data for ${currentLeague}...`);
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tqx=out:csv&sheet=${currentLeague}`;
             const response = await fetch(url);
             if (response.ok) {
               const csv = await response.text();
               if (csv.length > 100) {
-                const props = parseCSV(csv, league);
+                const props = parseCSV(csv, currentLeague);
                 allProps = allProps.concat(props);
               }
             }
           } catch (e) {
-            console.error(`Error loading ${league}:`, e);
+            console.error(`Error loading ${currentLeague}:`, e);
           }
         }
 
@@ -1850,6 +1851,7 @@
 
       } catch (e) {
         console.error('Error loading data:', e);
+        console.error('Stack trace:', e.stack);
         showToast('Error loading data');
       }
     }
