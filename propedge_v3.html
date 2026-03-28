@@ -1847,14 +1847,12 @@
         updateStatus();
         updateStats();
         renderProps();
-        hideLoading();
         showToast(`Loaded ${allProps.length} props`);
 
       } catch (e) {
         console.error('Error loading data:', e);
         console.error('Stack trace:', e.stack);
         showToast('Error loading data');
-        hideLoading();
       }
     }
 
