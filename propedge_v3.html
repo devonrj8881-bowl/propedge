@@ -2674,7 +2674,7 @@
               <div class="prop-stat">
                 <div class="prop-stat-value ${(() => {
                   const isGoodMatch = (p.direction === 'OVER' && p.sznMatchup >= 1 && p.sznMatchup <= 10) ||
-                    (p.direction === 'UNDER' && ((league === 'NFL' || league === 'NHL') ? p.sznMatchup >= 23 && p.sznMatchup <= 32 : p.sznMatchup >= 21 && p.sznMatchup <= 30));
+                    (p.direction === 'UNDER' && ((p.league === 'NFL' || p.league === 'NHL') ? p.sznMatchup >= 23 && p.sznMatchup <= 32 : p.sznMatchup >= 21 && p.sznMatchup <= 30));
                   return isGoodMatch ? 'green' : '';
                 })()}">#${p.sznMatchup}</div>
                 <div class="prop-stat-label">SZN MU</div>
