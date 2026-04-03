@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v3.15 — Pace Trends + API Fix — 2026-04-03T03:35AM -->
+<!-- PropEdge v3.14 — Ticket Watchlist + OneSignal Push Notifications — 2026-03-30 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -592,7 +592,7 @@
     /* Navigation Tabs */
     .nav-tabs {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       background: var(--bg-secondary);
       border-bottom: 1px solid var(--border-color);
     }
@@ -5310,6 +5310,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       initTabs();
       initFilters();
+      loadPaceTrends();
 
       state.autoRefresh = localStorage.getItem('propedge_autoRefresh') === 'true';
       state.hideCompleted = localStorage.getItem('propedge_hideCompleted') === 'true';
@@ -5337,9 +5338,6 @@
 
       // 🎟 Ticket Watchlist: init badge + bell on load
       _ticketUpdateBadge();
-
-      // Load pace trends from SQLite pipeline
-      loadPaceTrends();
       _ticketUpdateBellVisibility();
     });
 
@@ -15026,7 +15024,6 @@
       });
     }
 
-    // ==========================================
     // PACE TRENDS FROM SQLITE PIPELINE
     // ==========================================
     async function loadPaceTrends() {
@@ -15106,8 +15103,6 @@
         });
       } catch (error) {
         console.error('Error loading pace trends:', error);
-        const trendsSection = document.getElementById('paceTrendsSection');
-        if (trendsSection) trendsSection.style.display = 'none';
       }
     }
 
@@ -15146,17 +15141,12 @@
           document.getElementById('strategyContainer').className = state.view === 'strategy' ? 'view-container show' : 'view-container';
           document.getElementById('paceContainer').style.display = state.view === 'pace' ? 'block' : 'none';
           document.getElementById('filterSection').style.display = state.view === 'props' ? 'block' : 'none';
-
-          // Load pace trends when switching to pace view
-          if (state.view === 'pace') {
-            loadPaceTrends();
-          }
           document.getElementById('sortBar').style.display = state.view === 'props' ? 'flex' : 'none';
 
           if (state.view === 'injuries') fetchAllInjuries();
           if (state.view === 'parlay') { renderParlay(); generateSuggestedParlays(); }
           if (state.view === 'strategy') renderStrategy();
-          if (state.view === 'pace') displayPaceData();
+          if (state.view === 'pace') { loadPaceTrends(); displayPaceData(); }
         });
       });
     }
