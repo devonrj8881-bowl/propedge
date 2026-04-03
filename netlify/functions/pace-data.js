@@ -12,9 +12,30 @@ exports.handler = async (event) => {
     // Parse query parameters
     const { action = 'all', playerId, days = '30' } = event.queryStringParameters || {};
 
-    // Read database file
-    const dbPath = path.join(__dirname, '../../propedge-data.json');
-    const dbContent = fs.readFileSync(dbPath, 'utf-8');
+    // Read database file - try multiple locations for compatibility
+    let dbPath;
+    let dbContent;
+    const possiblePaths = [
+      path.join(__dirname, 'propedge-data.json'),  // Same dir as function
+      path.join(__dirname, '../../propedge-data.json'),  // Root of repo (dev)
+      '/var/task/propedge-data.json',  // Netlify Functions root
+      '/var/task/netlify/functions/propedge-data.json'  // Functions dir
+    ];
+
+    for (const tryPath of possiblePaths) {
+      try {
+        dbContent = fs.readFileSync(tryPath, 'utf-8');
+        dbPath = tryPath;
+        break;
+      } catch (e) {
+        // Continue to next path
+      }
+    }
+
+    if (!dbContent) {
+      throw new Error(`Database file not found in any expected location: ${possiblePaths.join(', ')}`);
+    }
+
     const db = JSON.parse(dbContent);
 
     let result;
