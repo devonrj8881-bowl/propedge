@@ -39,3 +39,4 @@ League thresholds are stored in Google Sheets (Config tab). Hard refresh the app
 ---
 
 **Built with ❤️ for smarter betting**
+## Pace API Fix Deployed - Thu Apr  2 23:33:29 EDT 2026
