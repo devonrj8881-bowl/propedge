@@ -1,0 +1,82 @@
+═══════════════════════════════════════════════════════════════════════════════
+  PROPEDGE DEPLOYMENT — RUN THESE COMMANDS
+═══════════════════════════════════════════════════════════════════════════════
+
+The deployment script had 2 issues:
+  1. Git lock file (.git/index.lock) was stuck
+  2. Netlify build command was looking for a build script that doesn't exist
+
+✅ Both are now fixed. Here's what to do:
+
+═══════════════════════════════════════════════════════════════════════════════
+  OPTION 1: Run the automated script (EASIEST)
+═══════════════════════════════════════════════════════════════════════════════
+
+In your Terminal, from the PropEdge directory:
+
+  bash fix-deploy.sh
+
+This will:
+  ✅ Remove the git lock file
+  ✅ Add pace pipeline files to git
+  ✅ Commit with descriptive message
+  ✅ Push to GitHub
+  ✅ Deploy to Netlify
+
+═══════════════════════════════════════════════════════════════════════════════
+  OPTION 2: Manual commands (if script fails)
+═══════════════════════════════════════════════════════════════════════════════
+
+Run these in order:
+
+  # Remove git lock
+  rm -f .git/index.lock
+
+  # Check status
+  git status
+
+  # Add files
+  git add propedge-data.json init-db.js sync-espn-pace.js \
+    netlify/functions/pace-data.js test-pace-api.js netlify.toml
+
+  # Commit
+  git commit -m "Add SQLite pace data pipeline"
+
+  # Push to GitHub
+  git push origin main
+
+  # Deploy to Netlify
+  ./deploy-prod.sh
+
+═══════════════════════════════════════════════════════════════════════════════
+  VERIFY DEPLOYMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+Once deployed, test the API:
+
+  curl "https://propedgemasters.netlify.app/.netlify/functions/pace-data?action=all"
+
+You should see JSON with all players and pace data.
+
+═══════════════════════════════════════════════════════════════════════════════
+  WHAT'S RUNNING NOW
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ Scheduled Tasks (auto-running daily):
+   • 11:30 AM EST - Morning pace sync
+   • 6:00 PM EST - Evening pace sync
+
+   Manage in Cowork sidebar → Scheduled section
+
+✅ Database:
+   • propedge-data.json stores all pace data and predictions
+
+✅ API Endpoint:
+   • /.netlify/functions/pace-data
+   • Ready for PropEdge UI integration
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Questions? See QUICK_REFERENCE.md or COMPLETION_SUMMARY.txt
+
+═══════════════════════════════════════════════════════════════════════════════

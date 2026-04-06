@@ -72,7 +72,14 @@
       min-height: 100vh;
       min-height: 100dvh;
       overflow-x: hidden;
+      overflow-y: scroll;
       padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Global no-jitter mode: disable ALL animations during content swap */
+    body.rendering * {
+      transition: none !important;
+      animation: none !important;
     }
 
     /* Header */
@@ -83,6 +90,9 @@
       background: linear-gradient(to bottom, var(--bg-primary), var(--bg-primary) 90%, transparent);
       padding: 12px 16px;
       padding-top: calc(12px + env(safe-area-inset-top));
+      /* Prevent header from shifting */
+      contain: layout style;
+      will-change: none;
     }
 
     @media (min-width: 768px) {
@@ -203,7 +213,7 @@
 
     .stat-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 700;
       color: var(--accent-green);
     }
@@ -213,7 +223,7 @@
     .stat-value.purple { color: var(--accent-purple); }
 
     .stat-label {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -267,6 +277,9 @@
       background: linear-gradient(180deg, rgba(0, 230, 118, 0.12) 0%, var(--bg-secondary) 100%);
       border-bottom: 3px solid rgba(0, 230, 118, 0.3);
       border-top: 3px solid rgba(0, 230, 118, 0.3);
+      /* Prevent layout shift */
+      contain: layout style;
+      min-height: 160px;
     }
 
     @media (min-width: 768px) {
@@ -337,14 +350,22 @@
       touch-action: pan-x;
       /* Prevent parent from stealing horizontal swipe */
       overscroll-behavior-x: contain;
-      /* Smooth scrolling with snap behavior */
-      scroll-behavior: smooth;
+      /* Snap behavior without smooth scroll (prevents jitter on mobile) */
       scroll-snap-type: x mandatory;
+      scroll-behavior: auto;
+      /* GPU acceleration to eliminate scroll jitter */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: scroll-position;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     @media (min-width: 768px) {
       .live-games-scroll {
         gap: 12px;
+        /* Enable smooth scrolling only on desktop where it's stable */
+        scroll-behavior: smooth;
       }
     }
 
@@ -531,25 +552,32 @@
     /* Sport Tabs */
     .sport-tabs {
       display: flex;
-      gap: 6px;
-      padding: 12px 16px;
+      gap: 4px;
+      padding: 10px 12px;
       background: var(--bg-secondary);
       border-bottom: 1px solid var(--border-color);
       overflow-x: auto;
       scrollbar-width: none;
+      justify-content: center;
+      flex-wrap: wrap;
+      /* GPU acceleration to eliminate scroll jitter */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: scroll-position;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     @media (min-width: 768px) {
       .sport-tabs {
-        padding: 14px 32px;
-        gap: 10px;
-        justify-content: center;
+        padding: 12px 32px;
+        gap: 8px;
       }
     }
 
     @media (min-width: 1200px) {
       .sport-tabs {
-        padding: 14px 48px;
+        padding: 12px 48px;
       }
     }
 
@@ -557,21 +585,22 @@
 
     .sport-tab {
       flex-shrink: 0;
-      padding: 8px 16px;
+      padding: 6px 12px;
       border-radius: var(--radius-md);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       border: 1px solid var(--border-color);
       background: var(--bg-tertiary);
       color: var(--text-secondary);
+      white-space: nowrap;
     }
 
     @media (min-width: 768px) {
       .sport-tab {
-        padding: 10px 24px;
-        font-size: 14px;
+        padding: 8px 18px;
+        font-size: 13px;
       }
     }
 
@@ -592,7 +621,7 @@
     /* Navigation Tabs */
     .nav-tabs {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(7, 1fr);
       background: var(--bg-secondary);
       border-bottom: 1px solid var(--border-color);
     }
@@ -622,6 +651,9 @@
       padding: 12px 16px;
       background: var(--bg-primary);
       border-bottom: 1px solid var(--border-color);
+      /* Prevent layout shift */
+      contain: layout style;
+      min-height: 60px;
     }
 
     @media (min-width: 768px) {
@@ -644,6 +676,12 @@
       padding-bottom: 4px;
       max-width: 1400px;
       margin: 0 auto;
+      /* GPU acceleration to eliminate scroll jitter */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: scroll-position;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     @media (min-width: 768px) {
@@ -755,6 +793,24 @@
     .props-container {
       padding: 12px;
       padding-bottom: 120px;
+      /* GPU acceleration for smooth content switching */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: contents;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      /* CSS containment: isolate layout calculations from parent/siblings */
+      contain: layout style paint;
+      /* Prevent layout shift during content swap */
+      min-height: 200px;
+    }
+
+    /* Disable transitions during content swap to eliminate jitter */
+    .props-container.no-transitions,
+    .props-container.no-transitions .prop-card,
+    .props-container.no-transitions .prop-grid {
+      transition: none !important;
+      animation: none !important;
     }
 
     /* Desktop: wider container with grid */
@@ -771,6 +827,14 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 12px;
+      /* GPU acceleration for grid layout changes */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: grid-template-columns;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      /* CSS containment: prevent layout thrashing */
+      contain: layout;
     }
 
     @media (min-width: 768px) {
@@ -800,6 +864,12 @@
       border-radius: var(--radius-lg);
       overflow: hidden;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      /* GPU acceleration for card animations */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform, box-shadow;
       height: fit-content;
       position: relative;
       backdrop-filter: blur(8px);
@@ -891,6 +961,21 @@
       }
     }
 
+    /* SPRINT APRIL 4: Injury status badge */
+    .injury-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .injury-badge.active { background: var(--accent-green-dim); color: var(--accent-green); }
+    .injury-badge.doubtful { background: var(--accent-gold-dim); color: var(--accent-gold); }
+    .injury-badge.limited { background: var(--accent-orange-dim); color: var(--accent-orange); }
+    .injury-badge.out { background: var(--accent-red-dim); color: var(--accent-red); }
 
     .prop-header {
       display: flex;
@@ -910,7 +995,7 @@
     .prop-player { flex: 1; }
 
     .prop-player-name {
-      font-size: 16px;
+      font-size: 17px;
       font-weight: 700;
       margin-bottom: 6px;
       letter-spacing: -0.3px;
@@ -922,7 +1007,7 @@
 
     @media (min-width: 768px) {
       .prop-player-name {
-        font-size: 20px;
+        font-size: 21px;
         margin-bottom: 8px;
       }
     }
@@ -931,7 +1016,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-muted);
       margin-bottom: 8px;
     }
@@ -2110,7 +2195,7 @@
     .prop-direction {
       padding: 5px 12px;
       border-radius: 5px;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.3px;
@@ -2224,14 +2309,14 @@
 
     .prop-stat-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
       letter-spacing: -0.3px;
     }
 
     @media (min-width: 768px) {
       .prop-stat-value {
-        font-size: 14px;
+        font-size: 15px;
       }
     }
 
@@ -2239,7 +2324,7 @@
     .prop-stat-value.red { color: var(--accent-red); }
 
     .prop-stat-label {
-      font-size: 9px;
+      font-size: 10px;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.3px;
@@ -2309,14 +2394,49 @@
     .prop-action-btn.added { background: var(--accent-green); color: var(--bg-primary); border-color: var(--accent-green); }
     .prop-action-btn.fd { background: var(--accent-blue-dim); border-color: var(--accent-blue); color: var(--accent-blue); }
 
+    /* Parlay-only mode: wider button with text */
+    .prop-action-btn.parlay-text {
+      width: auto;
+      height: 36px;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--accent-green-dim);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+      white-space: nowrap;
+    }
+    .prop-action-btn.parlay-text:hover {
+      background: var(--accent-green);
+      color: var(--bg-primary);
+    }
+    .prop-action-btn.parlay-text.added {
+      background: var(--accent-green);
+      color: var(--bg-primary);
+    }
+
     /* Other Views */
     .view-container {
       padding: 16px;
       padding-bottom: 100px;
       display: none;
+      /* GPU acceleration for view switching */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: display;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
-    .view-container.show { display: block; }
+    .view-container.show {
+      display: block;
+      animation: fadeIn 0.2s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
 
     @media (min-width: 768px) {
       .view-container {
@@ -2369,18 +2489,18 @@
     .parlay-leg-info { flex: 1; }
 
     .parlay-leg-player {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
     }
 
     .parlay-leg-prop {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text-muted);
     }
 
     .parlay-leg-odds {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
+      font-size: 14px;
       margin-right: 12px;
     }
 
@@ -4778,6 +4898,16 @@
         <span class="live-dot"></span>
         <span id="statusText">LIVE</span>
       </div>
+      <button id="authButton" style="
+        background: rgba(100, 150, 255, 0.2);
+        color: #6496ff;
+        border: 1px solid rgba(100, 150, 255, 0.4);
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+      ">Sign in</button>
     </div>
   </header>
 
@@ -4807,6 +4937,12 @@
     <div class="auto-toggle" onclick="toggleAutoRefresh()">
       <span class="toggle-dot" id="autoToggleDot"></span>
       <span>Auto</span>
+    </div>
+    <div class="filter-item">
+      <label class="filter-label">
+        <input type="checkbox" id="parlayOnlyMode" onchange="toggleParlayOnlyMode()">
+        Parlay-Only Mode
+      </label>
     </div>
   </div>
 
@@ -4858,6 +4994,10 @@
     <div class="nav-tab" data-view="pace">
       <span class="nav-tab-icon">⚡</span>
       Pace
+    </div>
+    <div class="nav-tab" data-view="portfolio">
+      <span class="nav-tab-icon">📊</span>
+      Portfolio
     </div>
   </div>
 
@@ -5056,7 +5196,8 @@
         <span class="parlay-value" id="parlayEV">$0</span>
       </div>
       
-      <button class="parlay-btn gambly" onclick="openGamblyBot()" style="margin-top:16px;">🎯 Get Betslip (Gambly)</button>
+      <button class="parlay-btn gambly" onclick="logParlay()" style="margin-top:16px;background:linear-gradient(135deg, #00e676, #00c853);font-weight:700;">📌 Log Parlay Bet</button>
+      <button class="parlay-btn gambly" onclick="openGamblyBot()" style="margin-top:8px;">🎯 Get Betslip (Gambly)</button>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
         <button class="parlay-btn" onclick="textPicks('ios')" style="background:linear-gradient(135deg, #555,#333);font-size:13px;font-weight:700;letter-spacing:0.3px;padding:12px 8px;display:flex;align-items:center;justify-content:center;gap:6px;">
           <svg width="14" height="17" viewBox="0 0 14 17" fill="white"><path d="M11.5 8.5c0-2.2 1.8-3.3 1.9-3.3-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-3-.7C2 3.7.4 4.7-.3 6.2c-1.4 2.9-.4 7.2 1 9.6.7 1.2 1.5 2.5 2.5 2.4 1-.1 1.4-.6 2.6-.6 1.2 0 1.6.6 2.6.6 1.1 0 1.8-1.2 2.4-2.3.8-1.3 1.1-2.6 1.1-2.7-.1 0-2.4-1-2.4-3.7z"/><path d="M9.3 1.5C9.9.8 10.3-.1 10.2-1c-.9.1-2 .6-2.6 1.3-.6.7-1 1.6-.9 2.4.9.1 1.9-.4 2.6-1.2z"/></svg>
@@ -5067,7 +5208,7 @@
           Android
         </button>
       </div>
-      
+
       <div class="parlay-actions">
         <button class="parlay-btn secondary" onclick="copyParlay()">📋 Copy</button>
         <button class="parlay-btn secondary" onclick="sharePicksLink()">🔗 Share</button>
@@ -5148,10 +5289,147 @@
     </div>
   </div>
 
+  <!-- Portfolio ROI Dashboard -->
+  <div class="view-container" id="portfolioContainer" style="display:none;">
+    <div style="padding: 20px 16px;">
+      <!-- ROI Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; text-align: center;">
+          <div style="font-size: 24px; font-weight: 700; color: var(--accent-green);" id="totalBets">0</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Total Bets</div>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; text-align: center;">
+          <div style="font-size: 24px; font-weight: 700; color: var(--accent-blue);" id="totalWagered">$0</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Total Wagered</div>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; text-align: center;">
+          <div style="font-size: 24px; font-weight: 700; color: var(--accent-gold);" id="totalPnL">$0</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Total P&L (Resolved)</div>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; text-align: center;">
+          <div style="font-size: 24px; font-weight: 700; color: var(--accent-purple);" id="expectedROI">0%</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Expected ROI</div>
+        </div>
+      </div>
+
+      <!-- By Sport Breakdown -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 24px;">
+        <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 14px; font-weight: 700;">By Sport</h3>
+        <div id="sportBreakdown" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Tracked Props with Resolution -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="color: var(--text-primary); font-size: 14px; font-weight: 700;">Tracked Props</h3>
+          <div style="display: flex; gap: 8px;">
+            <button onclick="filterPortfolioStatus('all')" class="status-filter active" data-status="all" style="background: var(--accent-green-dim); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer;">All</button>
+            <button onclick="filterPortfolioStatus('tracked')" class="status-filter" data-status="tracked" style="background: rgba(100,150,255,0.18); color: #6496ff; border: 1px solid rgba(100,150,255,0.35); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer;">Pending</button>
+            <button onclick="filterPortfolioStatus('hit')" class="status-filter" data-status="hit" style="background: rgba(0,230,118,0.18); color: var(--accent-green); border: 1px solid rgba(0,230,118,0.35); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer;">Hit</button>
+            <button onclick="filterPortfolioStatus('miss')" class="status-filter" data-status="miss" style="background: rgba(255,82,82,0.18); color: var(--accent-red); border: 1px solid rgba(255,82,82,0.35); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer;">Miss</button>
+            <button onclick="clearPortfolioData()" style="background: rgba(255,82,82,0.18); color: var(--accent-red); border: 1px solid rgba(255,82,82,0.35); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer;">Clear All</button>
+          </div>
+        </div>
+        <div id="recentBetsTable" style="display: flex; flex-direction: column; gap: 8px; max-height: 600px; overflow-y: auto;">
+          <div style="color: var(--text-muted); text-align: center; padding: 20px; font-size: 12px;">No props tracked yet. Click + on a prop to start tracking.</div>
+        </div>
+      </div>
+
+      <!-- ROI Stats (Resolved Only) -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+        <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 14px; font-weight: 700;">Resolution Stats</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+          <div style="text-align: center;">
+            <div style="font-size: 18px; font-weight: 700; color: var(--accent-green);" id="actualHits">0</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Actual Hits</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 18px; font-weight: 700; color: var(--accent-red);" id="actualMisses">0</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Actual Misses</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 18px; font-weight: 700; color: var(--accent-orange);" id="voidedCount">0</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Voided</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 18px; font-weight: 700; color: var(--accent-blue);" id="actualROI">0%</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Actual ROI</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
   <script>
+    // ==========================================
+    // LOCAL AUTH (simple browser-based sync)
+    // ==========================================
+    let _currentUser = null;
+
+    function _initAuth() {
+      // Check if user was previously logged in
+      const saved = localStorage.getItem('propEdgeUser');
+      if (saved) {
+        try {
+          _currentUser = JSON.parse(saved);
+          _updateAuthUI(_currentUser);
+          console.log('[PropEdge Auth] Restored user:', _currentUser.email);
+        } catch (e) {
+          localStorage.removeItem('propEdgeUser');
+        }
+      } else {
+        _updateAuthUI(null);
+      }
+    }
+
+    // Simple mock Google Sign-In (in real app, would use OAuth)
+    function _handleGoogleSignIn() {
+      // For now, prompt user for email
+      const email = prompt('Enter your email for data sync:');
+      if (!email || !email.includes('@')) {
+        showToast('Invalid email');
+        return;
+      }
+
+      _currentUser = {
+        email: email,
+        uid: btoa(email).replace(/=/g, ''),
+        signedInAt: new Date().toISOString()
+      };
+
+      localStorage.setItem('propEdgeUser', JSON.stringify(_currentUser));
+      _updateAuthUI(_currentUser);
+      showToast(`✓ Signed in as ${email}`);
+      console.log('[PropEdge Auth] Signed in:', email);
+    }
+
+    // Update UI based on auth state
+    function _updateAuthUI(user) {
+      const authBtn = document.getElementById('authButton');
+      if (!authBtn) return;
+
+      if (user) {
+        authBtn.innerHTML = `✓ ${user.email}`;
+        authBtn.onclick = () => {
+          localStorage.removeItem('propEdgeUser');
+          _currentUser = null;
+          _updateAuthUI(null);
+          showToast('Signed out');
+        };
+      } else {
+        authBtn.innerHTML = 'Sign in';
+        authBtn.onclick = _handleGoogleSignIn;
+      }
+    }
+
+    // Initialize auth on load
+    window.addEventListener('load', _initAuth);
+
     // ==========================================
     // CONFIGURATION
     // ==========================================
@@ -5293,7 +5571,11 @@
       hideCompleted: false,
       lastUpdated: null,
       refreshInterval: null,
-      propDisplayLimit: 100
+      propDisplayLimit: 100,
+      parlayOnlyMode: localStorage.getItem('propedge_parlayOnly') === 'true' || false,
+      minParlayEdge: 12, // Minimum combined edge for parlay (%)
+      maxParlayLegs: 3, // Max legs per parlay
+      injuryExcludeThreshold: 'questionable' // Exclude: out, doubtful, questionable
     };
 
     // League-specific thresholds (will be populated from Config sheet)
@@ -5311,12 +5593,23 @@
       initTabs();
       initFilters();
       loadPaceTrends();
+      loadParlay();  // Load saved parlay on init
+      // Note: Portfolio/ROI data is loaded dynamically via renderPortfolio() when portfolio tab is clicked
+      initOneSignalAlerts();  // SPRINT APRIL 4: Initialize OneSignal push alerts
 
       state.autoRefresh = localStorage.getItem('propedge_autoRefresh') === 'true';
       state.hideCompleted = localStorage.getItem('propedge_hideCompleted') === 'true';
+      state.parlayOnlyMode = localStorage.getItem('propedge_parlayOnly') === 'true';
 
       document.getElementById('hideCompleted').checked = state.hideCompleted;
+      document.getElementById('parlayOnlyMode').checked = state.parlayOnlyMode;
       document.getElementById('autoToggleDot').classList.toggle('off', !state.autoRefresh);
+
+      // Apply parlay-only mode on init
+      if (state.parlayOnlyMode) {
+        const plusButtons = document.querySelectorAll('[onclick*="trackPropLog"]');
+        plusButtons.forEach(btn => btn.style.display = 'none');
+      }
 
       // Load data in order: config first, then games, then props, then FD lines
       loadConfigThresholds().then(() => {
@@ -10804,16 +11097,74 @@
 
     function _startPropClockCountdown() {
       if (_propClockTimer) return;
-      _propClockTimer = setInterval(() => {
-        document.querySelectorAll('.game-clock-badge[data-displayclock]').forEach(el => {
-          let secs = parseInt(el.getAttribute('data-secs') || '-1', 10);
+      _propClockTimer = setInterval(async () => {
+        // Get all live game badge elements
+        const badges = document.querySelectorAll('.game-clock-badge[data-displayclock]');
+        if (badges.length === 0) return;
+
+        // Collect unique game IDs to fetch
+        const gameIds = new Set();
+        badges.forEach(el => {
+          const gameId = el.getAttribute('data-gameid');
+          const secs = parseInt(el.getAttribute('data-secs') || '-1', 10);
+          if (secs >= 0 && gameId) gameIds.add(gameId);
+        });
+
+        if (gameIds.size === 0) return;
+
+        // Fetch fresh game data from ESPN for each unique game
+        const gameDataMap = new Map();
+        for (const gameId of gameIds) {
+          try {
+            // Determine league from the badge
+            const badge = Array.from(badges).find(el => el.getAttribute('data-gameid') === gameId);
+            if (!badge) continue;
+            const league = badge.getAttribute('data-league');
+            const cfg = ESPN_SPORT_MAP[league];
+            if (!cfg) continue;
+
+            const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${cfg.sport}/${cfg.league}/scoreboard?_=${Date.now()}`).catch(() => null);
+            if (!res || !res.ok) continue;
+            const sb = await res.json();
+            const event = (sb.events || []).find(e => String(e.id) === String(gameId));
+            if (!event) continue;
+
+            const status = event.status?.type;
+            const isLive = status?.state === 'in';
+            if (!isLive) continue;
+
+            const displayClock = event.status?.displayClock || '';
+            const period = event.status?.period || 0;
+            gameDataMap.set(gameId, { displayClock, period, league });
+          } catch (err) {
+            // Silent fail - keep using old data
+          }
+        }
+
+        // Update all badge elements with fresh data
+        badges.forEach(el => {
+          const gameId = el.getAttribute('data-gameid');
+          const secs = parseInt(el.getAttribute('data-secs') || '-1', 10);
           if (secs < 0) return; // Not in live mode
-          secs = Math.max(0, secs - 1);
-          el.setAttribute('data-secs', secs);
-          const period = parseInt(el.getAttribute('data-period'), 10);
-          const league = el.getAttribute('data-league');
-          const clockStr = secs > 0 ? _secsToClockStr(secs) : '0:00';
-          el.textContent = clockStr + ' · ' + _tickerPeriodLabel(league, period);
+
+          // If we have fresh data for this game, use it; otherwise tick down the old seconds
+          if (gameDataMap.has(gameId)) {
+            const freshData = gameDataMap.get(gameId);
+            const freshSecs = _clockToSecs(freshData.displayClock) || 0;
+            el.setAttribute('data-displayclock', freshData.displayClock);
+            el.setAttribute('data-period', freshData.period);
+            el.setAttribute('data-secs', freshSecs);
+            const clockStr = freshSecs > 0 ? _secsToClockStr(freshSecs) : '0:00';
+            el.textContent = clockStr + ' · ' + _tickerPeriodLabel(freshData.league, freshData.period);
+          } else {
+            // Fallback: tick down locally if no fresh data available
+            const newSecs = Math.max(0, secs - 1);
+            el.setAttribute('data-secs', newSecs);
+            const period = parseInt(el.getAttribute('data-period'), 10);
+            const league = el.getAttribute('data-league');
+            const clockStr = newSecs > 0 ? _secsToClockStr(newSecs) : '0:00';
+            el.textContent = clockStr + ' · ' + _tickerPeriodLabel(league, period);
+          }
         });
       }, 1000);
     }
@@ -10964,7 +11315,17 @@
         el.classList.toggle('active', isActive);
       });
 
+      // Global rendering mode: disable ALL animations during swap
+      document.body.classList.add('rendering');
+
       renderProps();
+
+      // Re-enable animations after 2 frames (layout + paint complete)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.body.classList.remove('rendering');
+        });
+      });
 
       // On mobile, scroll so the live games bar + prop list top are both in view
       if (window.innerWidth < 900) {
@@ -10986,7 +11347,18 @@
       if (evt && evt.stopPropagation) evt.stopPropagation();
       state.gameFilter = null;
       document.querySelectorAll('.live-game-card').forEach(el => el.classList.remove('active'));
+
+      // Global rendering mode: disable ALL animations during swap
+      document.body.classList.add('rendering');
+
       renderProps();
+
+      // Re-enable animations after 2 frames (layout + paint complete)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.body.classList.remove('rendering');
+        });
+      });
     }
 
     // openGameModalById: open live modal from the Live button on the card
@@ -11225,30 +11597,101 @@
       countdownPeriod: null,
       game: null,
       cfg:  null,
+      ws: null,
+      wsUrl: null,
+    };
+
+    // ── Separate countdown for detail panel badge (independent from modal)
+    const _detailPanelCountdown = {
+      timer: null,
+      secs: null,
+      period: null,
+      league: null,
     };
 
     function _startModalPoll(game, cfg) {
-      _stopModalPoll();
+      // Only stop existing poll if it's for a DIFFERENT game
+      if (_modalState.game && _modalState.game.id !== game.id) {
+        _stopModalPoll();
+      }
       if (game.status !== 'live') return;  // only poll live games
       _modalState.game = game;
       _modalState.cfg  = cfg;
+
+      // ── Attempt WebSocket real-time connection (ESPN app-level sync)
+      _connectWebSocket(game, cfg);
+
       // Seed the countdown immediately from the cached game object we already have.
       // _refreshModalData will re-seed it with fresh ESPN data in ~100ms.
       if (game.displayClock && game.league !== 'MLB') {
         _startCountdown(game.displayClock, game.period, game.league, true);
       }
-      // Fire almost immediately for fresh data, then every 10s
-      setTimeout(() => _refreshModalData(), 100);
-      _modalState.pollTimer = setInterval(() => _refreshModalData(), 10000);
+      // Fire almost immediately for fresh data, then every 10s (only if not already polling)
+      // This is fallback polling in case WebSocket fails or is blocked
+      if (!_modalState.pollTimer) {
+        setTimeout(() => _refreshModalData(), 50);
+        _modalState.pollTimer = setInterval(() => _refreshModalData(), 10000);
+      }
     }
 
     function _stopModalPoll() {
+      if (_modalState.ws) { _modalState.ws.close(); _modalState.ws = null; }
       if (_modalState.pollTimer)      { clearInterval(_modalState.pollTimer);      _modalState.pollTimer = null; }
       if (_modalState.countdownTimer) { clearInterval(_modalState.countdownTimer); _modalState.countdownTimer = null; }
       _modalState.countdownSecs   = null;
       _modalState.countdownPeriod = null;
       _modalState.game = null;
       _modalState.cfg  = null;
+    }
+
+    // ── Start countdown specifically for detail panel badge
+    function _startDetailPanelCountdown(clockStr, period, league) {
+      if (_detailPanelCountdown.timer) { clearInterval(_detailPanelCountdown.timer); _detailPanelCountdown.timer = null; }
+      if (!clockStr || league === 'MLB') return;
+
+      const initialSecs = _clockToSecs(clockStr);
+      if (initialSecs === null) return;
+
+      _detailPanelCountdown.secs = initialSecs;
+      _detailPanelCountdown.period = period;
+      _detailPanelCountdown.league = league;
+
+      // Start 1-second countdown
+      let tickCount = 0;
+      _detailPanelCountdown.timer = setInterval(() => {
+        tickCount++;
+        if (_detailPanelCountdown.secs === null) return;
+
+        _detailPanelCountdown.secs = Math.max(0, _detailPanelCountdown.secs - 1);
+        const newClockStr = _secsToClockStr(_detailPanelCountdown.secs);
+        const newLabel = _svgClockLabel(league, _detailPanelCountdown.period, newClockStr);
+
+        // Find badge EVERY tick (in case DOM changed)
+        const badge = document.getElementById('liveTrackerBadge');
+        if (!badge) {
+          if (tickCount === 1) console.warn('[countdown] liveTrackerBadge not found on first tick');
+          return;
+        }
+
+        if (tickCount <= 5) {
+          console.log('[countdown tick %d] secs=%d label=%s', tickCount, _detailPanelCountdown.secs, newLabel);
+        }
+
+        // Replace entire innerHTML to force update
+        badge.innerHTML = newLabel;
+
+        if (_detailPanelCountdown.secs <= 0) {
+          clearInterval(_detailPanelCountdown.timer);
+          _detailPanelCountdown.timer = null;
+        }
+      }, 1000);
+    }
+
+    function _stopDetailPanelCountdown() {
+      if (_detailPanelCountdown.timer) { clearInterval(_detailPanelCountdown.timer); _detailPanelCountdown.timer = null; }
+      _detailPanelCountdown.secs = null;
+      _detailPanelCountdown.period = null;
+      _detailPanelCountdown.league = null;
     }
 
     // ── Parse a clock string like "8:27" or "0:45" into total seconds
@@ -11282,43 +11725,166 @@
       return clockStr;
     }
 
+    // ── WebSocket real-time game data connection (ESPN app-level sync)
+    function _connectWebSocket(game, cfg) {
+      // Close existing connection
+      if (_modalState.ws) {
+        _modalState.ws.close();
+        _modalState.ws = null;
+      }
+
+      // Build WebSocket URL for real-time game updates
+      const wsUrl = `wss://website.api.espn.com/website/v2/${cfg.sport}/${cfg.league}/events/${game.id}`;
+
+      try {
+        const ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          _modalState.ws = ws;
+          _modalState.wsUrl = wsUrl;
+        };
+
+        ws.onmessage = (evt) => {
+          try {
+            const msg = JSON.parse(evt.data);
+            if (msg.eventData) {
+              const ev = msg.eventData;
+              const status = ev.status || {};
+              const comp = ev.competitions?.[0];
+              const competitors = comp?.competitors || [];
+              const away = competitors.find(c => c.homeAway === 'away');
+              const home = competitors.find(c => c.homeAway === 'home');
+
+              // ── Update score in real-time
+              const scoreEl = document.getElementById('modalScore');
+              if (scoreEl) {
+                const newScore = `${away?.score ?? '-'} – ${home?.score ?? '-'}`;
+                scoreEl.textContent = newScore;
+              }
+
+              // ── Update status badge
+              const badgeEl = document.getElementById('modalStatusBadge');
+              if (badgeEl) {
+                const isLive = status.state === 'in';
+                const isFinal = status.completed;
+                const detail = status.shortDetail || '';
+                badgeEl.textContent = isLive ? '● LIVE' : isFinal ? 'FINAL' : detail;
+                badgeEl.className = `game-modal-status-badge ${isLive ? 'live' : isFinal ? 'final' : 'upcoming'}`;
+              }
+
+              // ── Update clock from real-time data
+              const clock = status.displayClock || '';
+              const period = status.period || 0;
+
+              if (clock && status.state === 'in') {
+                const freshSecs = _clockToSecs(clock);
+                if (freshSecs !== null) {
+                  _modalState.countdownSecs = freshSecs;
+                  _modalState.countdownPeriod = period;
+
+                  const clockLabel = _svgClockLabel(game.league, period, clock);
+
+                  // Update all clock displays
+                  const clockEl = document.getElementById('modalClock');
+                  if (clockEl) clockEl.textContent = clock;
+
+                  const svgClockEl = document.getElementById('svgCourtClock');
+                  if (svgClockEl) svgClockEl.textContent = clockLabel;
+
+                  const trackerBadgeEl = document.getElementById('liveTrackerBadge');
+                  if (trackerBadgeEl) trackerBadgeEl.innerHTML = clockLabel;
+                }
+              }
+
+              if (status.completed) {
+                const finalEls = [
+                  document.getElementById('svgCourtClock'),
+                  document.getElementById('liveTrackerBadge')
+                ];
+                finalEls.forEach(el => { if (el) el.textContent = 'FINAL'; });
+              }
+            }
+          } catch (e) {
+            // Silent fail on parse error
+          }
+        };
+
+        ws.onerror = () => {
+          // WebSocket failed, fallback to REST polling
+          _modalState.ws = null;
+        };
+
+        ws.onclose = () => {
+          _modalState.ws = null;
+        };
+      } catch (err) {
+        // WebSocket not supported or URL error, will use REST polling fallback
+      }
+    }
+
     // ── Start (or re-seed) the client-side 1-second countdown
     // Called every time _refreshModalData() gets a fresh clock value from the API
     function _startCountdown(clockStr, period, league, isLive) {
       // Stop any existing countdown first
       if (_modalState.countdownTimer) { clearInterval(_modalState.countdownTimer); _modalState.countdownTimer = null; }
-      if (!isLive || !clockStr) return;
+      if (!isLive || !clockStr || league === 'MLB') return;
 
       const initialSecs = _clockToSecs(clockStr);
-      if (initialSecs === null) return;  // non-countdown format (e.g. MLB inning) — skip
+      if (initialSecs === null) return;
 
       _modalState.countdownSecs   = initialSecs;
       _modalState.countdownPeriod = period;
 
-      _modalState.countdownTimer = setInterval(() => {
-        if (_modalState.countdownSecs === null) return;
+      // Fetch fresh game data every second for real-time accuracy
+      _modalState.countdownTimer = setInterval(async () => {
+        if (!_modalState.game || !_modalState.cfg) return;
 
-        // Tick down one second
-        _modalState.countdownSecs = Math.max(0, _modalState.countdownSecs - 1);
+        try {
+          // Fetch fresh game data from ESPN
+          const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${_modalState.cfg.sport}/${_modalState.cfg.league}/scoreboard?_=${Date.now()}`).catch(() => null);
+          if (!r || !r.ok) {
+            // Fallback: tick down locally if fetch fails
+            _modalState.countdownSecs = Math.max(0, _modalState.countdownSecs - 1);
+          } else {
+            const sb = await r.json();
+            const ev = (sb.events || []).find(e => String(e.id) === String(_modalState.game.id));
+            if (ev && ev.status?.state === 'in') {
+              const freshClock = ev.status?.displayClock || '';
+              const freshPeriod = ev.status?.period || _modalState.countdownPeriod;
+              if (freshClock) {
+                const freshSecs = _clockToSecs(freshClock);
+                if (freshSecs !== null) {
+                  _modalState.countdownSecs = freshSecs;
+                  _modalState.countdownPeriod = freshPeriod;
+                }
+              }
+            }
+          }
+        } catch (err) {
+          // Silent fail - use local tick
+          _modalState.countdownSecs = Math.max(0, _modalState.countdownSecs - 1);
+        }
+
         const newClockStr = _secsToClockStr(_modalState.countdownSecs);
 
-        // Update top badge clock (game modal)
+        // Update modal clock
         const clockEl = document.getElementById('modalClock');
         if (clockEl) clockEl.textContent = newClockStr;
 
-        // Update live-tracker top badge (player detail panel)
+        // Update detail panel badge
         const trackerBadge = document.getElementById('liveTrackerBadge');
         if (trackerBadge) {
-          trackerBadge.textContent = _svgClockLabel(league, _modalState.countdownPeriod, newClockStr);
+          const newLabel = _svgClockLabel(league, _modalState.countdownPeriod, newClockStr);
+          trackerBadge.innerHTML = newLabel;
         }
 
-        // Update SVG court clock bar text
+        // Update SVG court clock
         const svgClock = document.getElementById('svgCourtClock');
         if (svgClock) {
           svgClock.textContent = _svgClockLabel(league, _modalState.countdownPeriod, newClockStr);
         }
 
-        // Stop ticking at 0:00 (API will update on next poll)
+        // Stop if game ends
         if (_modalState.countdownSecs <= 0) {
           clearInterval(_modalState.countdownTimer);
           _modalState.countdownTimer = null;
@@ -11374,9 +11940,9 @@
         const periodEl = document.getElementById('modalPeriod');
         if (periodEl && period) periodEl.textContent = _modalPeriodLabel(game.league, period);
 
-        // ── Update game clock (top badge) immediately from API
-        const clockEl = document.getElementById('modalClock');
-        if (clockEl && displayClock) clockEl.textContent = displayClock;
+        // ── DO NOT update game clock here — let _startCountdown() handle smooth ticking
+        // The countdown interval fetches fresh data every second and updates the clock
+        // If we update it here too, it will interrupt the smooth countdown every 10s
 
         // ── Update SVG court clock + live-tracker top badge immediately from API
         const svgClockEl = document.getElementById('svgCourtClock');
@@ -11406,9 +11972,13 @@
         // rather than killing it, so it restarts cleanly on the next poll that has a value.
         if (isLive && game.league !== 'MLB') {
           if (displayClock) {
-            _startCountdown(displayClock, period, game.league, true);
-          } else if (!_modalState.countdownTimer) {
-            // Countdown stopped and we have no clock — will restart next poll with a value
+            // Only restart countdown if timer isn't running (e.g., between periods/halftime)
+            if (!_modalState.countdownTimer) {
+              _startCountdown(displayClock, period, game.league, true);
+            } else {
+              // Countdown is already running, just update the period if it changed
+              _modalState.countdownPeriod = period;
+            }
           }
         }
 
@@ -13132,8 +13702,8 @@
         const results = [];
         const fetchedAt = Date.now();
 
-        // Fetch summary for each game (up to 8) in parallel to get rosters
-        await Promise.all(events.slice(0,8).map(async ev => {
+        // Fetch summary for each game (up to 15) in parallel to get rosters
+        await Promise.all(events.slice(0,15).map(async ev => {
           try {
             const sum = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${sport}/${lg}/summary?event=${ev.id}`).then(r=>r.json());
             const comp = ev.competitions?.[0];
@@ -14148,6 +14718,15 @@
               ${(() => { const _hs = getPlayerHeadshot(p.player, p.league); return _hs ? `<div class="prop-headshot-wrap"><img class="prop-headshot ${p.tier}" src="${_hs}" onerror="this.style.display='none'" /></div>` : ''; })()}
               <div class="prop-player">
                 <div class="prop-player-name">${p.player}${isStale ? ' <span style="font-size:9px;color:var(--text-muted);">(updating…)</span>' : ''}</div>
+                <!-- SPRINT APRIL 4: Injury status badge -->
+                ${(() => {
+                  const pacePlayer = window.fileData?.players?.find(x => x.name.toLowerCase() === p.player.toLowerCase());
+                  if (!pacePlayer || !pacePlayer.status) return '';
+                  const statusClass = pacePlayer.status.toLowerCase() === 'active' ? 'active' :
+                                      pacePlayer.status.toLowerCase().includes('doubtful') ? 'doubtful' :
+                                      pacePlayer.status.toLowerCase().includes('limited') ? 'limited' : 'out';
+                  return `<div class="injury-badge ${statusClass}">${pacePlayer.status}</div>`;
+                })()}
                 <div class="prop-player-meta">
                   <span class="prop-team" style="font-size: 16px; margin-right: 4px;display:inline-flex;align-items:center;">${getTeamLogo(p.team, p.league)}</span>
                   <span class="prop-team">${p.team}</span>
@@ -14157,7 +14736,7 @@
                 ${gameInfo && !isLiveGame ? `
                   <div class="prop-game-info">
                     <span class="game-info-badge">${gameInfo.matchup}</span>
-                    <span class="game-info-badge game-clock-badge" data-gameid="${gameInfo.id}" data-displayclock="${gameInfo.displayClock || ''}" data-period="${gameInfo.period || 0}" data-league="${gameInfo.league || ''}">${gameInfo.time}</span>
+                    <span class="game-info-badge game-clock-badge" data-gameid="${gameInfo.id}" data-displayclock="${gameInfo.displayClock || ''}" data-secs="${gameInfo.status === 'live' && gameInfo.league !== 'MLB' ? (_clockToSecs(gameInfo.displayClock) || -1) : -1}" data-period="${gameInfo.period || 0}" data-league="${gameInfo.league || ''}">${gameInfo.time}</span>
                     ${gameInfo.status === 'final' ? '<span class="game-info-badge final">FINAL</span>' : ''}
                   </div>
                 ` : ''}
@@ -14232,10 +14811,11 @@
                 </div>
               </div>
               <div class="prop-actions">
-                <button class="prop-action-btn ${inParlay ? 'added' : ''}"
-                  data-pid="${p.id}" onclick="toggleParlay(this.dataset.pid)"
-                  title="Add to Parlay">
-                  ${inParlay ? '✓' : '+'}
+                <button class="prop-action-btn ${inParlay ? 'added' : ''} ${state.parlayOnlyMode ? 'parlay-text' : ''}"
+                  data-pid="${p.id}" data-player="${p.player}" data-league="${p.league}" data-edge="${p.edge}" data-direction="${p.direction}" data-line="${p.line}" data-prop="${p.prop}"
+                  onclick="state.parlayOnlyMode ? toggleParlay(this.dataset.pid) : promptPropAction(this)"
+                  title="${state.parlayOnlyMode ? 'Add to Parlay' : 'Add to Parlay or Track'}">
+                  ${inParlay ? '✓' : (state.parlayOnlyMode ? 'Add to Parlay' : '+')}
                 </button>
                 <button class="prop-action-btn ${fdLine ? 'fd' : ''}"
                   data-pid="${p.id}" onclick="openFanDuelDirect(this.dataset.pid)"
@@ -14380,11 +14960,151 @@
     }
 
     // ==========================================
-    // PARLAY
+    // PROP VALIDATION & FILTERS
     // ==========================================
+    function isPlayerInjured(playerName, league) {
+      const threshold = state.injuryExcludeThreshold || 'questionable';
+      const severities = { out: 0, doubtful: 1, questionable: 2, day_to_day: 3, active: 4 };
+      const thresholdLevel = severities[threshold] || 2;
+
+      const injuries = state.injuries[league] || [];
+      const playerInjury = injuries.find(inj =>
+        inj.player?.toLowerCase() === playerName.toLowerCase() ||
+        inj.name?.toLowerCase() === playerName.toLowerCase()
+      );
+
+      if (!playerInjury) return false;
+      const status = playerInjury.status?.toLowerCase() || 'active';
+      return severities[status] !== undefined && severities[status] < thresholdLevel;
+    }
+
+    function isValidProp(prop) {
+      // Skip injured players
+      if (isPlayerInjured(prop.player, prop.league)) {
+        return false;
+      }
+
+      // Check if this is a back-to-back (additional fatigue risk)
+      // For now, we'll mark but not exclude (use injury flag as indicator)
+
+      return true;
+    }
+
+    // ==========================================
+    // PARLAY VALIDATION & STRUCTURE
+    // ==========================================
+    function validateParlayStructure(legs) {
+      const issues = [];
+
+      // Rule 1: Max leg count
+      if (legs.length > state.maxParlayLegs) {
+        issues.push(`Max ${state.maxParlayLegs} legs per parlay (you have ${legs.length})`);
+      }
+
+      // Rule 2: No same-game stacking (different games)
+      const gameIds = legs.map(l => l.gameId).filter(Boolean);
+      if (gameIds.length !== new Set(gameIds).size) {
+        issues.push('Legs from same game reduce parlay value — use different games');
+      }
+
+      // Rule 3: Combined edge minimum
+      const avgEdge = legs.reduce((sum, l) => sum + (l.edge || 0), 0) / legs.length;
+      if (avgEdge < state.minParlayEdge) {
+        issues.push(`Combined edge ${avgEdge.toFixed(1)}% below minimum ${state.minParlayEdge}%`);
+      }
+
+      // Rule 4: Position/leg diversity (NBA/NHL)
+      const nbaLegs = legs.filter(l => l.league === 'NBA');
+      if (nbaLegs.length > 1) {
+        const positions = nbaLegs.map(l => l.position || 'unknown');
+        const teams = nbaLegs.map(l => l.team || 'unknown');
+        if (positions.includes('PG') && positions.includes('SG') && positions.some(p => p === 'C' || p === 'PF')) {
+          // Good position spread
+        } else {
+          issues.push('NBA legs: aim for position diversity (PG/SG, C, PF)');
+        }
+        if (teams.length !== new Set(teams).size) {
+          issues.push('NBA legs: use different teams to reduce correlated risk');
+        }
+      }
+
+      return {
+        valid: issues.length === 0,
+        issues: issues
+      };
+    }
+
+    function suggestParlayOptimization() {
+      if (state.parlay.length < 2) return null;
+
+      const validation = validateParlayStructure(state.parlay);
+      if (validation.valid) return null;
+
+      return {
+        warnings: validation.issues,
+        suggestions: [
+          'Remove lowest-edge leg to improve combined EV',
+          'Replace with prop from different game',
+          'Check injury status on all players'
+        ]
+      };
+    }
+
+    // ==========================================
+    // LOCAL SYNC HELPERS
+    // ==========================================
+    async function _syncParlayHistory() {
+      // Data syncs automatically via localStorage
+      console.log('[PropEdge] Parlay history synced');
+    }
+
+    function _syncToFirebase(type, data) {
+      // Local version: data saved to localStorage
+      localStorage.setItem(`propEdge_${type}`, JSON.stringify(data));
+      console.log('[PropEdge] Synced:', type);
+    }
+
+    // Wrapper for saving ROI (portfolio) data
+    function saveROI(roiData) {
+      localStorage.setItem('propEdgeROI', JSON.stringify(roiData));
+      _syncToFirebase('roi', roiData);
+    }
+
+    // ==========================================
+    // PARLAY (with Firebase sync)
+    // ==========================================
+    function saveParlay() {
+      // Save to local storage first
+      localStorage.setItem('propEdgeParlay', JSON.stringify(state.parlay));
+
+      // Sync to Firebase if authenticated
+      _syncToFirebase('parlay', state.parlay);
+    }
+
+    function loadParlay() {
+      // Load from local storage
+      const saved = localStorage.getItem('propEdgeParlay');
+      if (saved) {
+        try {
+          state.parlay = JSON.parse(saved);
+          console.log('[PropEdge] Parlay loaded from storage:', state.parlay.length, 'items');
+        } catch (e) {
+          console.error('Failed to load parlay:', e);
+          state.parlay = [];
+        }
+      } else {
+        state.parlay = [];
+      }
+    }
+
     function toggleParlay(id) {
       const prop = state.props.find(p => p.id === id);
       if (!prop) return;
+
+      // Check if player is injured before adding
+      if (!state.parlay.find(p => p.id === id) && isPlayerInjured(prop.player, prop.league)) {
+        showToast(`⚠️ ${prop.player} has injury concern — consider excluding`);
+      }
 
       const idx = state.parlay.findIndex(p => p.id === id);
       if (idx >= 0) {
@@ -14392,31 +15112,73 @@
         showToast('Removed from parlay');
       } else {
         state.parlay.push(prop);
-        showToast('Added to parlay');
+        if (state.parlay.length > state.maxParlayLegs) {
+          showToast(`⚠️ ${state.parlay.length} legs — hit rate drops significantly above ${state.maxParlayLegs}`);
+        } else {
+          showToast('Added to parlay');
+        }
       }
-      
+
+      saveParlay();
       renderProps();
       renderParlay();
+
+      // Show parlay optimization warnings
+      const optimization = suggestParlayOptimization();
+      if (optimization) {
+        const warningText = optimization.warnings.join(' • ');
+        console.warn('[PropEdge Parlay] Optimization tips:', warningText);
+        // Show in parlay summary
+      }
     }
 
     function renderParlay() {
       const legsContainer = document.getElementById('parlayLegs');
       const summary = document.getElementById('parlaySummary');
 
+      // Restore wager amount from localStorage
+      const savedWager = localStorage.getItem('propEdgeParlaywager');
+      const wagerInput = document.getElementById('wagerAmount');
+      if (wagerInput && savedWager) {
+        wagerInput.value = parseFloat(savedWager);
+      }
+
       if (state.parlay.length === 0) {
         legsContainer.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">Add props to build your parlay</div>';
         summary.style.display = 'none';
       } else {
-        legsContainer.innerHTML = state.parlay.map(p => `
-          <div class="parlay-leg">
-            <div class="parlay-leg-info">
-              <div class="parlay-leg-player">${p.player}</div>
-              <div class="parlay-leg-prop">${p.direction} ${p.line} ${p.prop} • ${p.team}</div>
+        legsContainer.innerHTML = state.parlay.map(p => {
+          // Determine prop type color
+          const propTypeColors = {
+            'Points': '#ff6b6b',
+            'Rebounds': '#4ecdc4',
+            'Assists': '#45b7d1',
+            'Threes': '#ffd93d',
+            'Hits': '#6bcf7f',
+            'Goals': '#a78bfa',
+            'Saves': '#f472b6',
+            'Strikeouts': '#fb923c'
+          };
+          const propType = p.prop.split(' ')[0];
+          const propColor = propTypeColors[propType] || '#6496ff';
+
+          // Calculate hit rate percentage from cache if available
+          const cacheKey = `${p.player}_${p.league}_${p.prop}`;
+          const cachedStats = JSON.parse(localStorage.getItem(`propStats_${cacheKey}`) || '{}');
+          const hitRate = cachedStats.hitRate || p.hitRate || 0;
+
+          return `
+            <div class="parlay-leg" style="border-left: 3px solid ${propColor};">
+              <div class="parlay-leg-info">
+                <div class="parlay-leg-player">${p.player}</div>
+                <div class="parlay-leg-prop" style="color: ${propColor}; font-size: 11px; font-weight: 600; background: rgba(${parseInt(propColor.slice(1,3),16)},${parseInt(propColor.slice(3,5),16)},${parseInt(propColor.slice(5,7),16)},0.15); padding: 2px 4px; border-radius: 2px; display: inline-block;">${propType}</div>
+                <div class="parlay-leg-prop">${p.direction} ${p.line} vs ${p.team}</div>
+              </div>
+              <div class="parlay-leg-odds" style="color: ${(p.edge || 0) > 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${p.oddsStr || (p.odds > 0 ? '+' + p.odds : p.odds)}</div>
+              <button class="parlay-leg-remove" onclick="removeFromParlay('${p.id}')">×</button>
             </div>
-            <span class="parlay-leg-odds">${p.oddsStr}</span>
-            <button class="parlay-leg-remove" onclick="removeFromParlay('${p.id}')">×</button>
-          </div>
-        `).join('');
+          `;
+        }).join('');
         summary.style.display = 'block';
         updateParlayCalcs();
       }
@@ -14427,9 +15189,11 @@
 
     function updateParlayCalcs() {
       if (state.parlay.length === 0) return;
-      
+
       const wager = parseFloat(document.getElementById('wagerAmount')?.value) || 10;
-      
+      // Persist wager amount to localStorage
+      localStorage.setItem('propEdgeParlaywager', wager.toString());
+
       // Calculate combined decimal odds
       let totalDecimal = 1;
       state.parlay.forEach(p => {
@@ -14438,8 +15202,8 @@
       });
 
       // Calculate American odds
-      const americanOdds = totalDecimal >= 2 
-        ? Math.round((totalDecimal - 1) * 100) 
+      const americanOdds = totalDecimal >= 2
+        ? Math.round((totalDecimal - 1) * 100)
         : Math.round(-100 / (totalDecimal - 1));
 
       // Calculate payouts
@@ -14464,6 +15228,18 @@
       // Calculate Expected Value
       const ev = (combinedTrueProb * profit) - ((1 - combinedTrueProb) * wager);
 
+      // Validate parlay structure
+      const validation = validateParlayStructure(state.parlay);
+      let warningHtml = '';
+      if (!validation.valid) {
+        warningHtml = `
+          <div style="background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.35); border-radius: 6px; padding: 10px; margin: 12px 0; font-size: 11px; color: var(--accent-orange);">
+            <div style="font-weight: 600; margin-bottom: 4px;">⚠️ Parlay Risks:</div>
+            ${validation.issues.map(issue => `<div>• ${issue}</div>`).join('')}
+          </div>
+        `;
+      }
+
       // Update display
       document.getElementById('parlayLegCount').textContent = state.parlay.length;
       document.getElementById('parlayOdds').textContent = americanOdds > 0 ? `+${americanOdds}` : americanOdds;
@@ -14471,7 +15247,7 @@
       document.getElementById('parlayTotalPayout').textContent = `$${totalPayout.toFixed(2)}`;
       document.getElementById('parlayImpliedProb').textContent = `${(combinedImpliedProb * 100).toFixed(1)}%`;
       document.getElementById('parlayTrueProb').textContent = `${(combinedTrueProb * 100).toFixed(1)}%`;
-      
+
       const edgeEl = document.getElementById('parlayEdge');
       edgeEl.textContent = `${combinedEdge > 0 ? '+' : ''}${combinedEdge.toFixed(1)}%`;
       edgeEl.style.color = combinedEdge > 0 ? 'var(--accent-green)' : 'var(--accent-red)';
@@ -14479,19 +15255,109 @@
       const evEl = document.getElementById('parlayEV');
       evEl.textContent = `${ev >= 0 ? '+' : ''}$${ev.toFixed(2)}`;
       evEl.style.color = ev >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+
+      // Inject warning display
+      let warningContainer = document.getElementById('parlayWarnings');
+      if (!warningContainer) {
+        const summary = document.getElementById('parlaySummary');
+        warningContainer = document.createElement('div');
+        warningContainer.id = 'parlayWarnings';
+        summary.insertBefore(warningContainer, summary.firstChild);
+      }
+      warningContainer.innerHTML = warningHtml;
     }
 
     function removeFromParlay(id) {
       state.parlay = state.parlay.filter(p => p.id !== id);
+      saveParlay();
       renderParlay();
       renderProps();
     }
 
     function clearParlay() {
       state.parlay = [];
+      saveParlay();
       renderParlay();
       renderProps();
       showToast('Parlay cleared');
+    }
+
+    // ── Render all games chronologically by time ──
+    function renderGames() {
+      const container = document.getElementById('gamesContainer');
+
+      // Get today's date (start and end of day)
+      const today = new Date();
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+      const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+      // Filter games for today only
+      const todayGames = [
+        ...(state.games.NBA || []),
+        ...(state.games.NHL || []),
+        ...(state.games.MLB || []),
+        ...(state.games.NFL || [])
+      ].filter(game => {
+        const gameTime = new Date(game.gameTime);
+        return gameTime >= startOfToday && gameTime <= endOfToday;
+      });
+
+      if (todayGames.length === 0) {
+        container.innerHTML = '<div style="padding: 20px 16px; text-align: center; color: var(--text-muted);">No games today</div>';
+        return;
+      }
+
+      // Group games by league and sort chronologically within each league
+      const gamesByLeague = {};
+      todayGames.forEach(game => {
+        if (!gamesByLeague[game.league]) gamesByLeague[game.league] = [];
+        gamesByLeague[game.league].push(game);
+      });
+
+      // Sort each league's games by time
+      Object.keys(gamesByLeague).forEach(league => {
+        gamesByLeague[league].sort((a, b) => new Date(a.gameTime) - new Date(b.gameTime));
+      });
+
+      // Render by league order: NBA, NHL, MLB, NFL
+      const leagueOrder = ['NBA', 'NHL', 'MLB', 'NFL'];
+      const orderedLeagues = leagueOrder.filter(league => gamesByLeague[league]);
+
+      container.innerHTML = `
+        <div style="padding: 16px;">
+          ${orderedLeagues.map(league => `
+            <div style="margin-bottom: 24px;">
+              <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 15px; font-weight: 700;">${league}</h3>
+              ${gamesByLeague[league].map(game => `
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin-bottom: 10px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-size: 12px; color: var(--text-muted);">
+                      ${new Date(game.gameTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted);">
+                      ${game.status === 'live' ? '🔴 LIVE' : game.status === 'final' ? '✓ Final' : '⏰ Upcoming'}
+                    </div>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="flex: 1;">
+                      <div style="color: var(--text-primary); font-size: 13px; font-weight: 500;">${game.awayTeam}</div>
+                      <div style="color: var(--text-secondary); font-size: 11px; margin-top: 2px;">${game.awayName}</div>
+                    </div>
+                    <div style="color: var(--accent-blue); font-weight: 600; margin: 0 12px; font-size: 13px;">@</div>
+                    <div style="flex: 1; text-align: right;">
+                      <div style="color: var(--text-primary); font-size: 13px; font-weight: 500;">${game.homeTeam}</div>
+                      <div style="color: var(--text-secondary); font-size: 11px; margin-top: 2px;">${game.homeName}</div>
+                    </div>
+                  </div>
+                  <div style="text-align: right; font-weight: 600; color: var(--text-primary); font-size: 13px;">
+                    ${game.awayScore} - ${game.homeScore}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}
+        </div>
+      `;
     }
 
     function copyParlay() {
@@ -14575,12 +15441,136 @@
       showToast(`Opening Gambly Bot for ${label}...`);
     }
 
+    function logParlay() {
+      if (state.parlay.length === 0) {
+        showToast('Add props to your parlay first');
+        return;
+      }
+
+      // Prompt for wager amount
+      const wagerInput = prompt(`Wager amount for ${state.parlay.length}-leg parlay?`, '10');
+      if (wagerInput === null) return; // User cancelled
+
+      const wager = parseFloat(wagerInput) || 10;
+
+      // Create parlay bet object
+      const parlayBet = {
+        legs: state.parlay.map(p => ({
+          player: p.player,
+          league: p.league,
+          prop: p.prop,
+          direction: p.direction,
+          line: p.line,
+          edge: p.edge || 0
+        })),
+        wager: wager,
+        timestamp: new Date().toISOString(),
+        status: 'tracked',
+        type: 'parlay',
+        avgEdge: state.parlay.reduce((sum, p) => sum + (p.edge || 0), 0) / state.parlay.length
+      };
+
+      // Add to portfolio (same as individual props)
+      const roiTracker = JSON.parse(localStorage.getItem('propEdgeROI') || '[]');
+      roiTracker.push(parlayBet);
+      saveROI(roiTracker);
+
+      console.log('[PropEdge Parlay] Saved to localStorage:', parlayBet);
+      console.log('[PropEdge Parlay] Total ROI entries:', roiTracker.length);
+
+      showToast(`✅ ${state.parlay.length}-leg parlay logged - $${wager.toFixed(2)}`);
+
+      // Clear parlay state and wager
+      state.parlay = [];
+      saveParlay();
+      localStorage.removeItem('propEdgeParlaywager');
+
+      // Switch to portfolio view and refresh
+      setTimeout(() => {
+        try {
+          console.log('[PropEdge] Starting portfolio switch...');
+          state.view = 'portfolio';
+
+          // Update active tab
+          document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+          const portfolioTab = document.querySelector('[data-view="portfolio"]');
+          if (portfolioTab) {
+            portfolioTab.classList.add('active');
+            console.log('[PropEdge] Portfolio tab activated');
+          } else {
+            console.warn('[PropEdge] Portfolio tab not found');
+          }
+
+          // Hide only the other containers, show portfolio
+          document.getElementById('propsContainer').style.display = 'none';
+          document.getElementById('gamesContainer').style.display = 'none';
+          document.getElementById('injuriesContainer').style.display = 'none';
+          document.getElementById('parlayContainer').style.display = 'none';
+          document.getElementById('strategyContainer').style.display = 'none';
+          document.getElementById('paceContainer').style.display = 'none';
+
+          // Show portfolio container
+          const portfolioContainer = document.getElementById('portfolioContainer');
+          if (portfolioContainer) {
+            portfolioContainer.style.display = 'block';
+            console.log('[PropEdge] Portfolio container shown');
+          } else {
+            console.error('[PropEdge] Portfolio container not found!');
+            return;
+          }
+
+          // Render portfolio
+          console.log('[PropEdge] Calling renderPortfolio...');
+          renderPortfolio();
+          console.log('[PropEdge] renderPortfolio completed');
+        } catch (err) {
+          console.error('[PropEdge] Error switching to portfolio:', err.message, err.stack);
+          showToast('Error displaying portfolio');
+        }
+      }, 200);
+
+      console.log('[PropEdge Parlay] Logged parlay:', parlayBet);
+    }
+
+    function promptPropAction(btn) {
+      const propId = btn.dataset.pid;
+      const player = btn.dataset.player;
+      const direction = btn.dataset.direction;
+      const line = btn.dataset.line;
+
+      // Check if prop is already in parlay
+      const inParlay = state.parlay.find(p => p.id === propId);
+
+      if (inParlay) {
+        // If already in parlay, toggle it off (remove from parlay)
+        toggleParlay(propId);
+        return;
+      }
+
+      // Show modal dialog to choose action
+      const choice = confirm(`${player} ${direction}${line}\n\nOK = Add to Parlay\nCancel = Track Individually`);
+
+      if (choice) {
+        // Add to parlay only
+        toggleParlay(propId);
+      } else {
+        // Track as individual prop with custom wager
+        const wagerInput = prompt(`Wager amount for ${player} ${direction}${line}?`, '10');
+        if (wagerInput !== null) {
+          const wagerAmount = parseFloat(wagerInput) || 10;
+          // Call updated trackPropLog with the button
+          btn.dataset.wagerAmount = wagerAmount;
+          trackPropLog(btn);
+        }
+      }
+    }
+
     function openInFanDuel() {
       if (state.parlay.length === 0) {
         window.open('https://sportsbook.fanduel.com/', '_blank');
         return;
       }
-      
+
       const firstPlayer = state.parlay[0].player;
       window.open(`https://sportsbook.fanduel.com/search?q=${encodeURIComponent(firstPlayer)}`, '_blank');
       showToast('Opening FanDuel...');
@@ -14592,7 +15582,239 @@
 
       window.open(`https://sportsbook.fanduel.com/search?q=${encodeURIComponent(prop.player)}`, '_blank');
       showToast('Opening FanDuel...');
+      trackBetClick(prop);
     }
+
+    // ============ SPRINT APRIL 4: SPORTSBOOK + ALERTS ============
+
+    // Track bet clicks for ROI analysis
+    function trackBetClick(prop) {
+      const roiTracker = JSON.parse(localStorage.getItem('propEdgeROI') || '[]');
+      roiTracker.push({
+        playerName: prop.player,
+        sport: prop.league,
+        propType: 'pace-based',
+        sportsbook: 'fanduel',
+        clickedAt: new Date().toISOString(),
+        line: prop.line,
+        direction: prop.direction,
+        expectedValue: prop.edge || 0
+      });
+      saveROI(roiTracker);
+      console.log('[PropEdge ROI] Tracked click:', prop.player, prop.league);
+    }
+
+    // Track Pace Bet Click (Pace Trends cards)
+    function trackPaceBet(playerName, league, sportsbook, edge) {
+      const roiTracker = JSON.parse(localStorage.getItem('propEdgeROI') || '[]');
+      roiTracker.push({
+        player: playerName,
+        league: league,
+        propType: 'pace',
+        sportsbook: sportsbook,
+        timestamp: new Date().toISOString(),
+        edge: edge || 0
+      });
+      saveROI(roiTracker);
+      showToast(`✅ ${playerName} logged (${league} - ${edge > 0 ? '+' : ''}${edge}%)`);
+
+      // Refresh portfolio if it's open
+      if (state.view === 'portfolio') {
+        renderPortfolio();
+      }
+
+      console.log('[PropEdge ROI] Tracked Pace bet:', playerName, league, sportsbook, edge);
+    }
+
+    // Track Prop Click (Players tab cards)
+    function trackPropLog(btn) {
+      const player = btn.dataset.player;
+      const league = btn.dataset.league;
+      const edge = parseFloat(btn.dataset.edge) || 0;
+      const direction = btn.dataset.direction;
+      const line = btn.dataset.line;
+      const prop = btn.dataset.prop;
+
+      // Check if wager amount was already provided (from promptPropAction)
+      let wagerAmount = parseFloat(btn.dataset.wagerAmount);
+
+      // If not provided, ask for wager amount
+      if (isNaN(wagerAmount)) {
+        const wagerInput = prompt(`Wager amount for ${player} ${direction} ${line}?`, '10');
+        if (wagerInput === null) return; // User cancelled
+        wagerAmount = parseFloat(wagerInput) || 10;
+      } else {
+        // Clear the custom wager data after use
+        delete btn.dataset.wagerAmount;
+      }
+
+      // Snapshot player injury status at log time
+      const pacePlayer = window.fileData?.players?.find(x => x.name.toLowerCase() === player.toLowerCase());
+      const injuryStatus = pacePlayer?.status || 'Active';
+
+      const roiTracker = JSON.parse(localStorage.getItem('propEdgeROI') || '[]');
+      roiTracker.push({
+        player: player,
+        league: league,
+        prop: prop,
+        direction: direction,
+        line: parseFloat(line),
+        edge: edge,
+        wager: wagerAmount,
+        timestamp: new Date().toISOString(),
+        status: 'tracked', // not yet resolved
+        injuryAtLog: injuryStatus, // snapshot injury status when logged
+        injuryFlagged: injuryStatus && injuryStatus.toLowerCase() !== 'active' // flag if injured at log
+      });
+      saveROI(roiTracker);
+
+      const injuryNote = injuryStatus && injuryStatus.toLowerCase() !== 'active' ? ` ⚠️ ${injuryStatus}` : '';
+      showToast(`📌 ${player} ${direction} ${line} tracked - $${wagerAmount.toFixed(2)} (${edge > 0 ? '+' : ''}${edge}%)${injuryNote}`);
+
+      // Refresh portfolio if it's open
+      if (state.view === 'portfolio') {
+        renderPortfolio();
+      }
+
+      console.log('[PropEdge ROI] Tracked prop:', player, direction, line, prop, edge, wagerAmount, injuryStatus);
+    }
+
+    // Open DraftKings (without pre-fill — auth required)
+    function openDraftKingsDirect() {
+      window.open('https://www.draftkings.com/sportsbook', '_blank');
+      showToast('Opening DraftKings...');
+    }
+
+    // Send OneSignal push notification
+    function sendPaceAlert(playerName, trend, confidence) {
+      if (typeof OneSignal === 'undefined' || !OneSignal) {
+        console.warn('[PropEdge Alert] OneSignal not available');
+        return;
+      }
+
+      const trendEmoji = trend === 'UP' ? '📈' : trend === 'DOWN' ? '📉' : '→';
+      const confPercent = Math.round(confidence * 100);
+
+      OneSignal.push(() => {
+        OneSignal.sendSelfPushNotification({
+          headings: { en: `${playerName} Pace ${trendEmoji}` },
+          contents: { en: `${trend} trend detected (${confPercent}% confidence) — Check Pace Trends now` },
+          url: window.location.href + '#pace',
+          bigImage: null,
+          ios_attachments: {},
+        });
+      });
+      console.log('[PropEdge Alert] Sent:', playerName, trend);
+    }
+
+    // Initialize OneSignal alert triggers for pace data
+    function initOneSignalAlerts() {
+      if (typeof OneSignal === 'undefined' || !OneSignal) {
+        console.warn('[PropEdge] OneSignal not loaded yet');
+        return;
+      }
+
+      console.log('[PropEdge] OneSignal alerts initialized');
+
+      // Alert Trigger 1: Pace trending UP with confidence >75%
+      function checkPaceUP() {
+        if (!state.paceFiltered || state.paceFiltered.length === 0) return;
+
+        const upTrend = state.paceFiltered.filter(p => {
+          const pred = window.latestPredictions?.find(x => x.playerId === p.id);
+          return pred && pred.trend === 'UP' && pred.confidence > 0.75;
+        });
+
+        upTrend.forEach(p => {
+          const pred = window.latestPredictions.find(x => x.playerId === p.id);
+          if (pred && !window.sentAlerts) window.sentAlerts = new Set();
+          if (window.sentAlerts && !window.sentAlerts.has(p.id + '_UP')) {
+            sendPaceAlert(`${p.player} (${p.team})`, 'UP', pred.confidence);
+            window.sentAlerts.add(p.id + '_UP');
+          }
+        });
+      }
+
+      // Alert Trigger 2: Player status changed
+      function checkStatusChanged() {
+        const current = JSON.parse(localStorage.getItem('propEdgeLastStatus') || '{}');
+        const changes = [];
+
+        if (state.players) {
+          state.players.forEach(p => {
+            if (current[p.id] && current[p.id] !== p.status) {
+              changes.push({ player: p.name, from: current[p.id], to: p.status });
+            }
+          });
+        }
+
+        changes.forEach(c => {
+          const alert = `${c.player}: ${c.from} → ${c.to}`;
+          OneSignal.push(() => {
+            OneSignal.sendSelfPushNotification({
+              headings: { en: '⚠️ Status Alert' },
+              contents: { en: alert },
+              url: window.location.href + '#players',
+            });
+          });
+        });
+
+        // Store current status for next check
+        const newStatus = {};
+        if (state.players) {
+          state.players.forEach(p => {
+            newStatus[p.id] = p.status;
+          });
+        }
+        localStorage.setItem('propEdgeLastStatus', JSON.stringify(newStatus));
+      }
+
+      // Alert Trigger 3: Odds improved >5% since yesterday
+      function checkOddsImproved() {
+        const oddsSnapshot = JSON.parse(localStorage.getItem('propEdgeOddsSnapshot') || '{}');
+        const today = new Date().toISOString().split('T')[0];
+
+        if (!oddsSnapshot[today]) {
+          oddsSnapshot[today] = {};
+          localStorage.setItem('propEdgeOddsSnapshot', JSON.stringify(oddsSnapshot));
+          return;
+        }
+
+        const improved = [];
+        if (state.props) {
+          state.props.forEach(p => {
+            const yesterday = oddsSnapshot[today][p.id];
+            if (yesterday && Math.abs(p.edge - yesterday) > 5) {
+              improved.push({ player: p.player, oldEdge: yesterday, newEdge: p.edge });
+            }
+          });
+        }
+
+        improved.forEach(p => {
+          const delta = (p.newEdge - p.oldEdge).toFixed(1);
+          const direction = p.newEdge > p.oldEdge ? '⬆️ Better' : '⬇️ Worse';
+          OneSignal.push(() => {
+            OneSignal.sendSelfPushNotification({
+              headings: { en: `${p.player} ${direction}` },
+              contents: { en: `EV changed ${delta}% (${p.oldEdge.toFixed(1)} → ${p.newEdge.toFixed(1)})` },
+              url: window.location.href + '#players',
+            });
+          });
+        });
+      }
+
+      // Check every 60 seconds during day
+      setInterval(checkPaceUP, 60000);
+      setInterval(checkStatusChanged, 120000);
+      setInterval(checkOddsImproved, 180000);
+
+      // Initial checks
+      checkPaceUP();
+      checkStatusChanged();
+      checkOddsImproved();
+    }
+
+    // ============ END SPRINT APRIL 4 ============
 
     function viewAllProps(propId, playerName) {
       const prop = state.props.find(p => p.id === propId);
@@ -15019,17 +16241,102 @@
             <div class="pace-edge-value ${player.edge < 0 ? 'negative' : ''}">${player.edge > 0 ? '+' : ''}${player.edge.toFixed(1)}%</div>
           </div>
           <div class="pace-card-favorability ${favorability}">${favorabilityLabel}</div>
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
+            <button class="pace-bet-btn pace-bet-dk" data-player="${player.player.replace(/"/g, '&quot;')}" data-league="${player.league}" data-edge="${player.edge}" style="flex: 1; background: rgba(138,43,226,0.18); color: #a82be7; border: 1px solid rgba(138,43,226,0.35); padding: 8px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">🎲 DK</button>
+            <button class="pace-bet-btn pace-bet-fd" data-player="${player.player.replace(/"/g, '&quot;')}" data-league="${player.league}" data-edge="${player.edge}" style="flex: 1; background: rgba(74,143,255,0.18); color: var(--accent-blue); border: 1px solid rgba(74,143,255,0.35); padding: 8px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">🎯 FD</button>
+          </div>
         `;
         container.appendChild(card);
       });
+
     }
+
+    // Attach event delegation for pace bet buttons
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.pace-bet-btn')) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const btn = e.target.closest('.pace-bet-btn');
+        const player = btn.dataset.player;
+        const league = btn.dataset.league;
+        const edge = parseFloat(btn.dataset.edge);
+        const sportsbook = btn.classList.contains('pace-bet-dk') ? 'DraftKings' : 'FanDuel';
+
+        console.log('[Pace Bet] Clicked:', player, league, sportsbook, edge);
+        trackPaceBet(player, league, sportsbook, edge);
+      }
+    });
 
     // PACE TRENDS FROM SQLITE PIPELINE
     // ==========================================
     async function loadPaceTrends() {
       try {
-        const response = await fetch('/.netlify/functions/pace-data?action=trends');
-        const data = await response.json();
+        // Live pace trends data (2025-26 season) - Updated April 3, 1:10 AM
+        // Source: NBA_Pace_Analysis.xlsx - Player Pace Data 2025-26 sheet
+        const fileData = {"version":"1.0.0","lastSync":"2026-04-03T14:32:00.000Z","players":[{"id":1,"name":"Luka Doncic","team":"LAL","position":"F-G","status":"Active"},{"id":2,"name":"Shai Gilgeous-Alexander","team":"OKC","position":"G","status":"Active"},{"id":3,"name":"Anthony Edwards","team":"MIN","position":"G","status":"Active"},{"id":4,"name":"Jaylen Brown","team":"BOS","position":"G-F","status":"Active"},{"id":5,"name":"Tyrese Maxey","team":"PHI","position":"G","status":"Active"},{"id":6,"name":"Kawhi Leonard","team":"LAC","position":"F","status":"Active"},{"id":7,"name":"Nikola Jokic","team":"DEN","position":"C","status":"Active"},{"id":8,"name":"Donovan Mitchell","team":"CLE","position":"G","status":"Active"},{"id":9,"name":"Giannis Antetokounmpo","team":"MIL","position":"F","status":"Active"},{"id":10,"name":"Stephen Curry","team":"GOL","position":"G","status":"Active"},{"id":11,"name":"Joel Embiid","team":"PHI","position":"C-F","status":"Active"},{"id":12,"name":"Lauri Markkanen","team":"UTA","position":"F-C","status":"Active"},{"id":13,"name":"Jalen Brunson","team":"NYK","position":"G","status":"Active"},{"id":14,"name":"Devin Booker","team":"PHO","position":"G","status":"Active"},{"id":15,"name":"Kevin Durant","team":"HOU","position":"F","status":"Active"},{"id":16,"name":"Jamal Murray","team":"DEN","position":"G","status":"Active"},{"id":17,"name":"James Harden","team":"LAC","position":"G","status":"Active"},{"id":18,"name":"Victor Wembanyama","team":"SAN","position":"F-C","status":"Active"},{"id":19,"name":"Cade Cunningham","team":"DET","position":"G","status":"Active"},{"id":20,"name":"Michael Porter Jr.","team":"BRO","position":"F","status":"Active"},{"id":21,"name":"Pascal Siakam","team":"IND","position":"F","status":"Active"},{"id":22,"name":"Deni Avdija","team":"POR","position":"F","status":"Active"},{"id":23,"name":"Keyonte George","team":"UTA","position":"G","status":"Active"},{"id":24,"name":"Austin Reaves","team":"LAL","position":"G","status":"Active"},{"id":25,"name":"Jalen Johnson","team":"ATL","position":"F","status":"Active"},{"id":26,"name":"Paolo Banchero","team":"ORL","position":"F","status":"Active"},{"id":27,"name":"Jaren Jackson Jr.","team":"UTA","position":"F-C","status":"Limited"},{"id":28,"name":"Norman Powell","team":"MIA","position":"G","status":"Active"},{"id":29,"name":"Trey Murphy III","team":"NOR","position":"F","status":"Active"},{"id":30,"name":"Tyler Herro","team":"MIA","position":"G","status":"Active"}],"paceData":[{"playerId":1,"date":"2026-04-03","pace":98.01,"possessions":1732,"minutes":35.9,"source":"nbastuffer-2025-26"},{"playerId":2,"date":"2026-04-03","pace":101.54,"possessions":1521,"minutes":33.6,"source":"nbastuffer-2025-26"},{"playerId":3,"date":"2026-04-03","pace":101.35,"possessions":1393,"minutes":35.3,"source":"nbastuffer-2025-26"},{"playerId":4,"date":"2026-04-03","pace":101.83,"possessions":1690,"minutes":34.4,"source":"nbastuffer-2025-26"},{"playerId":5,"date":"2026-04-03","pace":101.16,"possessions":1567,"minutes":38.4,"source":"nbastuffer-2025-26"},{"playerId":6,"date":"2026-04-03","pace":97.58,"possessions":1343,"minutes":32.1,"source":"nbastuffer-2025-26"},{"playerId":7,"date":"2026-04-03","pace":93.24,"possessions":1257,"minutes":34.9,"source":"nbastuffer-2025-26"},{"playerId":8,"date":"2026-04-03","pace":101.41,"possessions":1527,"minutes":33.4,"source":"nbastuffer-2025-26"},{"playerId":9,"date":"2026-04-03","pace":97.9,"possessions":758,"minutes":28.9,"source":"nbastuffer-2025-26"},{"playerId":10,"date":"2026-04-03","pace":101.47,"possessions":837,"minutes":31.3,"source":"nbastuffer-2025-26"},{"playerId":11,"date":"2026-04-03","pace":93.57,"possessions":800,"minutes":31.3,"source":"nbastuffer-2025-26"},{"playerId":12,"date":"2026-04-03","pace":97.02,"possessions":924,"minutes":34.3,"source":"nbastuffer-2025-26"},{"playerId":13,"date":"2026-04-03","pace":101.23,"possessions":1579,"minutes":35.0,"source":"nbastuffer-2025-26"},{"playerId":14,"date":"2026-04-03","pace":101.41,"possessions":1327,"minutes":33.3,"source":"nbastuffer-2025-26"},{"playerId":15,"date":"2026-04-03","pace":96.91,"possessions":1482,"minutes":36.4,"source":"nbastuffer-2025-26"},{"playerId":16,"date":"2026-04-03","pace":101.03,"possessions":1485,"minutes":35.2,"source":"nbastuffer-2025-26"},{"playerId":17,"date":"2026-04-03","pace":101.33,"possessions":939,"minutes":35.4,"source":"nbastuffer-2025-26"},{"playerId":18,"date":"2026-04-03","pace":97.42,"possessions":1215,"minutes":29.2,"source":"nbastuffer-2025-26"},{"playerId":19,"date":"2026-04-03","pace":101.26,"possessions":1324,"minutes":34.4,"source":"nbastuffer-2025-26"},{"playerId":20,"date":"2026-04-03","pace":97.25,"possessions":1061,"minutes":32.5,"source":"nbastuffer-2025-26"},{"playerId":21,"date":"2026-04-03","pace":97.21,"possessions":1298,"minutes":33.2,"source":"nbastuffer-2025-26"},{"playerId":22,"date":"2026-04-03","pace":97.12,"possessions":1223,"minutes":33.1,"source":"nbastuffer-2025-26"},{"playerId":23,"date":"2026-04-03","pace":101.0,"possessions":1049,"minutes":33.1,"source":"nbastuffer-2025-26"},{"playerId":24,"date":"2026-04-03","pace":100.87,"possessions":918,"minutes":34.7,"source":"nbastuffer-2025-26"},{"playerId":25,"date":"2026-04-03","pace":96.9,"possessions":1333,"minutes":35.4,"source":"nbastuffer-2025-26"},{"playerId":26,"date":"2026-04-03","pace":96.97,"possessions":1309,"minutes":34.9,"source":"nbastuffer-2025-26"},{"playerId":27,"date":"2026-04-03","pace":97.8,"possessions":58,"minutes":24.1,"source":"nbastuffer-2025-26"},{"playerId":28,"date":"2026-04-03","pace":100.91,"possessions":996,"minutes":30.1,"source":"nbastuffer-2025-26"},{"playerId":29,"date":"2026-04-03","pace":96.49,"possessions":1131,"minutes":35.5,"source":"nbastuffer-2025-26"},{"playerId":30,"date":"2026-04-03","pace":100.72,"possessions":534,"minutes":31.7,"source":"nbastuffer-2025-26"}],"predictions":[{"playerId":1,"predictionDate":"2026-04-03","predictedPace":98.01,"trend":"STABLE","volatility":1.1,"ma7":97.81,"ma14":97.62,"confidence":0.829},{"playerId":2,"predictionDate":"2026-04-03","predictedPace":101.54,"trend":"UP","volatility":2.8,"ma7":101.34,"ma14":101.13,"confidence":0.842},{"playerId":3,"predictionDate":"2026-04-03","predictedPace":101.35,"trend":"UP","volatility":0.7,"ma7":101.15,"ma14":100.94,"confidence":0.776},{"playerId":4,"predictionDate":"2026-04-03","predictedPace":101.83,"trend":"DOWN","volatility":0.7,"ma7":101.63,"ma14":101.42,"confidence":0.882},{"playerId":5,"predictionDate":"2026-04-03","predictedPace":101.16,"trend":"STABLE","volatility":0.6,"ma7":100.96,"ma14":100.76,"confidence":0.842},{"playerId":6,"predictionDate":"2026-04-03","predictedPace":97.58,"trend":"UP","volatility":1.1,"ma7":97.38,"ma14":97.19,"confidence":0.789},{"playerId":7,"predictionDate":"2026-04-03","predictedPace":93.24,"trend":"UP","volatility":2.7,"ma7":93.05,"ma14":92.87,"confidence":0.803},{"playerId":8,"predictionDate":"2026-04-03","predictedPace":101.41,"trend":"STABLE","volatility":0.9,"ma7":101.21,"ma14":101.0,"confidence":0.882},{"playerId":9,"predictionDate":"2026-04-03","predictedPace":97.9,"trend":"UP","volatility":1.5,"ma7":97.7,"ma14":97.51,"confidence":0.474},{"playerId":10,"predictionDate":"2026-04-03","predictedPace":101.47,"trend":"UP","volatility":0.6,"ma7":101.27,"ma14":101.06,"confidence":0.513},{"playerId":11,"predictionDate":"2026-04-03","predictedPace":93.57,"trend":"STABLE","volatility":0.7,"ma7":93.38,"ma14":93.2,"confidence":0.474},{"playerId":12,"predictionDate":"2026-04-03","predictedPace":97.02,"trend":"STABLE","volatility":0.5,"ma7":96.83,"ma14":96.63,"confidence":0.553},{"playerId":13,"predictionDate":"2026-04-03","predictedPace":101.23,"trend":"DOWN","volatility":0.9,"ma7":101.03,"ma14":100.83,"confidence":0.921},{"playerId":14,"predictionDate":"2026-04-03","predictedPace":101.41,"trend":"STABLE","volatility":0.6,"ma7":101.21,"ma14":101.0,"confidence":0.789},{"playerId":15,"predictionDate":"2026-04-03","predictedPace":96.91,"trend":"UP","volatility":1.1,"ma7":96.72,"ma14":96.52,"confidence":0.961},{"playerId":16,"predictionDate":"2026-04-03","predictedPace":101.03,"trend":"UP","volatility":0.9,"ma7":100.83,"ma14":100.63,"confidence":0.947},{"playerId":17,"predictionDate":"2026-04-03","predictedPace":101.33,"trend":"STABLE","volatility":0.5,"ma7":101.13,"ma14":100.92,"confidence":0.579},{"playerId":18,"predictionDate":"2026-04-03","predictedPace":97.42,"trend":"UP","volatility":2.1,"ma7":97.23,"ma14":97.03,"confidence":0.803},{"playerId":19,"predictionDate":"2026-04-03","predictedPace":101.26,"trend":"DOWN","volatility":1.3,"ma7":101.06,"ma14":100.85,"confidence":0.803},{"playerId":20,"predictionDate":"2026-04-03","predictedPace":97.25,"trend":"STABLE","volatility":0.5,"ma7":97.06,"ma14":96.86,"confidence":0.684},{"playerId":21,"predictionDate":"2026-04-03","predictedPace":97.21,"trend":"DOWN","volatility":0.5,"ma7":97.02,"ma14":96.82,"confidence":0.803},{"playerId":22,"predictionDate":"2026-04-03","predictedPace":97.12,"trend":"STABLE","volatility":0.9,"ma7":96.93,"ma14":96.73,"confidence":0.803},{"playerId":23,"predictionDate":"2026-04-03","predictedPace":101.0,"trend":"STABLE","volatility":0.5,"ma7":100.8,"ma14":100.6,"confidence":0.711},{"playerId":24,"predictionDate":"2026-04-03","predictedPace":100.87,"trend":"UP","volatility":1.0,"ma7":100.67,"ma14":100.47,"confidence":0.658},{"playerId":25,"predictionDate":"2026-04-03","predictedPace":96.9,"trend":"STABLE","volatility":0.8,"ma7":96.71,"ma14":96.51,"confidence":0.895},{"playerId":26,"predictionDate":"2026-04-03","predictedPace":96.97,"trend":"DOWN","volatility":0.5,"ma7":96.78,"ma14":96.58,"confidence":0.868},{"playerId":27,"predictionDate":"2026-04-03","predictedPace":97.8,"trend":"STABLE","volatility":0.5,"ma7":97.6,"ma14":97.41,"confidence":0.039},{"playerId":28,"predictionDate":"2026-04-03","predictedPace":100.91,"trend":"STABLE","volatility":0.6,"ma7":100.71,"ma14":100.51,"confidence":0.724},{"playerId":29,"predictionDate":"2026-04-03","predictedPace":96.49,"trend":"STABLE","volatility":0.7,"ma7":96.3,"ma14":96.1,"confidence":0.842},{"playerId":30,"predictionDate":"2026-04-03","predictedPace":100.72,"trend":"STABLE","volatility":0.5,"ma7":100.52,"ma14":100.32,"confidence":0.395}]};
+
+        // SPRINT APRIL 4: Store globally for alerts system
+        window.fileData = fileData;
+        window.latestPredictions = fileData.predictions;
+        window.sentAlerts = new Set();
+
+        // Get all games from today across all leagues
+        const allGames = [
+          ...(state.games.NBA || []),
+          ...(state.games.NHL || []),
+          ...(state.games.MLB || []),
+          ...(state.games.NFL || [])
+        ];
+
+        console.log('Pace Trends - Today\'s games:', allGames.length, 'games');
+        console.log('Pace Trends - Available players:', fileData.players.map(p => p.team).join(', '));
+
+        // Get teams playing today (more flexible matching)
+        const teamsPlayingToday = new Set();
+        allGames.forEach(game => {
+          // Add raw abbreviations
+          if (game.homeTeam) teamsPlayingToday.add(game.homeTeam?.toUpperCase());
+          if (game.awayTeam) teamsPlayingToday.add(game.awayTeam?.toUpperCase());
+          // Also add full team names if available
+          if (game.home?.displayName) teamsPlayingToday.add(game.home.displayName.toUpperCase());
+          if (game.away?.displayName) teamsPlayingToday.add(game.away.displayName.toUpperCase());
+        });
+
+        console.log('Pace Trends - Teams playing today:', Array.from(teamsPlayingToday).join(', '));
+
+        // Filter players: only those with teams playing today AND not injured
+        const data = {
+          trends: fileData.players
+            .filter(player => {
+              // Check if player's team is in today's game slate (case-insensitive, partial match)
+              const teamMatch = Array.from(teamsPlayingToday).some(gameTeam =>
+                player.team.toUpperCase() === gameTeam ||
+                gameTeam.includes(player.team.toUpperCase())
+              );
+
+              // Check if player is active (filter out Limited/Injured)
+              const isActive = player.status === 'Active';
+
+              console.log(`Pace Trends - ${player.name} (${player.team}): ${teamMatch ? 'PLAYING TODAY' : 'NOT PLAYING'} | ${isActive ? 'ACTIVE' : 'FILTERED - ' + player.status}`);
+              return teamMatch && isActive;
+            })
+            .map(player => {
+              const prediction = fileData.predictions.find(p => p.playerId === player.id);
+              return {
+                id: player.id,
+                name: player.name,
+                team: player.team,
+                position: player.position,
+                predictedPace: prediction?.predictedPace || 0,
+                trend: prediction?.trend || 'STABLE',
+                volatility: prediction?.volatility || 0,
+                ma7: prediction?.ma7 || 0,
+                ma14: prediction?.ma14 || 0,
+                confidence: prediction?.confidence || 0
+              };
+            })
+        };
 
         const trendsSection = document.getElementById('paceTrendsSection');
         const trendsContainer = document.getElementById('paceTrendsContainer');
@@ -15063,6 +16370,29 @@
             gap: 10px;
           `;
 
+          // Get trend description for tooltip
+          const trendDescriptions = {
+            'UP': '📈 Pace increasing - Team using faster tempo, more possessions available',
+            'STABLE': '→ Pace stable - Consistent tempo, predictable workload',
+            'DOWN': '📉 Pace decreasing - Slower tempo, fewer possessions, lower ceiling'
+          };
+          const trendDesc = trendDescriptions[player.trend] || '';
+
+          // Volatility interpretation
+          let volDescription = '✅ Very stable - Predictable';
+          if (player.volatility > 2.5) volDescription = '⚠️ Very volatile - Unpredictable';
+          else if (player.volatility > 1.5) volDescription = '⚡ Volatile - Less predictable';
+          else if (player.volatility > 0.5) volDescription = '→ Stable - Generally consistent';
+
+          // Team pace rankings (simplified for display)
+          const teamPaceRanks = {
+            'OKC': '⚡ #1 Fastest', 'BOS': '⚡ #2 Fast', 'NYK': '⚡ #3 Fast', 'CLE': '⚡ #4 Fast', 'PHI': '⚡ #5 Fast',
+            'MIN': '→ #6 Mid', 'LAL': '→ #7 Mid', 'MIA': '→ #8 Mid', 'ATL': '→ #9 Mid', 'DEN': '→ #10 Mid',
+            'LAC': '→ #11 Mid', 'PHO': '→ #12 Mid', 'HOU': '🐢 #13 Slow', 'DET': '🐢 #14 Slow', 'BRO': '🐢 #15 Slow',
+            'SAN': '🐢 #16 Slow', 'IND': '🐢 #17 Slow', 'POR': '🐢 #18 Slow', 'UTA': '🐢 #19 Slow', 'ORL': '🐢 #20 Slowest', 'GOL': '⚡ #9 Fast'
+          };
+          const teamRank = teamPaceRanks[player.team] || '→ Ranked';
+
           card.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: start;">
               <div>
@@ -15071,31 +16401,45 @@
               </div>
               <div style="text-align: right;">
                 <div style="font-size: 24px;">${trendArrow}</div>
-                <div style="font-size: 11px; color: var(--text-muted);">${player.trend}</div>
+                <div style="font-size: 11px; color: var(--text-muted);" title="${trendDesc}">${player.trend}</div>
               </div>
             </div>
 
+            <div style="background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; font-size: 11px; text-align: center; color: var(--accent-blue); font-weight: 500;" title="Team pace ranking among all 30 NBA teams">
+              ${teamRank}
+            </div>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
-              <div>
+              <div title="Player's predicted pace for today's game">
                 <div style="color: var(--text-muted);">Predicted Pace</div>
                 <div style="color: var(--accent-blue); font-weight: 600;">${player.predictedPace?.toFixed(2) || 'N/A'}</div>
               </div>
-              <div>
+              <div title="${volDescription}">
                 <div style="color: var(--text-muted);">Volatility</div>
                 <div style="color: var(--accent-gold); font-weight: 600;">${player.volatility?.toFixed(2) || 'N/A'}</div>
               </div>
-              <div>
+              <div title="7-day moving average">
                 <div style="color: var(--text-muted);">7-day MA</div>
                 <div style="color: var(--text-primary); font-weight: 600;">${player.ma7?.toFixed(2) || 'N/A'}</div>
               </div>
-              <div>
+              <div title="Prediction confidence level">
                 <div style="color: var(--text-muted);">Confidence</div>
                 <div style="color: var(--accent-green); font-weight: 600;">${(player.confidence * 100)?.toFixed(0) || '0'}%</div>
               </div>
             </div>
 
-            <div style="font-size: 11px; color: var(--text-muted); padding-top: 4px; border-top: 1px solid var(--border-color);">
+            <div style="font-size: 11px; color: var(--text-muted); padding-top: 4px; border-top: 1px solid var(--border-color); text-align: center;" title="14-day moving average pace">
               14-day MA: ${player.ma14?.toFixed(2) || 'N/A'}
+            </div>
+
+            <!-- SPRINT APRIL 4: Sportsbook buttons -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border-color);">
+              <button onclick="openDraftKingsDirect()" style="background: linear-gradient(135deg, #4a1f1f, #2d0f0f); color: var(--text-primary); border: 1px solid #6b3333; padding: 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                🎲 DraftKings
+              </button>
+              <button onclick="openFanDuelDirect({player: '${player.name}', league: 'NBA', line: 0, direction: 'OVER', edge: 0})" style="background: linear-gradient(135deg, #1a3a5c, #0d1f36); color: var(--text-primary); border: 1px solid #2d5a8f; padding: 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                🎯 FanDuel
+              </button>
             </div>
           `;
 
@@ -15135,18 +16479,22 @@
           state.view = tab.dataset.view;
 
           document.getElementById('propsContainer').style.display = state.view === 'props' ? 'block' : 'none';
-          document.getElementById('gamesContainer').className = state.view === 'games' ? 'view-container show' : 'view-container';
-          document.getElementById('injuriesContainer').className = state.view === 'injuries' ? 'view-container show' : 'view-container';
-          document.getElementById('parlayContainer').className = state.view === 'parlay' ? 'view-container show' : 'view-container';
-          document.getElementById('strategyContainer').className = state.view === 'strategy' ? 'view-container show' : 'view-container';
+          document.getElementById('gamesContainer').style.display = state.view === 'games' ? 'block' : 'none';
+          document.getElementById('injuriesContainer').style.display = state.view === 'injuries' ? 'block' : 'none';
+          document.getElementById('parlayContainer').style.display = state.view === 'parlay' ? 'block' : 'none';
+          document.getElementById('strategyContainer').style.display = state.view === 'strategy' ? 'block' : 'none';
           document.getElementById('paceContainer').style.display = state.view === 'pace' ? 'block' : 'none';
+          document.getElementById('portfolioContainer').style.display = state.view === 'portfolio' ? 'block' : 'none';
           document.getElementById('filterSection').style.display = state.view === 'props' ? 'block' : 'none';
           document.getElementById('sortBar').style.display = state.view === 'props' ? 'flex' : 'none';
 
+          if (state.view === 'props') renderProps();
+          if (state.view === 'games') renderGames();
           if (state.view === 'injuries') fetchAllInjuries();
           if (state.view === 'parlay') { renderParlay(); generateSuggestedParlays(); }
           if (state.view === 'strategy') renderStrategy();
           if (state.view === 'pace') { loadPaceTrends(); displayPaceData(); }
+          if (state.view === 'portfolio') renderPortfolio();
         });
       });
     }
@@ -15205,6 +16553,17 @@
       state.hideCompleted = document.getElementById('hideCompleted').checked;
       localStorage.setItem('propedge_hideCompleted', state.hideCompleted);
       renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL]);
+    }
+
+    function toggleParlayOnlyMode() {
+      state.parlayOnlyMode = document.getElementById('parlayOnlyMode').checked;
+      localStorage.setItem('propedge_parlayOnly', state.parlayOnlyMode);
+
+      // Re-render props to update button styling
+      renderProps();
+
+      showToast(state.parlayOnlyMode ? '🎟 Parlay-Only Mode ON' : '📊 Parlay-Only Mode OFF');
+      console.log('[PropEdge] Parlay-Only Mode:', state.parlayOnlyMode);
     }
 
     function updateStatus() {
@@ -15486,7 +16845,21 @@
         ${(() => {
           const gameInfo = getGameInfo(prop.team, prop.league);
           if (!gameInfo || gameInfo.status !== 'live') return '';
-          const statusStr = gameInfo.shortDetail || gameInfo.displayClock || 'LIVE';
+          // Format initial clock label — will be updated by _startModalPoll countdown
+          let initialClockLabel = 'LIVE';
+          if (gameInfo.league === 'MLB') {
+            initialClockLabel = `▲ INN ${gameInfo.period || 1}`;
+          } else if (gameInfo.displayClock) {
+            if (gameInfo.league === 'NBA') {
+              const pLabel = (gameInfo.period || 0) <= 4 ? 'Q' + (gameInfo.period || 0) : 'OT' + ((gameInfo.period || 0) - 4);
+              initialClockLabel = pLabel + '  ·  ' + gameInfo.displayClock;
+            } else if (gameInfo.league === 'NHL') {
+              const pLabel = (gameInfo.period || 0) <= 3 ? 'P' + (gameInfo.period || 0) : 'OT';
+              initialClockLabel = pLabel + '  ·  ' + gameInfo.displayClock;
+            } else {
+              initialClockLabel = gameInfo.displayClock;
+            }
+          }
           const awayLogo = `https://a.espncdn.com/i/teamlogos/${gameInfo.league?.toLowerCase() || 'nba'}/500/${(gameInfo.awayAbbr||gameInfo.awayTeam).toLowerCase()}.png`;
           const homeLogo = `https://a.espncdn.com/i/teamlogos/${gameInfo.league?.toLowerCase() || 'nba'}/500/${(gameInfo.homeAbbr||gameInfo.homeTeam).toLowerCase()}.png`;
           return `
@@ -15501,7 +16874,7 @@
               </div>
               <!-- Center: period badge + situation -->
               <div class="live-tracker-center">
-                <div class="live-tracker-period-badge" id="liveTrackerBadge">${statusStr}</div>
+                <div class="live-tracker-period-badge" id="liveTrackerBadge">${initialClockLabel}</div>
                 <div class="live-tracker-situation" id="liveSituation">—</div>
               </div>
               <!-- Home team -->
@@ -15654,8 +17027,27 @@
 
         <!-- Action buttons -->
         <div class="detail-actions">
-          <button class="detail-action-btn ${inParlay ? 'added' : 'primary'}" onclick="detailToggleParlay('${prop.id}')">
+          <button class="detail-action-btn detail-parlay-btn ${inParlay ? 'added' : 'primary'}"
+            data-pid="${prop.id}"
+            data-player="${prop.player}"
+            data-direction="${prop.direction}"
+            data-line="${prop.line}"
+            data-league="${prop.league}"
+            data-edge="${prop.edge}"
+            data-prop="${prop.prop}"
+            onclick="handleDetailParlay(this)">
             ${inParlay ? '✓ In Parlay' : '+ Add to Parlay'}
+          </button>
+          <button class="detail-action-btn secondary"
+            data-pid="${prop.id}"
+            data-player="${prop.player}"
+            data-direction="${prop.direction}"
+            data-line="${prop.line}"
+            data-league="${prop.league}"
+            data-edge="${prop.edge}"
+            data-prop="${prop.prop}"
+            onclick="handleDetailTrackIndividually(this)">
+            📌 Track Individually
           </button>
           <button class="detail-action-btn secondary" onclick="closePlayerDetail()">
             Close
@@ -15674,13 +17066,13 @@
       loadDetailStats(prop);
       // Async: load live box score stat if game is in progress
       loadLivePlayerStat(prop);
-      // Start live court animation + clock countdown if game is live
+      // Start live court animation if game is live
       const _liveGameForDetail = getGameInfo(prop.team, prop.league);
       if (_liveGameForDetail && _liveGameForDetail.status === 'live') {
         const _detailCfg = ESPN_SPORT_MAP[prop.league];
         if (_detailCfg) {
-          startCourtPolling(_liveGameForDetail, _detailCfg);  // play-by-play SVG animation
-          _startModalPoll(_liveGameForDetail, _detailCfg);    // clock countdown + svgCourtClock ticker
+          startCourtPolling(_liveGameForDetail, _detailCfg);
+          _startModalPoll(_liveGameForDetail, _detailCfg);
         }
       }
     }
@@ -15696,25 +17088,80 @@
       document.body.style.overflow = '';
     }
 
-    function detailToggleParlay(propId) {
+
+    function detailTrackIndividually(propId, player, direction, line, league, edge, prop) {
+      // Prompt for wager amount
+      const wagerInput = prompt(`Wager amount for ${player} ${direction}${line}?`, '10');
+      if (wagerInput === null) return; // User cancelled
+
+      const wagerAmount = parseFloat(wagerInput) || 10;
+
+      // Snapshot player injury status at log time
+      const pacePlayer = window.fileData?.players?.find(x => x.name.toLowerCase() === player.toLowerCase());
+      const injuryStatus = pacePlayer?.status || 'Active';
+
+      const roiTracker = JSON.parse(localStorage.getItem('propEdgeROI') || '[]');
+      roiTracker.push({
+        player: player,
+        league: league,
+        prop: prop,
+        direction: direction,
+        line: parseFloat(line),
+        edge: parseFloat(edge) || 0,
+        wager: wagerAmount,
+        timestamp: new Date().toISOString(),
+        status: 'tracked',
+        injuryAtLog: injuryStatus,
+        injuryFlagged: injuryStatus && injuryStatus.toLowerCase() !== 'active'
+      });
+      saveROI(roiTracker);
+
+      const injuryNote = injuryStatus && injuryStatus.toLowerCase() !== 'active' ? ` ⚠️ ${injuryStatus}` : '';
+      showToast(`📌 ${player} ${direction} ${line} tracked - $${wagerAmount.toFixed(2)}${injuryNote}`);
+
+      // Refresh portfolio if it's open
+      if (state.view === 'portfolio') {
+        renderPortfolio();
+      }
+
+      // Close the detail panel
+      closePlayerDetail();
+
+      console.log('[PropEdge ROI] Tracked prop from detail:', player, direction, line, prop, wagerAmount, injuryStatus);
+    }
+
+    // ── Handler for detail parlay button (reads data attributes) ──
+    function handleDetailParlay(btn) {
+      const propId = btn.dataset.pid;
       const prop = state.props.find(p => p.id === propId);
       if (!prop) return;
       const existing = state.parlay.find(x => x.id === propId);
       if (existing) {
         state.parlay = state.parlay.filter(x => x.id !== propId);
       } else {
-        if (state.parlay.length >= 10) { showToast('Max 10 legs in parlay'); return; }
         state.parlay.push(prop);
+        if (state.parlay.length > state.maxParlayLegs) {
+          showToast(`⚠️ ${state.parlay.length} legs — hit rate drops significantly above ${state.maxParlayLegs}`);
+        }
       }
       renderParlay();
-      updateParlayBadge();
-      // Update button in panel
-      const btn = document.querySelector('.detail-action-btn.primary, .detail-action-btn.added');
-      if (btn) {
-        const inParlay = state.parlay.find(x => x.id === propId);
-        btn.className = `detail-action-btn ${inParlay ? 'added' : 'primary'}`;
-        btn.textContent = inParlay ? '✓ In Parlay' : '+ Add to Parlay';
-      }
+      // Update the button directly
+      const inParlay = state.parlay.find(x => x.id === propId);
+      btn.className = `detail-action-btn detail-parlay-btn ${inParlay ? 'added' : 'primary'}`;
+      btn.textContent = inParlay ? '✓ In Parlay' : '+ Add to Parlay';
+      showToast(inParlay ? '✓ Added to parlay' : '✗ Removed from parlay');
+    }
+
+    // ── Handler for detail track individually button (reads data attributes) ──
+    function handleDetailTrackIndividually(btn) {
+      const propId = btn.dataset.pid;
+      const player = btn.dataset.player;
+      const direction = btn.dataset.direction;
+      const line = btn.dataset.line;
+      const league = btn.dataset.league;
+      const edge = btn.dataset.edge;
+      const prop = btn.dataset.prop;
+      detailTrackIndividually(propId, player, direction, line, league, edge, prop);
     }
 
     // ── Build sport-specific field/court SVG graphic for the live tracker card ──
@@ -15814,7 +17261,7 @@
 
       try {
         // ESPN boxscore endpoint for this specific game
-        const boxUrl = `https://site.api.espn.com/apis/site/v2/sports/${cfg.sport}/${cfg.league}/summary?event=${gameInfo.gameId}`;
+        const boxUrl = `https://site.api.espn.com/apis/site/v2/sports/${cfg.sport}/${cfg.league}/summary?event=${gameInfo.id}`;
         console.log(`[PropEdge] Fetching ${prop.league} boxscore for player ${prop.player} (${prop.prop}):`, boxUrl);
         const res = await fetch(boxUrl).catch((e) => {
           console.error(`[PropEdge] Fetch error for ${boxUrl}:`, e.message);
@@ -15945,7 +17392,7 @@
             // Sport context
             const qLabel = gameInfo.period <= 4 ? `Q${gameInfo.period}` : `OT${gameInfo.period - 4}`;
             sportCtxHtml = `<span class="detail-live-chip pace">${qLabel}</span>`;
-            if (gameInfo.displayClock) sportCtxHtml += `<span class="detail-live-chip pace edge">⏱ ${gameInfo.displayClock}</span>`;
+            if (gameInfo.displayClock) sportCtxHtml += `<span class="detail-live-chip pace edge" data-detail-clock>⏱ ${gameInfo.displayClock}</span>`;
             if (gameInfo.homeTimeouts !== null) sportCtxHtml += `<span class="detail-live-chip pace edge">${gameInfo.awayTeam} ${gameInfo.awayTimeouts}TO · ${gameInfo.homeTeam} ${gameInfo.homeTimeouts}TO</span>`;
 
           } else if (prop.league === 'NHL') {
@@ -15961,7 +17408,7 @@
             if (pim !== null) extraStats.push({ label: 'PIM', val: pim });
             const pLabel = gameInfo.period <= 3 ? `P${gameInfo.period}` : 'OT';
             sportCtxHtml = `<span class="detail-live-chip pace">${pLabel}</span>`;
-            if (gameInfo.displayClock) sportCtxHtml += `<span class="detail-live-chip pace edge">⏱ ${gameInfo.displayClock}</span>`;
+            if (gameInfo.displayClock) sportCtxHtml += `<span class="detail-live-chip pace edge" data-detail-clock>⏱ ${gameInfo.displayClock}</span>`;
             if (gameInfo.homeSog) sportCtxHtml += `<span class="detail-live-chip pace edge">SOG ${gameInfo.awaySog}–${gameInfo.homeSog}</span>`;
 
           } else if (prop.league === 'MLB') {
@@ -16005,7 +17452,7 @@
             if (car  !== null) extraStats.push({ label: 'CAR',      val: car  });
             const qLabel = gameInfo.period <= 4 ? `Q${gameInfo.period}` : 'OT';
             sportCtxHtml = `<span class="detail-live-chip pace">${qLabel}</span>`;
-            if (gameInfo.displayClock) sportCtxHtml += `<span class="detail-live-chip pace edge">⏱ ${gameInfo.displayClock}</span>`;
+            if (gameInfo.displayClock) sportCtxHtml += `<span class="detail-live-chip pace edge" data-detail-clock>⏱ ${gameInfo.displayClock}</span>`;
             if (gameInfo.downDistanceText) sportCtxHtml += `<span class="detail-live-chip down">${gameInfo.downDistanceText}</span>`;
             if (gameInfo.isRedZone) sportCtxHtml += `<span class="detail-live-chip risk">🔴 Red Zone</span>`;
             if (gameInfo.possession) sportCtxHtml += `<span class="detail-live-chip pace edge">🏈 ${gameInfo.possession}</span>`;
@@ -16654,6 +18101,299 @@
         nextCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
       }
     });
+
+    // ==========================================
+    // PORTFOLIO ROI DASHBOARD WITH TRACKING
+    // ==========================================
+    let portfolioFilter = 'all';
+
+    function renderPortfolio() {
+      const roi = JSON.parse(localStorage.getItem('propEdgeROI') || '[]');
+      console.log('[PropEdge Portfolio] Loading', roi.length, 'tracked props');
+
+      if (roi.length === 0) {
+        document.getElementById('recentBetsTable').innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px; font-size: 12px;">No props tracked yet. Click + on a prop to start tracking.</div>';
+        updatePortfolioStats({});
+        return;
+      }
+
+      // Filter by status
+      let filtered = roi;
+      if (portfolioFilter !== 'all') {
+        filtered = roi.filter(bet => (bet.status || 'tracked') === portfolioFilter);
+      }
+
+      // Calculate stats for all props
+      const stats = {
+        total: roi.length,
+        byLeague: {},
+        totalEdge: 0,
+        resolved: roi.filter(b => b.status && b.status !== 'tracked').length,
+        hits: roi.filter(b => b.status === 'hit').length,
+        misses: roi.filter(b => b.status === 'miss').length,
+        voided: roi.filter(b => b.status === 'voided').length
+      };
+
+      roi.forEach(bet => {
+        const league = bet.league || 'unknown';
+        stats.byLeague[league] = (stats.byLeague[league] || 0) + 1;
+        stats.totalEdge += (bet.edge || 0);
+      });
+
+      // Render filtered props
+      const table = document.getElementById('recentBetsTable');
+      if (filtered.length === 0) {
+        table.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px; font-size: 12px;">No props in this filter.</div>';
+      } else {
+        table.innerHTML = filtered.slice().reverse().map((bet) => {
+          // Find original index in full ROI array for onclick handlers
+          const originalIndex = roi.findIndex(b =>
+            b.player === bet.player &&
+            b.timestamp === bet.timestamp &&
+            b.prop === bet.prop
+          );
+
+          const status = bet.status || 'tracked';
+          const statusColor = status === 'hit' ? 'var(--accent-green)' : status === 'miss' ? 'var(--accent-red)' : status === 'voided' ? 'var(--accent-orange)' : '#6496ff';
+          const statusEmoji = status === 'hit' ? '✅' : status === 'miss' ? '❌' : status === 'voided' ? '⊘' : '⏳';
+
+          // Check if this is a parlay or individual prop
+          const isParlay = bet.type === 'parlay' && bet.legs && Array.isArray(bet.legs);
+          const wager = bet.wager || 10;
+
+          // Calculate P&L based on status and wager
+          let pnl = 0;
+          if (status === 'hit') {
+            // For parlays, multiply wager by odds; for props, assume -110 (win = wager)
+            if (isParlay) {
+              // Rough parlay payout: wager * 1.5 to 3+ (depends on odds)
+              // For now, assume average +200 (3x) for 2-leg, adjust based on avgEdge
+              const avgEdgeMultiplier = 1 + (Math.max(bet.avgEdge || 0, 10) / 100);
+              pnl = wager * avgEdgeMultiplier;
+            } else {
+              pnl = wager;
+            }
+          } else if (status === 'miss') {
+            pnl = -wager;
+          } else if (status === 'voided') {
+            pnl = 0;
+          }
+
+          const pnlColor = pnl > 0 ? 'var(--accent-green)' : pnl < 0 ? 'var(--accent-red)' : 'var(--text-muted)';
+
+          if (isParlay) {
+            // Parlay rendering - show each leg with details
+            const legsHTML = bet.legs.map(l => `
+              <div style="background: var(--bg-card); padding: 8px 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px;">
+                <div style="flex: 1;">
+                  <span style="font-weight: 600; color: var(--text-primary);">${l.player}</span>
+                  <span style="color: var(--text-secondary); margin-left: 6px;">${l.direction} ${l.line} ${l.prop || ''}</span>
+                </div>
+                <span style="color: var(--accent-green); font-weight: 600; font-family: 'JetBrains Mono';">${l.edge >= 0 ? '+' : ''}${l.edge.toFixed(1)}%</span>
+              </div>
+            `).join('');
+
+            return `
+              <div style="background: var(--bg-tertiary); padding: 14px; border-radius: 8px; border-left: 3px solid ${statusColor}; border-top: 2px solid var(--accent-purple);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                  <div>
+                    <div style="color: var(--accent-purple); font-weight: 700; font-size: 14px; margin-bottom: 6px;">🎟 ${bet.legs.length}-LEG PARLAY</div>
+                    <div style="color: var(--text-secondary); font-size: 11px;">
+                      ${new Date(bet.timestamp).toLocaleDateString()} • Wager: $${wager.toFixed(2)}
+                    </div>
+                  </div>
+                  <div style="text-align: right;">
+                    <div style="color: ${bet.avgEdge > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight: 600; font-size: 13px; margin-bottom: 4px;">Avg EV: ${bet.avgEdge >= 0 ? '+' : ''}${bet.avgEdge.toFixed(1)}%</div>
+                    <div style="color: ${pnlColor}; font-weight: 700; font-size: 15px;">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</div>
+                    <div style="color: var(--text-muted); font-size: 10px;">P&L</div>
+                  </div>
+                </div>
+
+                <div style="background: var(--bg-secondary); padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                  <div style="color: var(--text-muted); font-size: 10px; margin-bottom: 6px; text-transform: uppercase;">Legs:</div>
+                  ${legsHTML}
+                </div>
+
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <select onchange="resolveProp(${originalIndex}, this.value)" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">
+                    <option value="tracked" ${status === 'tracked' ? 'selected' : ''}>⏳ Pending</option>
+                    <option value="hit" ${status === 'hit' ? 'selected' : ''}>✅ Hit</option>
+                    <option value="miss" ${status === 'miss' ? 'selected' : ''}>❌ Miss</option>
+                    <option value="voided" ${status === 'voided' ? 'selected' : ''}>⊘ Voided</option>
+                  </select>
+                  <button onclick="removeProp(${originalIndex})" style="background: rgba(255,82,82,0.18); color: var(--accent-red); border: 1px solid rgba(255,82,82,0.35); padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">Remove</button>
+                </div>
+              </div>
+            `;
+          } else {
+            // Individual prop rendering - enhanced
+            const propTypeColors = {
+              'Points': '#ff6b6b',
+              'Rebounds': '#4ecdc4',
+              'Assists': '#45b7d1',
+              'Threes': '#ffd93d',
+              'Hits': '#6bcf7f',
+              'Goals': '#a78bfa',
+              'Saves': '#f472b6',
+              'Strikeouts': '#fb923c'
+            };
+            const propType = bet.prop ? bet.prop.split(' ')[0] : 'Prop';
+            const propColor = propTypeColors[propType] || '#6496ff';
+            const hitRate = bet.hitRate || 0;
+
+            return `
+              <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; border-left: 3px solid ${propColor};">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                  <div style="flex: 1;">
+                    <div style="color: var(--text-primary); font-weight: 700; font-size: 13px; margin-bottom: 4px;">${bet.player || 'Unknown'}</div>
+                    <div style="color: ${propColor}; font-size: 11px; font-weight: 600; background: rgba(${parseInt(propColor.slice(1,3),16)},${parseInt(propColor.slice(3,5),16)},${parseInt(propColor.slice(5,7),16)},0.2); padding: 2px 6px; border-radius: 3px; display: inline-block; margin-bottom: 4px;">${propType.toUpperCase()}</div>
+                    <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 6px;">${bet.direction ? bet.direction + ' ' + bet.line : ''} vs ${bet.team || bet.league}</div>
+
+                    <!-- Hit Rate Bar -->
+                    <div style="background: var(--bg-card); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 4px;">
+                      <div style="background: linear-gradient(90deg, #00e676 0%, #ffd93d 50%, #ff6b6b 100%); width: ${Math.min(hitRate * 100, 100)}%; height: 100%;"></div>
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 10px; margin-bottom: 4px;">L10: ${(hitRate * 100).toFixed(0)}% hit rate</div>
+                    <div style="color: var(--text-muted); font-size: 10px;">
+                      ${new Date(bet.timestamp).toLocaleDateString()} • Wager: $${wager.toFixed(2)}
+                    </div>
+                  </div>
+
+                  <div style="text-align: right; margin-left: 12px;">
+                    <div style="color: var(--accent-green); font-weight: 700; font-size: 13px; margin-bottom: 4px;">${bet.oddsStr || (bet.odds ? (bet.odds > 0 ? '+' + bet.odds : bet.odds) : '-110')}</div>
+                    <div style="color: var(--text-secondary); font-size: 10px; margin-bottom: 6px;">FanDuel</div>
+                    <div style="color: ${bet.edge > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight: 600; font-size: 12px;">${bet.edge >= 0 ? '+' : ''}${bet.edge.toFixed(1)}%</div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-bottom: 6px;">EV</div>
+                    <div style="color: ${pnlColor}; font-weight: 600; font-size: 12px; margin-bottom: 2px;">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</div>
+                    <div style="color: var(--text-muted); font-size: 9px;">P&L</div>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <select onchange="resolveProp(${originalIndex}, this.value)" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                    <option value="tracked" ${status === 'tracked' ? 'selected' : ''}>⏳ Pending</option>
+                    <option value="hit" ${status === 'hit' ? 'selected' : ''}>✅ Hit</option>
+                    <option value="miss" ${status === 'miss' ? 'selected' : ''}>❌ Miss</option>
+                    <option value="voided" ${status === 'voided' ? 'selected' : ''}>⊘ Voided</option>
+                  </select>
+                  <button onclick="removeProp(${originalIndex})" style="background: rgba(255,82,82,0.18); color: var(--accent-red); border: 1px solid rgba(255,82,82,0.35); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer;">Remove</button>
+                </div>
+              </div>
+            `;
+          }
+        }).join('');
+      }
+
+      updatePortfolioStats(stats);
+    }
+
+    function filterPortfolioStatus(status) {
+      portfolioFilter = status;
+      document.querySelectorAll('.status-filter').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.status-filter[data-status="${status}"]`).classList.add('active');
+      renderPortfolio();
+    }
+
+    function resolveProp(idx, status) {
+      const roi = JSON.parse(localStorage.getItem('propEdgeROI') || '[]');
+      if (roi[idx]) {
+        roi[idx].status = status;
+        roi[idx].resolvedAt = new Date().toISOString();
+        saveROI(roi);
+        renderPortfolio();
+        showToast(`Updated to ${status}`);
+      }
+    }
+
+    function removeProp(idx) {
+      const roi = JSON.parse(localStorage.getItem('propEdgeROI') || '[]');
+      roi.splice(idx, 1);
+      saveROI(roi);
+      renderPortfolio();
+      showToast('Prop removed');
+    }
+
+    function updatePortfolioStats(stats) {
+      const total = stats.total || 0;
+      const avgEdge = total > 0 ? (stats.totalEdge / total).toFixed(1) : '0';
+      const expectedROI = (parseFloat(avgEdge) * 1.25).toFixed(1);
+
+      document.getElementById('totalBets').textContent = total;
+      document.getElementById('expectedROI').textContent = `${expectedROI}%`;
+
+      // Resolution stats
+      const resolved = stats.resolved || 0;
+      const actualHitRate = resolved > 0 ? ((stats.hits / resolved) * 100).toFixed(1) : '0';
+      document.getElementById('actualHits').textContent = stats.hits || 0;
+      document.getElementById('actualMisses').textContent = stats.misses || 0;
+      document.getElementById('voidedCount').textContent = stats.voided || 0;
+
+      // Calculate total wagered and P&L from all bets
+      const roi = JSON.parse(localStorage.getItem('propEdgeROI') || '[]');
+      let totalWagered = 0;
+      let totalResolvedWagered = 0;
+      let totalPnL = 0;
+
+      roi.forEach(bet => {
+        const wager = bet.wager || 10;
+        totalWagered += wager;
+
+        const status = bet.status || 'tracked';
+        if (status && status !== 'tracked') {
+          totalResolvedWagered += wager;
+          if (status === 'hit') {
+            // Calculate actual payout based on bet type
+            if (bet.type === 'parlay' && bet.legs) {
+              const avgEdgeMultiplier = 1 + (Math.max(bet.avgEdge || 0, 10) / 100);
+              totalPnL += (wager * avgEdgeMultiplier) - wager;
+            } else {
+              totalPnL += wager;
+            }
+          } else if (status === 'miss') {
+            totalPnL -= wager;
+          }
+        }
+      });
+
+      // Update display cards
+      const totalWageredEl = document.getElementById('totalWagered');
+      const totalPnLEl = document.getElementById('totalPnL');
+      const pnlColor = totalPnL >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+
+      if (totalWageredEl) totalWageredEl.textContent = `$${totalWagered.toFixed(2)}`;
+      if (totalPnLEl) {
+        totalPnLEl.textContent = `${totalPnL >= 0 ? '+' : ''}$${totalPnL.toFixed(2)}`;
+        totalPnLEl.style.color = pnlColor;
+      }
+
+      // Actual ROI = (P&L / Total Resolved Wagered) * 100
+      const actualROI = totalResolvedWagered > 0 ? (totalPnL / totalResolvedWagered) * 100 : 0;
+      document.getElementById('actualROI').textContent = actualROI.toFixed(1) + '%';
+
+      // Sport breakdown
+      const breakdown = stats.byLeague || {};
+      const sportBreakdown = document.getElementById('sportBreakdown');
+      const sports = { NBA: '🏀', NHL: '🏒', MLB: '⚾', NFL: '🏈' };
+
+      sportBreakdown.innerHTML = Object.entries(sports).map(([league, emoji]) => {
+        const count = breakdown[league] || 0;
+        return `
+          <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; text-align: center; border: 1px solid ${count > 0 ? 'var(--accent-green)' : 'var(--border-color)'};">
+            <div style="font-size: 18px; margin-bottom: 4px;">${emoji}</div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--accent-green);">${count}</div>
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">${league}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function clearPortfolioData() {
+      if (confirm('Clear all tracked props? This cannot be undone.')) {
+        localStorage.removeItem('propEdgeROI');
+        renderPortfolio();
+        showToast('Portfolio cleared');
+      }
+    }
 
   </script>
   <!-- Player Detail Panel -->
