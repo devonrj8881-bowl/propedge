@@ -17,3 +17,6 @@ propedge-deploy/propedge-deploy-state.json
 node_modules/
 *.log
 
+
+# Local Netlify folder
+.netlify

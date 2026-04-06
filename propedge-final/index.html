@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v3.14 — Ticket Watchlist + OneSignal Push Notifications — 2026-03-30 -->
+<!-- PropEdge v3.15 — Full Features + Pace Trends API Integration — 2026-04-03 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -592,7 +592,7 @@
     /* Navigation Tabs */
     .nav-tabs {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       background: var(--bg-secondary);
       border-bottom: 1px solid var(--border-color);
     }
@@ -5134,6 +5134,14 @@
       </div>
     </div>
 
+    <!-- Pace Trends from SQLite Pipeline -->
+    <div id="paceTrendsSection" class="pace-trends-section" style="display:none; margin: 20px 16px; padding: 16px; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      <h3 style="margin-bottom: 16px; color: var(--accent-blue);">📊 Pace Trends (Live Data)</h3>
+      <div id="paceTrendsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;">
+        <!-- Trends populated by JS -->
+      </div>
+    </div>
+
     <!-- Pace Cards Container -->
     <div id="paceCardsContainer" class="pace-cards-container">
       <!-- Cards populated by JS -->
@@ -5302,6 +5310,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       initTabs();
       initFilters();
+      loadPaceTrends();
 
       state.autoRefresh = localStorage.getItem('propedge_autoRefresh') === 'true';
       state.hideCompleted = localStorage.getItem('propedge_hideCompleted') === 'true';
@@ -15015,6 +15024,88 @@
       });
     }
 
+    // PACE TRENDS FROM SQLITE PIPELINE
+    // ==========================================
+    async function loadPaceTrends() {
+      try {
+        const response = await fetch('/.netlify/functions/pace-data?action=trends');
+        const data = await response.json();
+
+        const trendsSection = document.getElementById('paceTrendsSection');
+        const trendsContainer = document.getElementById('paceTrendsContainer');
+
+        if (!trendsContainer || !data.trends || data.trends.length === 0) {
+          if (trendsSection) trendsSection.style.display = 'none';
+          return;
+        }
+
+        // Show trends section
+        if (trendsSection) trendsSection.style.display = 'block';
+
+        trendsContainer.innerHTML = '';
+
+        data.trends.forEach(player => {
+          const trendColor = player.trend === 'UP' ? 'var(--accent-green)' :
+                            player.trend === 'DOWN' ? 'var(--accent-red)' :
+                            'var(--accent-blue)';
+
+          const trendArrow = player.trend === 'UP' ? '📈' :
+                            player.trend === 'DOWN' ? '📉' : '➡️';
+
+          const card = document.createElement('div');
+          card.style.cssText = `
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          `;
+
+          card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary);">${player.name}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${player.team} • ${player.position || 'N/A'}</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 24px;">${trendArrow}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">${player.trend}</div>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+              <div>
+                <div style="color: var(--text-muted);">Predicted Pace</div>
+                <div style="color: var(--accent-blue); font-weight: 600;">${player.predictedPace?.toFixed(2) || 'N/A'}</div>
+              </div>
+              <div>
+                <div style="color: var(--text-muted);">Volatility</div>
+                <div style="color: var(--accent-gold); font-weight: 600;">${player.volatility?.toFixed(2) || 'N/A'}</div>
+              </div>
+              <div>
+                <div style="color: var(--text-muted);">7-day MA</div>
+                <div style="color: var(--text-primary); font-weight: 600;">${player.ma7?.toFixed(2) || 'N/A'}</div>
+              </div>
+              <div>
+                <div style="color: var(--text-muted);">Confidence</div>
+                <div style="color: var(--accent-green); font-weight: 600;">${(player.confidence * 100)?.toFixed(0) || '0'}%</div>
+              </div>
+            </div>
+
+            <div style="font-size: 11px; color: var(--text-muted); padding-top: 4px; border-top: 1px solid var(--border-color);">
+              14-day MA: ${player.ma14?.toFixed(2) || 'N/A'}
+            </div>
+          `;
+
+          trendsContainer.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Error loading pace trends:', error);
+      }
+    }
+
     // ==========================================
     // TABS & FILTERS
     // ==========================================
@@ -15055,7 +15146,7 @@
           if (state.view === 'injuries') fetchAllInjuries();
           if (state.view === 'parlay') { renderParlay(); generateSuggestedParlays(); }
           if (state.view === 'strategy') renderStrategy();
-          if (state.view === 'pace') displayPaceData();
+          if (state.view === 'pace') { loadPaceTrends(); displayPaceData(); }
         });
       });
     }
