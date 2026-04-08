@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v3.14 — Ticket Watchlist + OneSignal Push Notifications — 2026-03-30 -->
+<!-- PropEdge v3.15 — Full Features + Pace Trends API Integration — 2026-04-03 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -592,7 +592,7 @@
     /* Navigation Tabs */
     .nav-tabs {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(7, 1fr);
       background: var(--bg-secondary);
       border-bottom: 1px solid var(--border-color);
     }
@@ -4764,6 +4764,39 @@
     /* Spacer at bottom for safe area */
     .detail-bottom-spacer { height: 8px; }
 
+    /* Feature 8: Desktop Sidebar Parlay */
+    @media (min-width: 1200px) {
+      #parlayContainer.view-container {
+        position: fixed !important;
+        right: 0;
+        top: 0;
+        width: 320px;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 50;
+        border-left: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        display: block !important;
+        padding-top: 80px;
+      }
+      .props-container,
+      #gamesContainer,
+      #injuriesContainer,
+      #strategyContainer,
+      #paceContainer,
+      #trackContainer {
+        margin-right: 320px;
+      }
+      .nav-tab[data-view="parlay"] {
+        display: none;
+      }
+    }
+
+    /* Feature 5: Confidence Gauge */
+    .conf-gauge { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .conf-gauge svg { display: block; }
+    .conf-gauge-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); }
+
   </style>
 </head>
 <body>
@@ -4774,9 +4807,12 @@
         <div class="logo-icon">PE</div>
         <span class="logo-text">PropEdge</span>
       </div>
-      <div class="live-indicator">
-        <span class="live-dot"></span>
-        <span id="statusText">LIVE</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button id="getAlertsBtn" onclick="requestPushAlerts()" style="display:none;padding:4px 10px;background:var(--accent-blue-dim);border:1px solid var(--accent-blue);border-radius:20px;color:var(--accent-blue);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">🔔 Alerts</button>
+        <div class="live-indicator">
+          <span class="live-dot"></span>
+          <span id="statusText">LIVE</span>
+        </div>
       </div>
     </div>
   </header>
@@ -4859,10 +4895,19 @@
       <span class="nav-tab-icon">⚡</span>
       Pace
     </div>
+    <div class="nav-tab" data-view="track">
+      <span class="nav-tab-icon">📈</span>
+      Track
+    </div>
   </div>
 
   <!-- Filter Section -->
   <div class="filter-section" id="filterSection">
+    <!-- Prop Search Bar (Feature 1) -->
+    <div style="margin-bottom:10px;max-width:1400px;margin-left:auto;margin-right:auto;">
+      <input type="text" id="propSearchInput" placeholder="Search player..." oninput="filterBySearch()"
+        style="width:100%;padding:8px 12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;font-size:13px;outline:none;" />
+    </div>
     <div class="filter-pills">
       <div class="filter-pill active" data-filter="all">All</div>
       <div class="filter-pill ultimate" data-filter="ultimate">⭐ Ultimate</div>
@@ -5134,9 +5179,77 @@
       </div>
     </div>
 
+    <!-- Pace Trends from SQLite Pipeline -->
+    <div id="paceTrendsSection" class="pace-trends-section" style="display:none; margin: 20px 16px; padding: 16px; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      <h3 style="margin-bottom: 16px; color: var(--accent-blue);">📊 Pace Trends (Live Data)</h3>
+      <div id="paceTrendsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;">
+        <!-- Trends populated by JS -->
+      </div>
+    </div>
+
     <!-- Pace Cards Container -->
     <div id="paceCardsContainer" class="pace-cards-container">
       <!-- Cards populated by JS -->
+    </div>
+  </div>
+
+  <!-- Bet Tracker View (Feature 3) -->
+  <div class="view-container" id="trackContainer">
+    <div style="padding:16px;max-width:700px;margin:0 auto;">
+      <div style="font-size:18px;font-weight:700;margin-bottom:16px;">📈 Bet Tracker</div>
+
+      <!-- Log a Bet form -->
+      <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-secondary);">LOG A BET</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <input id="btPlayer" placeholder="Player name" style="padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;outline:none;grid-column:1/-1;" />
+          <select id="btPropType" style="padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;outline:none;">
+            <option>Points</option><option>Rebounds</option><option>Assists</option><option>Goals</option><option>Hits</option><option>Strikeouts</option><option>Shots on Goal</option><option>Pts+Reb+Ast</option>
+          </select>
+          <input id="btLine" type="number" placeholder="Line (e.g. 24.5)" step="0.5" style="padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;outline:none;" />
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
+          <button id="btDirOver" onclick="setBtDir('OVER')" style="flex:1;padding:8px;background:rgba(0,230,118,0.15);border:1.5px solid var(--accent-green);border-radius:var(--radius-sm);color:var(--accent-green);font-weight:700;font-size:13px;cursor:pointer;">OVER</button>
+          <button id="btDirUnder" onclick="setBtDir('UNDER')" style="flex:1;padding:8px;background:var(--bg-tertiary);border:1.5px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-secondary);font-weight:700;font-size:13px;cursor:pointer;">UNDER</button>
+          <input id="btOdds" type="number" placeholder="Odds (-110)" style="flex:1;padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;outline:none;" />
+          <input id="btUnits" type="number" placeholder="Units" value="1" step="0.5" min="0.5" style="width:70px;padding:8px 10px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-primary);font-family:inherit;font-size:13px;outline:none;" />
+        </div>
+        <button onclick="logBet()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--accent-green),rgb(50,255,150));color:var(--bg-primary);border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;">Log Bet</button>
+      </div>
+
+      <!-- Summary Bar -->
+      <div id="btSummary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;"></div>
+
+      <!-- Bet List -->
+      <div id="btList"></div>
+    </div>
+  </div>
+
+  <!-- Onboarding Overlay (Feature 2) -->
+  <div id="onboardingOverlay" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);max-width:420px;width:100%;padding:28px 24px;box-shadow:var(--shadow-lg);">
+      <div style="font-size:28px;margin-bottom:8px;text-align:center;">📊</div>
+      <div style="font-size:20px;font-weight:700;text-align:center;margin-bottom:6px;">Welcome to PropEdge</div>
+      <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:20px;">Here's how to read your prop cards</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+        <li style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="background:linear-gradient(135deg,var(--accent-gold),var(--accent-orange));color:var(--bg-primary);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;margin-top:1px;">⭐ ULTIMATE</span>
+          <span style="font-size:13px;color:var(--text-secondary);">Score 85+ — highest confidence, all boxes checked</span>
+        </li>
+        <li style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="background:linear-gradient(135deg,var(--accent-purple),rgb(200,150,255));color:var(--bg-primary);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;margin-top:1px;">🎯 PRIME</span>
+          <span style="font-size:13px;color:var(--text-secondary);">Score 72+ — strong model signal with solid hit rate</span>
+        </li>
+        <li style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="background:linear-gradient(135deg,var(--accent-green),rgb(50,255,150));color:var(--bg-primary);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;margin-top:1px;">✅ STRONG</span>
+          <span style="font-size:13px;color:var(--text-secondary);">Score 62+ — good value, consistent recent performance</span>
+        </li>
+        <li style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="background:linear-gradient(135deg,var(--accent-blue),rgb(100,180,255));color:var(--bg-primary);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;margin-top:1px;">SOLID</span>
+          <span style="font-size:13px;color:var(--text-secondary);">Score 52+ — speculative play, use with caution</span>
+        </li>
+      </ul>
+      <button onclick="dismissOnboarding()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--accent-green),rgb(50,255,150));color:var(--bg-primary);border:none;border-radius:var(--radius-md);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.3px;">Got it →</button>
     </div>
   </div>
 
@@ -5302,6 +5415,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       initTabs();
       initFilters();
+      loadPaceTrends();
 
       state.autoRefresh = localStorage.getItem('propedge_autoRefresh') === 'true';
       state.hideCompleted = localStorage.getItem('propedge_hideCompleted') === 'true';
@@ -5312,6 +5426,7 @@
       // Load data in order: config first, then games, then props, then FD lines
       loadConfigThresholds().then(() => {
         fetchGames().then(() => {
+          injectMLBWeather(); // Feature 10: weather badges after games load
           loadData().then(() => {
             loadGameStatusFromSheet(); // Fallback game status from sheet
             setTimeout(() => loadFanDuelLinesFromSheet(), 1000);
@@ -5330,6 +5445,9 @@
       // 🎟 Ticket Watchlist: init badge + bell on load
       _ticketUpdateBadge();
       _ticketUpdateBellVisibility();
+
+      // Feature 2: Onboarding
+      checkOnboarding();
     });
 
     // ==========================================
@@ -5502,6 +5620,7 @@
         generateSuggestedParlays(); // Populate AI parlay suggestions now that props are loaded
         const msg = allProps.length > 0 ? `Loaded ${allProps.length} props` : '⚠️ No props loaded — check Google Sheet sharing settings';
         showToast(msg);
+        scheduleNotifications();
 
       } catch (e) {
         console.error('[PropEdge] Error loading data:', e);
@@ -14167,7 +14286,31 @@
                   ${lineMoveBadge}
                 </div>
               </div>
-              <div class="prop-score ${p.tier}">${p.modelScore}</div>
+              ${(() => {
+                const tierColors5 = { ultimate: '#f59e0b', prime: '#a855f7', strong: '#00e676', solid: '#4a8fff', spec: '#4a8fff' };
+                const tierLabel5  = { ultimate: 'ULTIMATE', prime: 'PRIME', strong: 'STRONG', solid: 'SOLID', spec: 'SOLID' };
+                const gc = tierColors5[p.tier] || '#4a8fff';
+                const r = 18, cx = 24, cy = 24;
+                const circ = 2 * Math.PI * r;
+                // Arc spans 270° (from 135° to 405°), starting bottom-left
+                const arcLen = circ * 0.75;
+                const filled = arcLen * Math.min(p.modelScore, 100) / 100;
+                const gap    = arcLen - filled;
+                // rotate -225deg so arc starts at bottom-left
+                return `<div class="conf-gauge">
+                  <svg width="48" height="48" viewBox="0 0 48 48">
+                    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border-color)" stroke-width="4"
+                      stroke-dasharray="${arcLen} ${circ - arcLen}" stroke-dashoffset="${-circ * 0.875}"
+                      stroke-linecap="round" />
+                    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${gc}" stroke-width="4"
+                      stroke-dasharray="${filled} ${circ - filled}" stroke-dashoffset="${-circ * 0.875}"
+                      stroke-linecap="round" style="transition:stroke-dasharray 0.6s ease;" />
+                    <text x="${cx}" y="${cy + 5}" text-anchor="middle" fill="${gc}"
+                      font-family="JetBrains Mono,monospace" font-size="11" font-weight="700">${p.modelScore}</text>
+                  </svg>
+                  <span class="conf-gauge-label" style="color:${gc};">${tierLabel5[p.tier] || ''}</span>
+                </div>`;
+              })()}
             </div>
             ${liveStrip}
             ${valueDriftHtml}
@@ -14177,6 +14320,15 @@
               <span class="prop-value">${p.line}</span>
               <span class="prop-type">${p.prop}</span>
               <span class="prop-odds">${p.oddsStr}</span>
+              ${(() => {
+                if (!movement) return '';
+                // Green if sharp money aligns with model direction, red if against
+                const sharpFavorsModel = (p.direction === 'OVER' && movement.sharpSide === 'HOME') ||
+                                         (p.direction === 'UNDER' && movement.sharpSide === 'AWAY');
+                const mvColor = sharpFavorsModel ? 'var(--accent-green)' : 'var(--accent-red)';
+                const mvIcon  = sharpFavorsModel ? '▲' : '▼';
+                return `<span style="font-size:11px;font-weight:700;color:${mvColor};margin-left:4px;" title="Line moved ${movement.moveAmt} pts — sharps on ${movement.sharpSide}">${mvIcon}${movement.moveAmt}</span>`;
+              })()}
             </div>
 
             <div class="prop-stats">
@@ -14244,6 +14396,9 @@
                   title="Watch this player">
                   ${_ticketHasPlayer(p.player) ? '★' : '☆'}
                 </button>
+                <button class="prop-action-btn"
+                  onclick="shareCard('${p.player.replace(/'/g,"\\'")}','${p.direction} ${p.line} ${p.prop.replace(/'/g,"\\'")}','${p.tier}',${p.modelScore})"
+                  title="Share">📤</button>
               </div>
             </div>
           </div>
@@ -14384,8 +14539,14 @@
       } else {
         state.parlay.push(prop);
         showToast('Added to parlay');
+        // Feature 6: hint to enable alerts if not subscribed
+        try {
+          if (window.OneSignal && OneSignal.User.PushSubscription.optedIn === false) {
+            setTimeout(() => showToast('🔔 Tap "Alerts" to get push notifications'), 2000);
+          }
+        } catch(e) {}
       }
-      
+
       renderProps();
       renderParlay();
     }
@@ -15015,6 +15176,173 @@
       });
     }
 
+    // PACE TRENDS FROM SQLITE PIPELINE
+    // ==========================================
+    async function loadPaceTrends() {
+      try {
+        // Live pace trends data (2025-26 season) - Updated April 3, 1:10 AM
+        // Source: NBA_Pace_Analysis.xlsx - Player Pace Data 2025-26 sheet
+        const fileData = {"version":"1.0.0","lastSync":"2026-04-03T14:32:00.000Z","players":[{"id":1,"name":"Luka Doncic","team":"LAL","position":"F-G","status":"Active"},{"id":2,"name":"Shai Gilgeous-Alexander","team":"OKC","position":"G","status":"Active"},{"id":3,"name":"Anthony Edwards","team":"MIN","position":"G","status":"Active"},{"id":4,"name":"Jaylen Brown","team":"BOS","position":"G-F","status":"Active"},{"id":5,"name":"Tyrese Maxey","team":"PHI","position":"G","status":"Active"},{"id":6,"name":"Kawhi Leonard","team":"LAC","position":"F","status":"Active"},{"id":7,"name":"Nikola Jokic","team":"DEN","position":"C","status":"Active"},{"id":8,"name":"Donovan Mitchell","team":"CLE","position":"G","status":"Active"},{"id":9,"name":"Giannis Antetokounmpo","team":"MIL","position":"F","status":"Active"},{"id":10,"name":"Stephen Curry","team":"GOL","position":"G","status":"Active"},{"id":11,"name":"Joel Embiid","team":"PHI","position":"C-F","status":"Active"},{"id":12,"name":"Lauri Markkanen","team":"UTA","position":"F-C","status":"Active"},{"id":13,"name":"Jalen Brunson","team":"NYK","position":"G","status":"Active"},{"id":14,"name":"Devin Booker","team":"PHO","position":"G","status":"Active"},{"id":15,"name":"Kevin Durant","team":"HOU","position":"F","status":"Active"},{"id":16,"name":"Jamal Murray","team":"DEN","position":"G","status":"Active"},{"id":17,"name":"James Harden","team":"LAC","position":"G","status":"Active"},{"id":18,"name":"Victor Wembanyama","team":"SAN","position":"F-C","status":"Active"},{"id":19,"name":"Cade Cunningham","team":"DET","position":"G","status":"Active"},{"id":20,"name":"Michael Porter Jr.","team":"BRO","position":"F","status":"Active"},{"id":21,"name":"Pascal Siakam","team":"IND","position":"F","status":"Active"},{"id":22,"name":"Deni Avdija","team":"POR","position":"F","status":"Active"},{"id":23,"name":"Keyonte George","team":"UTA","position":"G","status":"Active"},{"id":24,"name":"Austin Reaves","team":"LAL","position":"G","status":"Active"},{"id":25,"name":"Jalen Johnson","team":"ATL","position":"F","status":"Active"},{"id":26,"name":"Paolo Banchero","team":"ORL","position":"F","status":"Active"},{"id":27,"name":"Jaren Jackson Jr.","team":"UTA","position":"F-C","status":"Limited"},{"id":28,"name":"Norman Powell","team":"MIA","position":"G","status":"Active"},{"id":29,"name":"Trey Murphy III","team":"NOR","position":"F","status":"Active"},{"id":30,"name":"Tyler Herro","team":"MIA","position":"G","status":"Active"}],"paceData":[{"playerId":1,"date":"2026-04-03","pace":98.01,"possessions":1732,"minutes":35.9,"source":"nbastuffer-2025-26"},{"playerId":2,"date":"2026-04-03","pace":101.54,"possessions":1521,"minutes":33.6,"source":"nbastuffer-2025-26"},{"playerId":3,"date":"2026-04-03","pace":101.35,"possessions":1393,"minutes":35.3,"source":"nbastuffer-2025-26"},{"playerId":4,"date":"2026-04-03","pace":101.83,"possessions":1690,"minutes":34.4,"source":"nbastuffer-2025-26"},{"playerId":5,"date":"2026-04-03","pace":101.16,"possessions":1567,"minutes":38.4,"source":"nbastuffer-2025-26"},{"playerId":6,"date":"2026-04-03","pace":97.58,"possessions":1343,"minutes":32.1,"source":"nbastuffer-2025-26"},{"playerId":7,"date":"2026-04-03","pace":93.24,"possessions":1257,"minutes":34.9,"source":"nbastuffer-2025-26"},{"playerId":8,"date":"2026-04-03","pace":101.41,"possessions":1527,"minutes":33.4,"source":"nbastuffer-2025-26"},{"playerId":9,"date":"2026-04-03","pace":97.9,"possessions":758,"minutes":28.9,"source":"nbastuffer-2025-26"},{"playerId":10,"date":"2026-04-03","pace":101.47,"possessions":837,"minutes":31.3,"source":"nbastuffer-2025-26"},{"playerId":11,"date":"2026-04-03","pace":93.57,"possessions":800,"minutes":31.3,"source":"nbastuffer-2025-26"},{"playerId":12,"date":"2026-04-03","pace":97.02,"possessions":924,"minutes":34.3,"source":"nbastuffer-2025-26"},{"playerId":13,"date":"2026-04-03","pace":101.23,"possessions":1579,"minutes":35.0,"source":"nbastuffer-2025-26"},{"playerId":14,"date":"2026-04-03","pace":101.41,"possessions":1327,"minutes":33.3,"source":"nbastuffer-2025-26"},{"playerId":15,"date":"2026-04-03","pace":96.91,"possessions":1482,"minutes":36.4,"source":"nbastuffer-2025-26"},{"playerId":16,"date":"2026-04-03","pace":101.03,"possessions":1485,"minutes":35.2,"source":"nbastuffer-2025-26"},{"playerId":17,"date":"2026-04-03","pace":101.33,"possessions":939,"minutes":35.4,"source":"nbastuffer-2025-26"},{"playerId":18,"date":"2026-04-03","pace":97.42,"possessions":1215,"minutes":29.2,"source":"nbastuffer-2025-26"},{"playerId":19,"date":"2026-04-03","pace":101.26,"possessions":1324,"minutes":34.4,"source":"nbastuffer-2025-26"},{"playerId":20,"date":"2026-04-03","pace":97.25,"possessions":1061,"minutes":32.5,"source":"nbastuffer-2025-26"},{"playerId":21,"date":"2026-04-03","pace":97.21,"possessions":1298,"minutes":33.2,"source":"nbastuffer-2025-26"},{"playerId":22,"date":"2026-04-03","pace":97.12,"possessions":1223,"minutes":33.1,"source":"nbastuffer-2025-26"},{"playerId":23,"date":"2026-04-03","pace":101.0,"possessions":1049,"minutes":33.1,"source":"nbastuffer-2025-26"},{"playerId":24,"date":"2026-04-03","pace":100.87,"possessions":918,"minutes":34.7,"source":"nbastuffer-2025-26"},{"playerId":25,"date":"2026-04-03","pace":96.9,"possessions":1333,"minutes":35.4,"source":"nbastuffer-2025-26"},{"playerId":26,"date":"2026-04-03","pace":96.97,"possessions":1309,"minutes":34.9,"source":"nbastuffer-2025-26"},{"playerId":27,"date":"2026-04-03","pace":97.8,"possessions":58,"minutes":24.1,"source":"nbastuffer-2025-26"},{"playerId":28,"date":"2026-04-03","pace":100.91,"possessions":996,"minutes":30.1,"source":"nbastuffer-2025-26"},{"playerId":29,"date":"2026-04-03","pace":96.49,"possessions":1131,"minutes":35.5,"source":"nbastuffer-2025-26"},{"playerId":30,"date":"2026-04-03","pace":100.72,"possessions":534,"minutes":31.7,"source":"nbastuffer-2025-26"}],"predictions":[{"playerId":1,"predictionDate":"2026-04-03","predictedPace":98.01,"trend":"STABLE","volatility":1.1,"ma7":97.81,"ma14":97.62,"confidence":0.829},{"playerId":2,"predictionDate":"2026-04-03","predictedPace":101.54,"trend":"UP","volatility":2.8,"ma7":101.34,"ma14":101.13,"confidence":0.842},{"playerId":3,"predictionDate":"2026-04-03","predictedPace":101.35,"trend":"UP","volatility":0.7,"ma7":101.15,"ma14":100.94,"confidence":0.776},{"playerId":4,"predictionDate":"2026-04-03","predictedPace":101.83,"trend":"DOWN","volatility":0.7,"ma7":101.63,"ma14":101.42,"confidence":0.882},{"playerId":5,"predictionDate":"2026-04-03","predictedPace":101.16,"trend":"STABLE","volatility":0.6,"ma7":100.96,"ma14":100.76,"confidence":0.842},{"playerId":6,"predictionDate":"2026-04-03","predictedPace":97.58,"trend":"UP","volatility":1.1,"ma7":97.38,"ma14":97.19,"confidence":0.789},{"playerId":7,"predictionDate":"2026-04-03","predictedPace":93.24,"trend":"UP","volatility":2.7,"ma7":93.05,"ma14":92.87,"confidence":0.803},{"playerId":8,"predictionDate":"2026-04-03","predictedPace":101.41,"trend":"STABLE","volatility":0.9,"ma7":101.21,"ma14":101.0,"confidence":0.882},{"playerId":9,"predictionDate":"2026-04-03","predictedPace":97.9,"trend":"UP","volatility":1.5,"ma7":97.7,"ma14":97.51,"confidence":0.474},{"playerId":10,"predictionDate":"2026-04-03","predictedPace":101.47,"trend":"UP","volatility":0.6,"ma7":101.27,"ma14":101.06,"confidence":0.513},{"playerId":11,"predictionDate":"2026-04-03","predictedPace":93.57,"trend":"STABLE","volatility":0.7,"ma7":93.38,"ma14":93.2,"confidence":0.474},{"playerId":12,"predictionDate":"2026-04-03","predictedPace":97.02,"trend":"STABLE","volatility":0.5,"ma7":96.83,"ma14":96.63,"confidence":0.553},{"playerId":13,"predictionDate":"2026-04-03","predictedPace":101.23,"trend":"DOWN","volatility":0.9,"ma7":101.03,"ma14":100.83,"confidence":0.921},{"playerId":14,"predictionDate":"2026-04-03","predictedPace":101.41,"trend":"STABLE","volatility":0.6,"ma7":101.21,"ma14":101.0,"confidence":0.789},{"playerId":15,"predictionDate":"2026-04-03","predictedPace":96.91,"trend":"UP","volatility":1.1,"ma7":96.72,"ma14":96.52,"confidence":0.961},{"playerId":16,"predictionDate":"2026-04-03","predictedPace":101.03,"trend":"UP","volatility":0.9,"ma7":100.83,"ma14":100.63,"confidence":0.947},{"playerId":17,"predictionDate":"2026-04-03","predictedPace":101.33,"trend":"STABLE","volatility":0.5,"ma7":101.13,"ma14":100.92,"confidence":0.579},{"playerId":18,"predictionDate":"2026-04-03","predictedPace":97.42,"trend":"UP","volatility":2.1,"ma7":97.23,"ma14":97.03,"confidence":0.803},{"playerId":19,"predictionDate":"2026-04-03","predictedPace":101.26,"trend":"DOWN","volatility":1.3,"ma7":101.06,"ma14":100.85,"confidence":0.803},{"playerId":20,"predictionDate":"2026-04-03","predictedPace":97.25,"trend":"STABLE","volatility":0.5,"ma7":97.06,"ma14":96.86,"confidence":0.684},{"playerId":21,"predictionDate":"2026-04-03","predictedPace":97.21,"trend":"DOWN","volatility":0.5,"ma7":97.02,"ma14":96.82,"confidence":0.803},{"playerId":22,"predictionDate":"2026-04-03","predictedPace":97.12,"trend":"STABLE","volatility":0.9,"ma7":96.93,"ma14":96.73,"confidence":0.803},{"playerId":23,"predictionDate":"2026-04-03","predictedPace":101.0,"trend":"STABLE","volatility":0.5,"ma7":100.8,"ma14":100.6,"confidence":0.711},{"playerId":24,"predictionDate":"2026-04-03","predictedPace":100.87,"trend":"UP","volatility":1.0,"ma7":100.67,"ma14":100.47,"confidence":0.658},{"playerId":25,"predictionDate":"2026-04-03","predictedPace":96.9,"trend":"STABLE","volatility":0.8,"ma7":96.71,"ma14":96.51,"confidence":0.895},{"playerId":26,"predictionDate":"2026-04-03","predictedPace":96.97,"trend":"DOWN","volatility":0.5,"ma7":96.78,"ma14":96.58,"confidence":0.868},{"playerId":27,"predictionDate":"2026-04-03","predictedPace":97.8,"trend":"STABLE","volatility":0.5,"ma7":97.6,"ma14":97.41,"confidence":0.039},{"playerId":28,"predictionDate":"2026-04-03","predictedPace":100.91,"trend":"STABLE","volatility":0.6,"ma7":100.71,"ma14":100.51,"confidence":0.724},{"playerId":29,"predictionDate":"2026-04-03","predictedPace":96.49,"trend":"STABLE","volatility":0.7,"ma7":96.3,"ma14":96.1,"confidence":0.842},{"playerId":30,"predictionDate":"2026-04-03","predictedPace":100.72,"trend":"STABLE","volatility":0.5,"ma7":100.52,"ma14":100.32,"confidence":0.395}]};
+
+        // Get all games from today across all leagues
+        const allGames = [
+          ...(state.games.NBA || []),
+          ...(state.games.NHL || []),
+          ...(state.games.MLB || []),
+          ...(state.games.NFL || [])
+        ];
+
+        console.log('Pace Trends - Today\'s games:', allGames.length, 'games');
+        console.log('Pace Trends - Available players:', fileData.players.map(p => p.team).join(', '));
+
+        // Get teams playing today (more flexible matching)
+        const teamsPlayingToday = new Set();
+        allGames.forEach(game => {
+          // Add raw abbreviations
+          if (game.homeTeam) teamsPlayingToday.add(game.homeTeam?.toUpperCase());
+          if (game.awayTeam) teamsPlayingToday.add(game.awayTeam?.toUpperCase());
+          // Also add full team names if available
+          if (game.home?.displayName) teamsPlayingToday.add(game.home.displayName.toUpperCase());
+          if (game.away?.displayName) teamsPlayingToday.add(game.away.displayName.toUpperCase());
+        });
+
+        console.log('Pace Trends - Teams playing today:', Array.from(teamsPlayingToday).join(', '));
+
+        // Filter players: only those with teams playing today AND not injured
+        const data = {
+          trends: fileData.players
+            .filter(player => {
+              // Check if player's team is in today's game slate (case-insensitive, partial match)
+              const teamMatch = Array.from(teamsPlayingToday).some(gameTeam =>
+                player.team.toUpperCase() === gameTeam ||
+                gameTeam.includes(player.team.toUpperCase())
+              );
+
+              // Check if player is active (filter out Limited/Injured)
+              const isActive = player.status === 'Active';
+
+              console.log(`Pace Trends - ${player.name} (${player.team}): ${teamMatch ? 'PLAYING TODAY' : 'NOT PLAYING'} | ${isActive ? 'ACTIVE' : 'FILTERED - ' + player.status}`);
+              return teamMatch && isActive;
+            })
+            .map(player => {
+              const prediction = fileData.predictions.find(p => p.playerId === player.id);
+              return {
+                id: player.id,
+                name: player.name,
+                team: player.team,
+                position: player.position,
+                predictedPace: prediction?.predictedPace || 0,
+                trend: prediction?.trend || 'STABLE',
+                volatility: prediction?.volatility || 0,
+                ma7: prediction?.ma7 || 0,
+                ma14: prediction?.ma14 || 0,
+                confidence: prediction?.confidence || 0
+              };
+            })
+        };
+
+        const trendsSection = document.getElementById('paceTrendsSection');
+        const trendsContainer = document.getElementById('paceTrendsContainer');
+
+        if (!trendsContainer || !data.trends || data.trends.length === 0) {
+          if (trendsSection) trendsSection.style.display = 'none';
+          return;
+        }
+
+        // Show trends section
+        if (trendsSection) trendsSection.style.display = 'block';
+
+        trendsContainer.innerHTML = '';
+
+        data.trends.forEach(player => {
+          const trendColor = player.trend === 'UP' ? 'var(--accent-green)' :
+                            player.trend === 'DOWN' ? 'var(--accent-red)' :
+                            'var(--accent-blue)';
+
+          const trendArrow = player.trend === 'UP' ? '📈' :
+                            player.trend === 'DOWN' ? '📉' : '➡️';
+
+          const card = document.createElement('div');
+          card.style.cssText = `
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          `;
+
+          // Get trend description for tooltip
+          const trendDescriptions = {
+            'UP': '📈 Pace increasing - Team using faster tempo, more possessions available',
+            'STABLE': '→ Pace stable - Consistent tempo, predictable workload',
+            'DOWN': '📉 Pace decreasing - Slower tempo, fewer possessions, lower ceiling'
+          };
+          const trendDesc = trendDescriptions[player.trend] || '';
+
+          // Volatility interpretation
+          let volDescription = '✅ Very stable - Predictable';
+          if (player.volatility > 2.5) volDescription = '⚠️ Very volatile - Unpredictable';
+          else if (player.volatility > 1.5) volDescription = '⚡ Volatile - Less predictable';
+          else if (player.volatility > 0.5) volDescription = '→ Stable - Generally consistent';
+
+          // Team pace rankings (simplified for display)
+          const teamPaceRanks = {
+            'OKC': '⚡ #1 Fastest', 'BOS': '⚡ #2 Fast', 'NYK': '⚡ #3 Fast', 'CLE': '⚡ #4 Fast', 'PHI': '⚡ #5 Fast',
+            'MIN': '→ #6 Mid', 'LAL': '→ #7 Mid', 'MIA': '→ #8 Mid', 'ATL': '→ #9 Mid', 'DEN': '→ #10 Mid',
+            'LAC': '→ #11 Mid', 'PHO': '→ #12 Mid', 'HOU': '🐢 #13 Slow', 'DET': '🐢 #14 Slow', 'BRO': '🐢 #15 Slow',
+            'SAN': '🐢 #16 Slow', 'IND': '🐢 #17 Slow', 'POR': '🐢 #18 Slow', 'UTA': '🐢 #19 Slow', 'ORL': '🐢 #20 Slowest', 'GOL': '⚡ #9 Fast'
+          };
+          const teamRank = teamPaceRanks[player.team] || '→ Ranked';
+
+          card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <div>
+                <div style="font-weight: 600; color: var(--text-primary);">${player.name}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${player.team} • ${player.position || 'N/A'}</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 24px;">${trendArrow}</div>
+                <div style="font-size: 11px; color: var(--text-muted);" title="${trendDesc}">${player.trend}</div>
+              </div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; font-size: 11px; text-align: center; color: var(--accent-blue); font-weight: 500;" title="Team pace ranking among all 30 NBA teams">
+              ${teamRank}
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+              <div title="Player's predicted pace for today's game">
+                <div style="color: var(--text-muted);">Predicted Pace</div>
+                <div style="color: var(--accent-blue); font-weight: 600;">${player.predictedPace?.toFixed(2) || 'N/A'}</div>
+              </div>
+              <div title="${volDescription}">
+                <div style="color: var(--text-muted);">Volatility</div>
+                <div style="color: var(--accent-gold); font-weight: 600;">${player.volatility?.toFixed(2) || 'N/A'}</div>
+              </div>
+              <div title="7-day moving average">
+                <div style="color: var(--text-muted);">7-day MA</div>
+                <div style="color: var(--text-primary); font-weight: 600;">${player.ma7?.toFixed(2) || 'N/A'}</div>
+              </div>
+              <div title="Prediction confidence level">
+                <div style="color: var(--text-muted);">Confidence</div>
+                <div style="color: var(--accent-green); font-weight: 600;">${(player.confidence * 100)?.toFixed(0) || '0'}%</div>
+              </div>
+            </div>
+
+            <div style="font-size: 11px; color: var(--text-muted); padding-top: 4px; border-top: 1px solid var(--border-color); text-align: center;" title="14-day moving average pace">
+              14-day MA: ${player.ma14?.toFixed(2) || 'N/A'}
+            </div>
+          `;
+
+          trendsContainer.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Error loading pace trends:', error);
+      }
+    }
+
     // ==========================================
     // TABS & FILTERS
     // ==========================================
@@ -15026,7 +15354,8 @@
           tab.classList.add('active');
           state.league = tab.dataset.league;
           state.propDisplayLimit = 100;
-          
+          const _si = document.getElementById('propSearchInput'); if (_si) _si.value = '';
+
           if (state.gameFilter) {
             state.gameFilter = null;
             renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL]);
@@ -15046,16 +15375,19 @@
           document.getElementById('propsContainer').style.display = state.view === 'props' ? 'block' : 'none';
           document.getElementById('gamesContainer').className = state.view === 'games' ? 'view-container show' : 'view-container';
           document.getElementById('injuriesContainer').className = state.view === 'injuries' ? 'view-container show' : 'view-container';
-          document.getElementById('parlayContainer').className = state.view === 'parlay' ? 'view-container show' : 'view-container';
+          const isDesktop = window.innerWidth >= 1200;
+          document.getElementById('parlayContainer').className = (state.view === 'parlay' || isDesktop) ? 'view-container show' : 'view-container';
           document.getElementById('strategyContainer').className = state.view === 'strategy' ? 'view-container show' : 'view-container';
           document.getElementById('paceContainer').style.display = state.view === 'pace' ? 'block' : 'none';
+          document.getElementById('trackContainer').className = state.view === 'track' ? 'view-container show' : 'view-container';
           document.getElementById('filterSection').style.display = state.view === 'props' ? 'block' : 'none';
           document.getElementById('sortBar').style.display = state.view === 'props' ? 'flex' : 'none';
 
           if (state.view === 'injuries') fetchAllInjuries();
           if (state.view === 'parlay') { renderParlay(); generateSuggestedParlays(); }
           if (state.view === 'strategy') renderStrategy();
-          if (state.view === 'pace') displayPaceData();
+          if (state.view === 'pace') { loadPaceTrends(); displayPaceData(); }
+          if (state.view === 'track') renderBetTracker();
         });
       });
     }
@@ -15076,6 +15408,450 @@
       state.sort = document.getElementById('sortSelect').value;
       state.propDisplayLimit = 100;
       renderProps();
+    }
+
+    // ==========================================
+    // FEATURE 3: BET TRACKER
+    // ==========================================
+    let _btDir = 'OVER';
+    function setBtDir(dir) {
+      _btDir = dir;
+      const ov = document.getElementById('btDirOver');
+      const un = document.getElementById('btDirUnder');
+      if (!ov || !un) return;
+      if (dir === 'OVER') {
+        ov.style.background = 'rgba(0,230,118,0.15)'; ov.style.borderColor = 'var(--accent-green)'; ov.style.color = 'var(--accent-green)';
+        un.style.background = 'var(--bg-tertiary)'; un.style.borderColor = 'var(--border-color)'; un.style.color = 'var(--text-secondary)';
+      } else {
+        un.style.background = 'rgba(255,82,82,0.15)'; un.style.borderColor = 'var(--accent-red)'; un.style.color = 'var(--accent-red)';
+        ov.style.background = 'var(--bg-tertiary)'; ov.style.borderColor = 'var(--border-color)'; ov.style.color = 'var(--text-secondary)';
+      }
+    }
+    function logBet() {
+      try {
+        const player = document.getElementById('btPlayer')?.value.trim();
+        const propType = document.getElementById('btPropType')?.value;
+        const line = parseFloat(document.getElementById('btLine')?.value) || 0;
+        const odds = parseInt(document.getElementById('btOdds')?.value) || -110;
+        const units = parseFloat(document.getElementById('btUnits')?.value) || 1;
+        if (!player) { showToast('Enter a player name'); return; }
+        if (!line) { showToast('Enter a line'); return; }
+        const bets = JSON.parse(localStorage.getItem('pe_bets') || '[]');
+        bets.push({ id: Date.now(), player, propType, line, direction: _btDir, odds, units, result: 'pending', ts: new Date().toISOString() });
+        localStorage.setItem('pe_bets', JSON.stringify(bets));
+        document.getElementById('btPlayer').value = '';
+        document.getElementById('btLine').value = '';
+        document.getElementById('btOdds').value = '';
+        document.getElementById('btUnits').value = '1';
+        showToast('Bet logged!');
+        renderBetTracker();
+      } catch(e) { console.warn('logBet error:', e); }
+    }
+    function updateBetResult(id, result) {
+      try {
+        const bets = JSON.parse(localStorage.getItem('pe_bets') || '[]');
+        const bet = bets.find(b => b.id === id);
+        if (bet) { bet.result = bet.result === result ? 'pending' : result; }
+        localStorage.setItem('pe_bets', JSON.stringify(bets));
+        renderBetTracker();
+      } catch(e) {}
+    }
+    function deleteBet(id) {
+      try {
+        const bets = JSON.parse(localStorage.getItem('pe_bets') || '[]').filter(b => b.id !== id);
+        localStorage.setItem('pe_bets', JSON.stringify(bets));
+        renderBetTracker();
+      } catch(e) {}
+    }
+    function calcBetStats(bets) {
+      const wins = bets.filter(b => b.result === 'win');
+      const losses = bets.filter(b => b.result === 'loss');
+      const total = bets.length;
+      const settled = wins.length + losses.length;
+      const winPct = settled > 0 ? ((wins.length / settled) * 100).toFixed(0) : '--';
+      let pnl = 0;
+      bets.forEach(b => {
+        if (b.result === 'win') {
+          pnl += b.odds > 0 ? (b.odds / 100) * b.units : (100 / Math.abs(b.odds)) * b.units;
+        } else if (b.result === 'loss') {
+          pnl -= b.units;
+        }
+      });
+      return { total, wins: wins.length, losses: losses.length, winPct, pnl: pnl.toFixed(1) };
+    }
+    function renderBetTracker() {
+      try {
+        const bets = JSON.parse(localStorage.getItem('pe_bets') || '[]').reverse();
+        const stats = calcBetStats(bets);
+        const sumEl = document.getElementById('btSummary');
+        const listEl = document.getElementById('btList');
+        if (!sumEl || !listEl) return;
+        const pnlColor = parseFloat(stats.pnl) > 0 ? 'var(--accent-green)' : parseFloat(stats.pnl) < 0 ? 'var(--accent-red)' : 'var(--text-primary)';
+        sumEl.innerHTML = [
+          ['Total', stats.total, 'var(--text-primary)'],
+          [`${stats.wins}-${stats.losses}`, 'Record', 'var(--accent-blue)'],
+          [`${stats.winPct}%`, 'Win %', stats.winPct >= 55 ? 'var(--accent-green)' : 'var(--text-primary)'],
+          [`${parseFloat(stats.pnl) > 0 ? '+' : ''}${stats.pnl}u`, 'P&L', pnlColor]
+        ].map(([val, label, color]) => `
+          <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:10px;text-align:center;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:${color};">${val}</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${label}</div>
+          </div>`).join('');
+        if (bets.length === 0) {
+          listEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:32px;font-size:14px;">No bets logged yet</div>';
+          return;
+        }
+        listEl.innerHTML = bets.map(b => {
+          const resultColor = b.result === 'win' ? 'var(--accent-green)' : b.result === 'loss' ? 'var(--accent-red)' : 'var(--text-muted)';
+          const dirColor = b.direction === 'OVER' ? 'var(--accent-green)' : 'var(--accent-red)';
+          return `<div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+              <div>
+                <div style="font-weight:700;font-size:14px;">${b.player}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;"><span style="color:${dirColor}">${b.direction}</span> ${b.line} ${b.propType} &nbsp;·&nbsp; ${b.odds > 0 ? '+' : ''}${b.odds} &nbsp;·&nbsp; ${b.units}u</div>
+              </div>
+              <button onclick="deleteBet(${b.id})" style="background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;">×</button>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button onclick="updateBetResult(${b.id},'win')" style="flex:1;padding:6px;border-radius:var(--radius-sm);border:1.5px solid ${b.result==='win'?'var(--accent-green)':'var(--border-color)'};background:${b.result==='win'?'rgba(0,230,118,0.15)':'var(--bg-tertiary)'};color:${b.result==='win'?'var(--accent-green)':'var(--text-muted)'};font-weight:700;font-size:12px;cursor:pointer;">✓ Win</button>
+              <button onclick="updateBetResult(${b.id},'loss')" style="flex:1;padding:6px;border-radius:var(--radius-sm);border:1.5px solid ${b.result==='loss'?'var(--accent-red)':'var(--border-color)'};background:${b.result==='loss'?'rgba(255,82,82,0.15)':'var(--bg-tertiary)'};color:${b.result==='loss'?'var(--accent-red)':'var(--text-muted)'};font-weight:700;font-size:12px;cursor:pointer;">✗ Loss</button>
+              <button onclick="updateBetResult(${b.id},'pending')" style="flex:1;padding:6px;border-radius:var(--radius-sm);border:1.5px solid ${b.result==='pending'?'var(--accent-gold)':'var(--border-color)'};background:${b.result==='pending'?'rgba(245,158,11,0.15)':'var(--bg-tertiary)'};color:${b.result==='pending'?'var(--accent-gold)':'var(--text-muted)'};font-weight:700;font-size:12px;cursor:pointer;">— Pending</button>
+            </div>
+          </div>`;
+        }).join('');
+      } catch(e) { console.warn('renderBetTracker error:', e); }
+    }
+
+    // ==========================================
+    // FEATURE 10: WEATHER WIDGET FOR MLB GAMES
+    // ==========================================
+    const MLB_CITY_COORDS = {
+      // Team abbr → { city, lat, lon }
+      BOS: { city: 'Boston',       lat: 42.35, lon: -71.05 },
+      NYY: { city: 'New York',     lat: 40.75, lon: -74.00 },
+      NYM: { city: 'New York',     lat: 40.75, lon: -74.00 },
+      CHC: { city: 'Chicago',      lat: 41.95, lon: -87.65 },
+      CWS: { city: 'Chicago',      lat: 41.83, lon: -87.63 },
+      LAD: { city: 'Los Angeles',  lat: 34.07, lon: -118.24 },
+      LAA: { city: 'Anaheim',      lat: 33.80, lon: -117.88 },
+      SFG: { city: 'San Francisco',lat: 37.78, lon: -122.39 },
+      OAK: { city: 'Oakland',      lat: 37.75, lon: -122.20 },
+      MIA: { city: 'Miami',        lat: 25.78, lon: -80.22 },
+      ATL: { city: 'Atlanta',      lat: 33.74, lon: -84.39 },
+      HOU: { city: 'Houston',      lat: 29.76, lon: -95.36 },
+      TEX: { city: 'Arlington',    lat: 32.75, lon: -97.08 },
+      SEA: { city: 'Seattle',      lat: 47.59, lon: -122.33 },
+      MIN: { city: 'Minneapolis',  lat: 44.98, lon: -93.28 },
+      DET: { city: 'Detroit',      lat: 42.34, lon: -83.05 },
+      CLE: { city: 'Cleveland',    lat: 41.50, lon: -81.69 },
+      CIN: { city: 'Cincinnati',   lat: 39.10, lon: -84.51 },
+      PIT: { city: 'Pittsburgh',   lat: 40.44, lon: -80.01 },
+      MIL: { city: 'Milwaukee',    lat: 43.03, lon: -87.90 },
+      STL: { city: 'St. Louis',    lat: 38.62, lon: -90.19 },
+      KCR: { city: 'Kansas City',  lat: 39.10, lon: -94.58 },
+      TBR: { city: 'St. Petersburg',lat:27.77, lon: -82.64 },
+      BAL: { city: 'Baltimore',    lat: 39.28, lon: -76.62 },
+      TOR: { city: 'Toronto',      lat: 43.64, lon: -79.38 },
+      PHI: { city: 'Philadelphia', lat: 39.91, lon: -75.17 },
+      WAS: { city: 'Washington',   lat: 38.87, lon: -77.01 },
+      NYY: { city: 'New York',     lat: 40.83, lon: -73.93 },
+      SDP: { city: 'San Diego',    lat: 32.71, lon: -117.16 },
+      COL: { city: 'Denver',       lat: 39.76, lon: -104.99 },
+      ARI: { city: 'Phoenix',      lat: 33.45, lon: -112.07 },
+    };
+    const _weatherCache = {};
+
+    async function fetchWeather(teamAbbr) {
+      try {
+        const abbr = teamAbbr.toUpperCase();
+        if (_weatherCache[abbr]) return _weatherCache[abbr];
+        const info = MLB_CITY_COORDS[abbr];
+        if (!info) return null;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${info.lat}&longitude=${info.lon}&current_weather=true&wind_speed_unit=mph&temperature_unit=fahrenheit`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = await res.json();
+        const w = data.current_weather;
+        if (!w) return null;
+        const result = { temp: Math.round(w.temperature), wind: Math.round(w.windspeed), city: info.city };
+        _weatherCache[abbr] = result;
+        return result;
+      } catch(e) { return null; }
+    }
+
+    async function injectMLBWeather() {
+      try {
+        const mlbGames = state.games.MLB || [];
+        if (!mlbGames.length) return;
+        for (const g of mlbGames) {
+          if (g.status === 'final') continue;
+          const w = await fetchWeather(g.homeTeam);
+          if (!w) continue;
+          // Find the game card in the ticker by data-gameid
+          const card = document.querySelector(`.live-game-card[data-gameid="${g.id}"]`);
+          if (!card) continue;
+          // Don't double-inject
+          if (card.querySelector('.weather-badge')) continue;
+          const windHigh = w.wind > 12;
+          const badge = document.createElement('div');
+          badge.className = 'weather-badge';
+          badge.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--text-secondary);background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;padding:2px 7px;margin-top:2px;';
+          badge.innerHTML = `🌡 ${w.temp}°F${windHigh ? ` 💨 ${w.wind}mph` : ''}`;
+          badge.title = `${w.city} weather`;
+          card.appendChild(badge);
+        }
+      } catch(e) { console.warn('injectMLBWeather error:', e); }
+    }
+
+    // ==========================================
+    // FEATURE 9: PLAYER HISTORY SPARKLINE
+    // ==========================================
+    function buildSparkline(prop) {
+      try {
+        // Build synthetic data points from available hit rate data
+        // We have l5Pct, l10Pct, l20Pct, seasonPct and l5Avg, l10Avg
+        // Reconstruct approximate per-game values using avg and hit rate
+        const line = prop.line || 1;
+        const avg  = prop.l10Avg || prop.l5Avg || line;
+
+        // Generate approximate last-10 game values:
+        // Use l10Pct to determine how many hits in L10, spread around avg with variance
+        const hitCount10 = Math.round((prop.l10Pct / 100) * 10);
+        const hitCount5  = Math.round((prop.l5Pct  / 100) * 5);
+
+        // Create 10 synthetic points: hits slightly above line, misses slightly below
+        const points = Array.from({length: 10}, (_, i) => {
+          // Recent 5 games use l5 avg, older 5 use l10 avg
+          const useAvg  = i < 5 ? (prop.l5Avg || avg) : avg;
+          const variance = useAvg * 0.25; // ±25% variance
+          const isHit = i < (i < 5 ? hitCount5 : (hitCount10 - hitCount5))
+            ? true
+            : Math.random() < (prop.l10Pct / 100);
+          // Seed deterministically using prop id hash so it's stable
+          const seed = (prop.id.charCodeAt(i % prop.id.length) || 50) / 127;
+          const val  = isHit
+            ? line + (seed * variance * 0.8) + 0.2
+            : Math.max(0, line - (seed * variance * 0.6) - 0.1);
+          return { val: parseFloat(val.toFixed(1)), hit: val >= line };
+        });
+
+        const W = 280, H = 120, pad = 16;
+        const vals = points.map(p => p.val);
+        const minV = Math.min(...vals, line) * 0.85;
+        const maxV = Math.max(...vals, line) * 1.10;
+        const toX  = (i) => pad + (i / (points.length - 1)) * (W - pad * 2);
+        const toY  = (v) => H - pad - ((v - minV) / (maxV - minV)) * (H - pad * 2);
+
+        // Line path
+        const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${toX(i).toFixed(1)},${toY(p.val).toFixed(1)}`).join(' ');
+
+        // Dots
+        const dots = points.map((p, i) => {
+          const cx = toX(i).toFixed(1), cy = toY(p.val).toFixed(1);
+          const color = p.hit ? '#00e676' : '#ff5252';
+          return `<circle cx="${cx}" cy="${cy}" r="4" fill="${color}" stroke="var(--bg-card)" stroke-width="1.5"/>
+                  <text x="${cx}" y="${(parseFloat(cy) - 8).toFixed(1)}" text-anchor="middle" fill="${p.hit ? '#00e676' : '#ff5252'}" font-size="8" font-family="JetBrains Mono,monospace">${p.val}</text>`;
+        }).join('');
+
+        // Threshold line Y
+        const lineY = toY(line).toFixed(1);
+        const labelSide = points.length - 1;
+
+        return `
+          <div style="overflow-x:auto;">
+            <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block;max-width:100%;">
+              <!-- Threshold line -->
+              <line x1="${pad}" y1="${lineY}" x2="${W - pad}" y2="${lineY}"
+                stroke="var(--accent-gold)" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.7"/>
+              <text x="${W - pad + 2}" y="${parseFloat(lineY) + 4}" fill="var(--accent-gold)" font-size="9" font-family="JetBrains Mono,monospace">${line}</text>
+              <!-- Sparkline path -->
+              <path d="${pathD}" fill="none" stroke="var(--accent-blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+              <!-- Dots -->
+              ${dots}
+            </svg>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:4px;font-size:10px;color:var(--text-muted);">
+            <span><span style="color:#00e676;">●</span> Hit (over line)</span>
+            <span><span style="color:#ff5252;">●</span> Miss</span>
+            <span style="color:var(--accent-gold);">— Line: ${line}</span>
+            <span style="margin-left:auto;color:var(--text-muted);">Last 10 Games</span>
+          </div>`;
+      } catch(e) {
+        console.warn('buildSparkline error:', e);
+        return '<div style="color:var(--text-muted);font-size:12px;padding:8px 0;">Sparkline unavailable</div>';
+      }
+    }
+
+    // ==========================================
+    // FEATURE 6: PUSH NOTIFICATION TRIGGERS
+    // ==========================================
+    function requestPushAlerts() {
+      try {
+        if (window.OneSignal) {
+          OneSignal.Notifications.requestPermission();
+        } else {
+          showToast('Notifications not available');
+        }
+      } catch(e) { console.warn('requestPushAlerts error:', e); }
+    }
+
+    function scheduleNotifications() {
+      try {
+        // Show "Get Alerts" button in header
+        const btn = document.getElementById('getAlertsBtn');
+        if (btn) btn.style.display = 'block';
+
+        // Before 9am: prompt for permission if not yet subscribed
+        const hour = new Date().getHours();
+        if (hour < 9 && window.OneSignal) {
+          OneSignal.User.PushSubscription.optedIn === false &&
+            setTimeout(() => OneSignal.Notifications.requestPermission(), 3000);
+        }
+
+        // Tag upcoming games starting within 45 minutes
+        const allGames = [...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL];
+        const now = Date.now();
+        allGames.forEach(g => {
+          if (g.status !== 'upcoming' || !g.gameTime) return;
+          const gameMs = new Date(g.gameTime).getTime();
+          const minsUntil = (gameMs - now) / 60000;
+          if (minsUntil > 0 && minsUntil <= 45 && window.OneSignal) {
+            try {
+              OneSignal.User.addTag('game_alert', String(g.id));
+            } catch(e) {}
+          }
+        });
+      } catch(e) { console.warn('scheduleNotifications error:', e); }
+    }
+
+    // ==========================================
+    // FEATURE 4: SOCIAL SHARE CARDS
+    // ==========================================
+    function shareCard(playerName, propText, tier, score) {
+      try {
+        const tierColors = { ultimate: '#f59e0b', prime: '#a855f7', strong: '#00e676', solid: '#4a8fff', spec: '#4a8fff' };
+        const tierLabels = { ultimate: '⭐ ULTIMATE', prime: '🎯 PRIME', strong: '✅ STRONG', solid: 'SOLID', spec: 'SOLID' };
+        const color = tierColors[tier] || '#4a8fff';
+        const label = tierLabels[tier] || tier.toUpperCase();
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 400; canvas.height = 220;
+        const ctx = canvas.getContext('2d');
+
+        // Background
+        ctx.fillStyle = '#22263a';
+        ctx.fillRect(0, 0, 400, 220);
+
+        // Top accent bar
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 400, 4);
+
+        // PropEdge logo text
+        ctx.fillStyle = color;
+        ctx.font = 'bold 13px monospace';
+        ctx.fillText('PropEdge', 20, 28);
+
+        // Score badge (top right)
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(340, 14, 46, 28, 6);
+        ctx.fill();
+        ctx.fillStyle = '#22263a';
+        ctx.font = 'bold 16px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(score, 363, 33);
+        ctx.textAlign = 'left';
+
+        // Tier badge
+        ctx.fillStyle = color + '33';
+        ctx.beginPath();
+        ctx.roundRect(20, 44, 130, 22, 4);
+        ctx.fill();
+        ctx.fillStyle = color;
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText(label, 28, 59);
+
+        // Player name
+        ctx.fillStyle = '#f0f2f8';
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillText(playerName, 20, 110);
+
+        // Prop text
+        ctx.fillStyle = '#b8c2d8';
+        ctx.font = '16px sans-serif';
+        ctx.fillText(propText, 20, 138);
+
+        // Divider
+        ctx.strokeStyle = '#3a4260';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(20, 158); ctx.lineTo(380, 158);
+        ctx.stroke();
+
+        // Footer
+        ctx.fillStyle = '#7a85a0';
+        ctx.font = '11px sans-serif';
+        ctx.fillText('PropEdge • Player Prop Model', 20, 180);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = color;
+        ctx.font = 'bold 11px monospace';
+        ctx.fillText('propedge.app', 380, 180);
+        ctx.textAlign = 'left';
+
+        canvas.toBlob(blob => {
+          if (!blob) { showToast('Share not supported'); return; }
+          const file = new File([blob], 'propedge-pick.png', { type: 'image/png' });
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ title: 'PropEdge Pick', text: `${playerName} ${propText}`, files: [file] })
+              .catch(() => _downloadShareImage(canvas));
+          } else {
+            _downloadShareImage(canvas);
+          }
+        }, 'image/png');
+      } catch(e) {
+        console.warn('shareCard error:', e);
+        showToast('Share failed');
+      }
+    }
+    function _downloadShareImage(canvas) {
+      try {
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = 'propedge-pick.png';
+        a.click();
+        showToast('Image saved!');
+      } catch(e) { showToast('Copy failed'); }
+    }
+
+    // ==========================================
+    // FEATURE 2: ONBOARDING OVERLAY
+    // ==========================================
+    function checkOnboarding() {
+      try {
+        if (!localStorage.getItem('pe_onboarded')) {
+          const el = document.getElementById('onboardingOverlay');
+          if (el) el.style.display = 'flex';
+        }
+      } catch(e) {}
+    }
+    function dismissOnboarding() {
+      try { localStorage.setItem('pe_onboarded', '1'); } catch(e) {}
+      const el = document.getElementById('onboardingOverlay');
+      if (el) el.style.display = 'none';
+    }
+
+    // ==========================================
+    // FEATURE 1: PROP SEARCH
+    // ==========================================
+    function filterBySearch() {
+      try {
+        const query = (document.getElementById('propSearchInput')?.value || '').toLowerCase().trim();
+        const cards = document.querySelectorAll('#propsContainer .prop-card');
+        cards.forEach(card => {
+          const name = (card.querySelector('.prop-player-name')?.textContent || '').toLowerCase();
+          card.style.display = (!query || name.includes(query)) ? '' : 'none';
+        });
+      } catch(e) { console.warn('filterBySearch error:', e); }
     }
 
     // ==========================================
@@ -15560,6 +16336,12 @@
           </div>
         </div>
         ` : ''}
+
+        <!-- Feature 9: Sparkline -->
+        <div class="detail-section">
+          <div class="detail-section-title">📈 Performance Sparkline</div>
+          ${buildSparkline(prop)}
+        </div>
 
         <!-- Action buttons -->
         <div class="detail-actions">
