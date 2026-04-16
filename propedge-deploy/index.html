@@ -6,7 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PropEdge">
   <meta name="theme-color" content="#22263a">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" type="image/png" href="logo.png">
   <title>PropEdge</title>
   <!-- PropEdge Service Worker registration (handles push notifications) -->
   <script>
@@ -33,7 +36,7 @@
     });
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-primary: #22263a;
@@ -72,8 +75,11 @@
       min-height: 100vh;
       min-height: 100dvh;
       overflow-x: hidden;
-      overflow-y: scroll;
+      overflow-y: auto;
       padding-bottom: env(safe-area-inset-bottom);
+      -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
+      background-attachment: fixed; /* Prevent white space on scroll */
+      overscroll-behavior: contain; /* Contain scroll bounce within body */
     }
 
     /* Global no-jitter mode: disable ALL animations during content swap */
@@ -126,22 +132,26 @@
     }
 
     .logo-icon {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
-      border-radius: var(--radius-sm);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--bg-primary);
+      width: 48px;
+      height: 48px;
+      background: url('logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      flex-shrink: 0;
+      filter: drop-shadow(0 0 15px rgba(0, 230, 118, 0.6));
+      border: 2px solid #00e676; /* High-intensity pop border */
+      border-radius: 50%;
     }
-
     .logo-text {
-      font-weight: 700;
-      font-size: 20px;
-      letter-spacing: -0.5px;
+      font-weight: 900;
+      font-size: 24px;
+      letter-spacing: -1.2px;
+      text-transform: uppercase;
+      font-family: 'Outfit', sans-serif;
+      background: linear-gradient(to right, #fff, #00e676);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .live-indicator {
@@ -347,18 +357,16 @@
       min-height: 130px;
       /* Critical for iOS/mobile horizontal swipe */
       -webkit-overflow-scrolling: touch;
-      touch-action: pan-x;
+      touch-action: pan-x pan-y;
       /* Prevent parent from stealing horizontal swipe */
       overscroll-behavior-x: contain;
-      /* Snap behavior without smooth scroll (prevents jitter on mobile) */
-      scroll-snap-type: x mandatory;
+      /* Proximity snap — only snaps when close to a card, not mid-flick */
+      scroll-snap-type: x proximity;
+      scroll-padding: 0 10px;
       scroll-behavior: auto;
       /* GPU acceleration to eliminate scroll jitter */
       transform: translateZ(0);
-      -webkit-transform: translateZ(0);
       will-change: scroll-position;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
     }
 
     @media (min-width: 768px) {
@@ -371,8 +379,44 @@
 
     .live-games-scroll::-webkit-scrollbar { display: none; }
 
+    .live-games-scroll-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .ticker-arrow {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.07);
+      color: var(--text-primary);
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, opacity 0.2s;
+      z-index: 2;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .ticker-arrow:hover { background: rgba(255,255,255,0.14); }
+    .ticker-arrow:active { background: rgba(0,230,118,0.2); }
+    .ticker-arrow.hidden { opacity: 0; pointer-events: none; }
+
+    .ticker-arrow-left  { margin-right: 6px; }
+    .ticker-arrow-right { margin-left: 6px; }
+
     .live-game-card {
       touch-action: manipulation;
+      scroll-snap-align: start;
       -webkit-tap-highlight-color: transparent;
       cursor: pointer;
       flex-shrink: 0;
@@ -859,11 +903,11 @@
     }
 
     .prop-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
+      background: linear-gradient(145deg, rgba(30, 35, 45, 0.95), rgba(20, 24, 32, 0.85));
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px;
       overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Snappy sportsbook bounce */
       /* GPU acceleration for card animations */
       transform: translateZ(0);
       -webkit-transform: translateZ(0);
@@ -872,7 +916,8 @@
       will-change: transform, box-shadow;
       height: fit-content;
       position: relative;
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     }
 
     /* Gradient overlay by category */
@@ -1110,6 +1155,141 @@
       color: white;
       box-shadow: 0 3px 12px rgba(68, 138, 255, 0.25);
     }
+
+    .prop-badge.line-mismatch {
+      background: linear-gradient(135deg, rgba(255,180,0,0.25), rgba(255,120,0,0.25));
+      color: var(--accent-gold);
+      border: 1px solid rgba(255,180,0,0.35);
+    }
+
+    /* ── BET SCORE PANEL ──────────────────────────────── */
+    .how-to-bet-wrap {
+      border-top: 1px solid var(--border-color);
+      padding: 8px 12px 4px;
+    }
+
+    .how-to-bet-btn {
+      background: none;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 10px;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .how-to-bet-btn:active { border-color: var(--accent-green); color: var(--text-primary); }
+
+    .how-to-bet-content {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition: grid-template-rows 0.3s ease, opacity 0.25s ease;
+    }
+    .how-to-bet-content.open { grid-template-rows: 1fr; opacity: 1; }
+
+    .htb-inner {
+      overflow: hidden;
+      padding: 0;
+      transition: padding 0.3s ease;
+    }
+    .how-to-bet-content.open .htb-inner { padding: 10px 0 6px; }
+
+    /* Score header */
+    .bs-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 10px;
+    }
+    .bs-circle {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800;
+      flex-shrink: 0;
+      border: 2.5px solid currentColor;
+    }
+    .bs-circle-label { font-size: 9px; font-weight: 600; letter-spacing: 0.5px; opacity: 0.8; margin-top: 1px; }
+    .bs-circle.score-strong { color: var(--accent-green); background: rgba(0,230,118,0.1); }
+    .bs-circle.score-bet    { color: #4fc3f7;            background: rgba(79,195,247,0.1); }
+    .bs-circle.score-lean   { color: var(--accent-gold); background: rgba(255,180,0,0.1); }
+    .bs-circle.score-pass   { color: var(--accent-orange);background: rgba(255,145,0,0.08);}
+    .bs-circle.score-fade   { color: var(--accent-red);  background: rgba(255,82,82,0.1); }
+
+    .bs-action-wrap { flex: 1; }
+    .bs-action {
+      font-size: 16px; font-weight: 800; letter-spacing: 0.5px;
+      line-height: 1.2; margin-bottom: 3px;
+    }
+    .bs-action.score-strong { color: var(--accent-green); }
+    .bs-action.score-bet    { color: #4fc3f7; }
+    .bs-action.score-lean   { color: var(--accent-gold); }
+    .bs-action.score-pass   { color: var(--accent-orange); }
+    .bs-action.score-fade   { color: var(--accent-red); }
+    .bs-edge-line { font-size: 12px; color: var(--text-muted); }
+
+    /* Key stats row */
+    .bs-stats {
+      display: flex; gap: 6px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .bs-stat {
+      background: var(--surface-secondary);
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex; flex-direction: column; align-items: center; gap: 1px;
+    }
+    .bs-stat-val { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+    .bs-stat-val.green { color: var(--accent-green); }
+    .bs-stat-val.red   { color: var(--accent-red); }
+    .bs-stat-val.gold  { color: var(--accent-gold); }
+
+    /* FOR / AGAINST sections */
+    .bs-section-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; margin: 8px 0 4px;
+    }
+    .bs-section-title.for    { color: var(--accent-green); }
+    .bs-section-title.against{ color: var(--accent-red); }
+
+    .bs-factor {
+      font-size: 12px; line-height: 1.5;
+      padding: 4px 0 4px 12px;
+      border-left: 2px solid transparent;
+      color: var(--text-secondary);
+      position: relative;
+    }
+    .bs-factor::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 4px; border-radius: 50%; }
+    .bs-factor.for  { border-left-color: rgba(0,230,118,0.4); }
+    .bs-factor.for::before  { background: var(--accent-green); }
+    .bs-factor.against { border-left-color: rgba(255,82,82,0.4); }
+    .bs-factor.against::before { background: var(--accent-red); }
+
+    /* Old htb-row retained for FD line display */
+    .htb-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 13px;
+    }
+    .htb-row:last-child { border-bottom: none; }
+    .htb-label { color: var(--text-muted); font-size: 12px; }
+    .htb-val { font-weight: 600; color: var(--text-primary); }
+    .htb-val.green { color: var(--accent-green); }
+    .htb-val.gold  { color: var(--accent-gold); }
+    .htb-val.red   { color: var(--accent-red); }
 
     .prop-badge.steam {
       background: linear-gradient(135deg, rgba(255,145,0,0.25), rgba(255,82,82,0.25));
@@ -2176,6 +2356,40 @@
       transform: scale(1.08) translateY(-2px);
     }
 
+    /* PropIQ score badge — stacked below model score circle */
+    .prop-scores-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    .prop-score-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .propiq-badge {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+    }
+    .propiq-badge .propiq-num { font-size: 13px; }
+    .propiq-badge .propiq-lbl { font-size: 9px; font-weight: 600; opacity: 0.8; letter-spacing: 0.5px; }
+    .propiq-badge.score-strong { background: rgba(0,230,118,0.15);   color: var(--accent-green);  border: 1px solid rgba(0,230,118,0.35); }
+    .propiq-badge.score-bet    { background: rgba(79,195,247,0.15);  color: #4fc3f7;               border: 1px solid rgba(79,195,247,0.35); }
+    .propiq-badge.score-lean   { background: rgba(255,180,0,0.15);   color: var(--accent-gold);   border: 1px solid rgba(255,180,0,0.35); }
+    .propiq-badge.score-pass   { background: rgba(255,145,0,0.10);   color: var(--accent-orange); border: 1px solid rgba(255,145,0,0.35); }
+    .propiq-badge.score-fade   { background: rgba(255,82,82,0.15);   color: var(--accent-red);    border: 1px solid rgba(255,82,82,0.35); }
+
     .prop-line {
       display: flex;
       align-items: center;
@@ -2332,6 +2546,8 @@
       font-weight: 600;
     }
 
+    /* ── HIT RATE SPARKLINE ───────────────────── */
+    /* ── HIT RATE SPARKLINE ───────────────────── */
     .prop-footer {
       display: flex;
       justify-content: space-between;
@@ -4277,12 +4493,12 @@
     .detail-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.95); /* Ultimate isolation to stop bleed */
       z-index: 5000;
       opacity: 0;
       transition: opacity 0.3s ease;
       pointer-events: none;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(12px);
     }
     .detail-overlay.open {
       opacity: 1;
@@ -4295,16 +4511,17 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: 92vh;
-      max-height: 92vh;
-      background: var(--bg-secondary);
-      border-radius: 20px 20px 0 0;
+      height: 88vh; /* Clearance for mobile browser search bars */
+      max-height: 88vh;
+      background: #1c2033; /* Pure solid to prevent transparency artifacts */
+      border-radius: 28px 28px 0 0;
       z-index: 5001;
       transform: translateY(100%);
-      transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      box-shadow: 0 -12px 60px rgba(0,0,0,0.8);
     }
     .detail-panel.open {
       transform: translateY(0);
@@ -4353,8 +4570,8 @@
       overflow-x: hidden;
       flex: 1;
       min-height: 0;
-      height: 0; /* forces flex child to scroll rather than expand */
-      padding: 0 0 calc(env(safe-area-inset-bottom) + 20px);
+      height: 0;
+      padding: 0 0 env(safe-area-inset-bottom);
       scrollbar-width: thin;
       scrollbar-color: var(--border-color) transparent;
       -webkit-overflow-scrolling: touch;
@@ -4532,10 +4749,10 @@
     }
     .detail-score-ring-bg { fill: none; stroke: var(--border-color); stroke-width: 6; }
     .detail-score-ring-fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1); }
-    .detail-score-ring-fill.ultimate { stroke: var(--accent-gold); }
-    .detail-score-ring-fill.prime    { stroke: var(--accent-purple); }
-    .detail-score-ring-fill.strong   { stroke: var(--accent-green); }
-    .detail-score-ring-fill.solid    { stroke: var(--accent-blue); }
+    .detail-score-ring-fill.ultimate { stroke: var(--accent-gold); filter: drop-shadow(0 0 10px rgba(255,215,64,0.8)); }
+    .detail-score-ring-fill.prime    { stroke: var(--accent-purple); filter: drop-shadow(0 0 8px rgba(180,100,255,0.7)); }
+    .detail-score-ring-fill.strong   { stroke: var(--accent-green); filter: drop-shadow(0 0 8px rgba(0,230,118,0.7)); }
+    .detail-score-ring-fill.solid    { stroke: var(--accent-blue); filter: drop-shadow(0 0 8px rgba(50,150,255,0.6)); }
     .detail-score-ring-fill.spec     { stroke: var(--text-muted); }
     .detail-score-ring-label {
       position: absolute;
@@ -4884,6 +5101,181 @@
     /* Spacer at bottom for safe area */
     .detail-bottom-spacer { height: 8px; }
 
+    /* OVERRIDES FOR NEON SPORTSBOOK TRENDY UI MATCHING MOCKUP */
+    body { font-family: 'Outfit', sans-serif !important; }
+    .prop-player-name {
+      font-size: 26px !important;
+      font-weight: 900 !important;
+      letter-spacing: -0.5px !important;
+      text-transform: uppercase !important;
+      line-height: 1 !important;
+      margin-bottom: 8px !important;
+      color: #fff !important;
+    }
+    .prop-value {
+      font-size: 34px !important;
+      font-weight: 900 !important;
+      line-height: 1 !important;
+      color: #fff !important;
+    }
+    .prop-direction {
+      font-size: 16px !important;
+      font-weight: 800 !important;
+    }
+    .prop-type {
+      font-size: 14px !important;
+      font-weight: 600 !important;
+      color: var(--text-muted) !important;
+    }
+    .prop-odds {
+      color: var(--accent-green) !important;
+      font-size: 38px !important;
+      font-weight: 900 !important;
+      letter-spacing: -2px !important;
+      text-shadow: 0 0 16px rgba(0,255,100,0.5) !important;
+    }
+    .prop-badge.prime, .prop-badge.ultimate {
+      font-size: 14px !important;
+      font-weight: 900 !important;
+      padding: 6px 12px !important;
+      border-radius: 8px !important;
+      letter-spacing: 0.5px !important;
+      text-transform: uppercase !important;
+      background: transparent !important;
+      border: 2px solid var(--accent-green) !important;
+      color: var(--accent-green) !important;
+      box-shadow: 0 0 20px rgba(0,255,100,0.4), inset 0 0 10px rgba(0,255,100,0.2) !important;
+      text-shadow: 0 0 8px rgba(0,255,100,0.5) !important;
+    }
+    .prop-badge.ultimate {
+      border-color: var(--accent-gold) !important;
+      color: var(--accent-gold) !important;
+      box-shadow: 0 0 20px rgba(255,215,64,0.4), inset 0 0 10px rgba(255,215,64,0.2) !important;
+      text-shadow: 0 0 8px rgba(255,215,64,0.5) !important;
+    }
+    .propiq-badge {
+      font-family: 'Outfit', sans-serif !important;
+    }
+    .propiq-num {
+      font-size: 26px !important;
+      font-weight: 900 !important;
+    }
+    /* detail score ring modal */
+    .detail-score-ring-num {
+      font-size: 64px !important;
+      font-weight: 900 !important;
+      font-family: 'Outfit', sans-serif !important;
+      color: #fff !important;
+    }
+    .detail-score-ring-sub {
+      font-size: 14px !important;
+      letter-spacing: 1.5px !important;
+      font-weight: 700 !important;
+      color: var(--text-muted) !important;
+    }
+    
+    /* Modal Close Button Fixes for Desktop & Mobile */
+    .game-modal-close, .detail-close-btn {
+      width: 44px !important;
+      height: 44px !important;
+      z-index: 99999 !important;
+      background: rgba(30, 35, 45, 0.95) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      color: #fff !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.8) !important;
+      backdrop-filter: blur(12px) !important;
+      font-size: 20px !important;
+      border-radius: 50% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      flex-shrink: 0 !important;
+    }
+    /* Ensure the detail header doesn't overlap the fixed button */
+    .detail-hero { padding-right: 64px !important; }
+    /* Fancy sticky footer for mobile closing */
+    .detail-footer {
+      padding: 16px 20px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      background: #1c2033;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 12px;
+      position: relative;
+      z-index: 10001;
+    }
+    .detail-section-divider {
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+      margin: 24px 0;
+      width: 100%;
+    }
+
+    /* Elite Insight Cards */
+    .detail-insight-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+    }
+    .detail-insight-row::-webkit-scrollbar { display: none; }
+    
+    .detail-insight-pill {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 100px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .detail-insight-pill.positive { color: #00e676; border-color: rgba(0,230,118,0.2); background: rgba(0,230,118,0.05); }
+    .detail-insight-pill.negative { color: #ff5252; border-color: rgba(255,82,82,0.2); background: rgba(255,82,82,0.05); }
+    .detail-insight-pill.neutral { color: #ffd740; border-color: rgba(255,215,64,0.2); background: rgba(255,215,64,0.05); }
+
+    .detail-matchup-gauge {
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--border-color);
+    }
+    .detail-gauge-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .detail-gauge-val {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .detail-gauge-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      flex: 1;
+      margin: 0 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .detail-gauge-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      border-radius: 3px;
+    }
   </style>
 </head>
 <body>
@@ -4891,23 +5283,14 @@
   <header class="header">
     <div class="header-top">
       <div class="logo">
-        <div class="logo-icon">PE</div>
+        <div class="logo-icon"></div>
         <span class="logo-text">PropEdge</span>
       </div>
-      <div class="live-indicator">
-        <span class="live-dot"></span>
-        <span id="statusText">LIVE</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button id="emailPillBtn" onclick="showEmailModal()" style="padding:3px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:20px;color:var(--text-secondary);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;transition:all 0.2s;">Sign In</button>
+        <div class="live-indicator"><span class="live-dot"></span><span id="statusText">LIVE</span></div>
+        <button id="getAlertsBtn" onclick="requestPushAlerts()" style="width:28px;height:28px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:50%;color:var(--text-secondary);font-size:14px;cursor:pointer;padding:0;line-height:26px;text-align:center;">🔔</button>
       </div>
-      <button id="authButton" style="
-        background: rgba(100, 150, 255, 0.2);
-        color: #6496ff;
-        border: 1px solid rgba(100, 150, 255, 0.4);
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-      ">Sign in</button>
     </div>
   </header>
 
@@ -4938,12 +5321,6 @@
       <span class="toggle-dot" id="autoToggleDot"></span>
       <span>Auto</span>
     </div>
-    <div class="filter-item">
-      <label class="filter-label">
-        <input type="checkbox" id="parlayOnlyMode" onchange="toggleParlayOnlyMode()">
-        Parlay-Only Mode
-      </label>
-    </div>
   </div>
 
   <!-- Live Games -->
@@ -4957,7 +5334,11 @@
         Hide Final
       </label>
     </div>
-    <div class="live-games-scroll" id="gamesTicker"></div>
+    <div class="live-games-scroll-wrap" id="gamesTickerWrap">
+      <button class="ticker-arrow ticker-arrow-left" id="tickerArrowLeft" onclick="scrollTicker(-1)" aria-label="Scroll left">‹</button>
+      <div class="live-games-scroll" id="gamesTicker"></div>
+      <button class="ticker-arrow ticker-arrow-right" id="tickerArrowRight" onclick="scrollTicker(1)" aria-label="Scroll right">›</button>
+    </div>
   </div>
 
   <!-- Sport Tabs -->
@@ -5023,6 +5404,7 @@
       <option value="l10">L10 Hit Rate ↓</option>
       <option value="streak">Streak ↓</option>
       <option value="odds">Odds ↓</option>
+      <option value="propiq">PropIQ™ Score ↓</option>
     </select>
     <span class="prop-count" id="propCount">-- props</span>
   </div>
@@ -5212,6 +5594,7 @@
       <div class="parlay-actions">
         <button class="parlay-btn secondary" onclick="copyParlay()">📋 Copy</button>
         <button class="parlay-btn secondary" onclick="sharePicksLink()">🔗 Share</button>
+        <button class="parlay-btn secondary" onclick="refreshParlayOdds()">🔄 Refresh Odds</button>
       </div>
       <button class="parlay-btn fd" onclick="openInFanDuel()" style="margin-top:8px;">🔗 Open in FanDuel</button>
     </div>
@@ -5434,7 +5817,7 @@
     // CONFIGURATION
     // ==========================================
     const SHEET_ID = '1xQEGclOjfDpTBHau6qMZ5i2j8tLlHbGJiWwyxeupOrw';
-    const THRESHOLDS = { prime: 85, strong: 72, solid: 62, spec: 52 };
+    const THRESHOLDS = { prime: 83, strong: 71, solid: 60, spec: 50 }; // PropIQ v2: calibrated after scoring improvements
 
     const ESPN_APIS = {
       NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
@@ -5442,6 +5825,99 @@
       MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
       NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
     };
+
+    // Live team stats APIs — used for pace ranking + opponent defense context
+    const TEAM_STATS_APIS = {
+      NBA: 'https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byteam?season=2026&seasontype=2&limit=32',
+      NHL: 'https://site.web.api.espn.com/apis/common/v3/sports/hockey/nhl/statistics/byteam?season=2026&seasontype=2&limit=32',
+      MLB: 'https://site.web.api.espn.com/apis/common/v3/sports/baseball/mlb/statistics/byteam?season=2026&seasontype=2&limit=32'
+    };
+
+    // Live player game log — for recent form validation
+    const PLAYER_GAMELOG_API = (sport, league, athleteId, season) =>
+      `https://site.web.api.espn.com/apis/common/v3/sports/${sport}/${league}/athletes/${athleteId}/gamelog?season=${season}`;
+
+    // ── LIVE TEAM STATS STATE ──────────────────────────────────
+    // Populated by fetchLiveTeamStats(). Keyed by team abbreviation.
+    // _teamStats[league][abbr] = { ppg, rpg, apg, pace, paceRank, defPtsRank, ... }
+    window._teamStats  = { NBA: {}, NHL: {}, MLB: {} };
+    window._teamPaceRanks = {};  // abbr → rank (1=fastest)
+    window._gameLocations = { NBA: {}, NHL: {}, MLB: {}, NFL: {} };
+
+    async function fetchLiveTeamStats() {
+      for (const league of ['NBA', 'NHL', 'MLB']) {
+        try {
+          const res  = await fetch(TEAM_STATS_APIS[league] + '&_=' + Date.now(), { cache: 'no-store' });
+          const data = await res.json();
+
+          // ESPN byteam response: { athletes: [{ athlete: {abbreviation}, categories: [{name, displayName, stats, labels}] }] }
+          const teams = data.athletes || data.teams || [];
+          const statRows = [];
+
+          teams.forEach(entry => {
+            const abbr = (entry.athlete?.abbreviation || entry.team?.abbreviation || '').toUpperCase();
+            if (!abbr) return;
+            // Flatten all stat categories into a single key→value map
+            const statMap = {};
+            (entry.categories || []).forEach(cat => {
+              (cat.labels || []).forEach((lbl, i) => {
+                statMap[lbl.toLowerCase()] = parseFloat(cat.stats?.[i]) || 0;
+              });
+              (cat.names || []).forEach((nm, i) => {
+                statMap[nm.toLowerCase()] = parseFloat(cat.stats?.[i]) || 0;
+              });
+            });
+            statMap._abbr = abbr;
+            statRows.push(statMap);
+            window._teamStats[league][abbr] = statMap;
+          });
+
+          // Build pace rank (NBA: possessions/game or PPG proxy; NHL: goals/game; MLB: runs/game)
+          const paceKey = league === 'NBA' ? ['pace','possessionspergame','avgpossessions','pointspergame']
+                        : league === 'NHL' ? ['goalspergame','goalsfor','gf/g']
+                        : ['runspergame','runsscored','r/g'];
+          const getPaceVal = row => {
+            for (const k of paceKey) { if (row[k] != null && row[k] > 0) return row[k]; }
+            return 0;
+          };
+          const sorted = [...statRows].sort((a, b) => getPaceVal(b) - getPaceVal(a));
+          sorted.forEach((row, idx) => {
+            if (!window._teamStats[league][row._abbr]) window._teamStats[league][row._abbr] = {};
+            window._teamStats[league][row._abbr].paceRank = idx + 1;
+            window._teamPaceRanks[row._abbr] = idx + 1;
+          });
+
+          console.log(`[PropEdge] Live ${league} team stats loaded:`, statRows.length, 'teams');
+        } catch(e) {
+          console.warn(`[PropEdge] Team stats fetch failed for ${league}:`, e.message);
+        }
+      }
+    }
+
+    async function fetchLiveGameLocations() {
+      const SCOREBOARD_APIS = {
+        NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+        NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+        MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
+        NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
+      };
+      for (const [league, url] of Object.entries(SCOREBOARD_APIS)) {
+        try {
+          const res = await fetch(url + '?_=' + Date.now(), { cache: 'no-store' });
+          const data = await res.json();
+          (data.events || []).forEach(ev => {
+            (ev.competitions?.[0]?.competitors || []).forEach(c => {
+              const abbr = normalizeTeam(c.team?.abbreviation || '');
+              if (abbr) {
+                window._gameLocations[league][abbr] = c.homeAway; // 'home' or 'away'
+              }
+            });
+          });
+        } catch(e) {
+          console.warn(`[PropEdge] Game locations fetch failed for ${league}:`, e.message);
+        }
+      }
+    }
 
     const INJURY_APIS = {
       NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries',
@@ -5560,6 +6036,7 @@
       injuries: { NBA: [], NHL: [], MLB: [], NFL: [] },
       games: { NBA: [], NHL: [], MLB: [], NFL: [] },
       fdLines: {},
+      fdLinesSource: 'sheet', // 'sheet' | 'live'
       lineMovements: {}, // Sharp money / line movement data from Line_History
       teamStatus: {}, // Game status from sheet (fallback)
       league: 'ALL',
@@ -5571,6 +6048,7 @@
       hideCompleted: false,
       lastUpdated: null,
       refreshInterval: null,
+      propRefreshInterval: null, // Auto-refresh props every 60min from Google Sheets
       propDisplayLimit: 100,
       parlayOnlyMode: localStorage.getItem('propedge_parlayOnly') === 'true' || false,
       minParlayEdge: 12, // Minimum combined edge for parlay (%)
@@ -5590,10 +6068,54 @@
     // INITIALIZATION
     // ==========================================
     document.addEventListener('DOMContentLoaded', () => {
+      // Safari iOS: prevent scroll bounce by locking body at viewport bounds
+      let lastY = 0;
+      document.body.addEventListener('touchstart', (e) => { lastY = e.touches[0].clientY; }, { passive: true });
+      document.body.addEventListener('touchmove', (e) => {
+        const st = window.scrollY;
+        const sh = document.body.scrollHeight - window.innerHeight;
+        // At top and scrolling up, or at bottom and scrolling down: stop
+        if ((st <= 0 && e.touches[0].clientY > lastY) || (st >= sh && e.touches[0].clientY < lastY)) {
+          e.preventDefault();
+        }
+        lastY = e.touches[0].clientY;
+      }, { passive: false });
+
       initTabs();
       initFilters();
       loadPaceTrends();
-      loadParlay();  // Load saved parlay on init
+      loadParlay();
+      fetchLiveTeamStats();   // Live ESPN team stats for pace ranking + opponent defense
+      fetchLiveGameLocations(); // Sync Home/Away schedules
+      checkOnboarding();
+      _updateEmailPill();
+      // How to Bet toggle — locks scroll position to prevent iOS jiggle
+      window.toggleHtb = function(id, e) {
+        if (e) { e.stopPropagation(); e.preventDefault(); }
+        const el = document.getElementById(id);
+        if (!el) return;
+        const savedY = window.scrollY;
+        el.classList.toggle('open');
+        // Double-RAF ensures we restore AFTER iOS scroll-into-view fires
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            if (window.scrollY !== savedY) window.scrollTo({ top: savedY, behavior: 'instant' });
+          });
+        });
+      };
+
+      // Close How to Bet panels when tapping outside
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.how-to-bet-wrap')) {
+          const savedY = window.scrollY;
+          document.querySelectorAll('.how-to-bet-content.open').forEach(el => el.classList.remove('open'));
+          requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+              if (window.scrollY !== savedY) window.scrollTo({ top: savedY, behavior: 'instant' });
+            });
+          });
+        }
+      });
       // Note: Portfolio/ROI data is loaded dynamically via renderPortfolio() when portfolio tab is clicked
       initOneSignalAlerts();  // SPRINT APRIL 4: Initialize OneSignal push alerts
 
@@ -5617,9 +6139,18 @@
           loadData().then(() => {
             loadGameStatusFromSheet(); // Fallback game status from sheet
             setTimeout(() => loadFanDuelLinesFromSheet(), 1000);
+            setTimeout(() => loadFanDuelLinesFromOddsAPI(), 3000); // Live FD lines after sheet loads
             setTimeout(() => loadLineMovement(), 2000); // Sharp money detection
             // Mark initial load time so resume handler doesn't re-fetch immediately
             _lastRefreshAt = Date.now();
+
+            // Start automatic props refresh every 60 minutes from Google Sheets (where scraper-v13 writes)
+            if (!state.propRefreshInterval) {
+              state.propRefreshInterval = setInterval(() => {
+                console.log('[PropEdge] Auto-refreshing props from Google Sheets (60min interval)');
+                loadData().catch(err => console.error('[PropEdge] Auto-refresh failed:', err));
+              }, 60 * 60 * 1000); // 60 minutes in milliseconds
+            }
           });
         });
       });
@@ -5802,7 +6333,19 @@
         updateStats();
         renderProps();
         generateSuggestedParlays(); // Populate AI parlay suggestions now that props are loaded
-        const msg = allProps.length > 0 ? `Loaded ${allProps.length} props` : '⚠️ No props loaded — check Google Sheet sharing settings';
+        let msg;
+        if (allProps.length > 0) {
+          msg = `Loaded ${allProps.length} props`;
+        } else if (failureCount > 0 && successCount === 0) {
+          // All sheets returned HTML or errors — likely a real sharing/auth issue
+          msg = '⚠️ Sheet access error — verify Google Sheet is shared publicly';
+        } else {
+          // Sheets responded OK but were empty — scraper hasn't run yet today
+          const now = new Date();
+          const nextRun = now.getHours() < 11 || (now.getHours() === 11 && now.getMinutes() < 30)
+            ? '11:30 AM' : 'next scheduled run';
+          msg = `⏳ No props yet — scraper runs at ${nextRun}`;
+        }
         showToast(msg);
 
       } catch (e) {
@@ -5839,18 +6382,22 @@
         sznMatchup: headers.findIndex(h => h === 'szn matchup' || (h.includes('szn') && h.includes('matchup'))),
         // Season column: handles all PropFinder export variants
         // NBA/NHL: "'25-'26"  NHL: "'25-'26"  MLB: "2026"  NFL: "25-'26" (no leading apostrophe)
-        season: headers.findIndex(h =>
-          h === "25-'26"   || h === "'25-'26"  ||
-          h === '25-26'    || h === "'25-26"   ||
-          h === '2026'     || h === "'26"      ||
-          h.includes("25-'26") || h.includes('25-26') ||
-          h.includes('2026')   || h.includes('24-25') ||
-          h.includes("24-'25")
-        ),
+        season: headers.findIndex(h => {
+          // Normalize curly/smart apostrophes to straight before matching
+          const hn = h.replace(/[\u2018\u2019\u201A\u201B]/g, "'");
+          return hn === "25-'26"   || hn === "'25-'26"  ||
+                 hn === '25-26'    || hn === "'25-26"   ||
+                 hn === '2026'     || hn === "'26"      ||
+                 hn === "24-'25"   || hn === "'24-'25"  ||
+                 hn.includes("25-'26") || hn.includes('25-26') ||
+                 hn.includes('2026')   || hn.includes('24-25') ||
+                 hn.includes("24-'25");
+        }),
         h2h: headers.findIndex(h => h === 'h2h'),
         l5: headers.findIndex(h => h === 'l5'),
         l10: headers.findIndex(h => h === 'l10'),
-        l20: headers.findIndex(h => h === 'l20')
+        l20: headers.findIndex(h => h === 'l20'),
+        l30: headers.findIndex(h => h === 'l30')
       };
       
       console.log(`${league} column mapping:`, cols);
@@ -5887,41 +6434,90 @@
         const l5Pct = parseHitRate(getValue(cols.l5));
         const l10Pct = parseHitRate(getValue(cols.l10));
         const l20Pct = parseHitRate(getValue(cols.l20));
+        const l30Pct = parseHitRate(getValue(cols.l30));
         const seasonPct = parseHitRate(getValue(cols.season));
 
         const oddsStr = getValue(cols.odds);
         const odds = parseInt(oddsStr.replace(/[^0-9\-]/g, '')) || -110;
-        const impliedProb = odds < 0 ? Math.abs(odds) / (Math.abs(odds) + 100) : 100 / (odds + 100);
+        // PropIQ v2: devig implied probability — remove bookmaker overround before comparing to hit rate.
+        const rawImplied = odds < 0 ? Math.abs(odds) / (Math.abs(odds) + 100) : 100 / (odds + 100);
+        const impliedProb = rawImplied * 0.952; // devig factor for standard ~4.8% vig market
 
-        // Calculate model score with matchup bonuses
-        let modelScore = pfRating;
-        if (l10Pct >= 70 && l5Pct >= 65) modelScore += 5;
-
-        // FIX 5: MLB streak bonus — 3-game streak is common in baseball, require 5 for meaningful bump
-        if (league === 'MLB') {
-          if (streak >= 5) modelScore += 4;
-          else if (streak >= 3) modelScore += 1;
-        } else {
-          if (streak >= 3) modelScore += 3;
-        }
+        // ── PropIQ v3 — Deep Accuracy Improvements (Vegas + Volatility) ──────────────────────────────
         
-        // Matchup bonuses
+        let modelScore = pfRating;
+        const propFactors = [];
+        
+        // Vegas Anchor (Smart Money Follow): Highly juice props > 55% get heavily rewarded.
+        let vegasModifier = 0;
+        if (impliedProb >= 0.55) { 
+            vegasModifier = (impliedProb - 0.50) * 50; 
+            propFactors.push('💰 Heavy Vegas Juice (OVER)'); 
+        } else if (impliedProb <= 0.45) { 
+            vegasModifier = -(0.50 - impliedProb) * 50; 
+        }
+        modelScore += vegasModifier;
+
+        // Volatility Penalty: Punish players with massive variance between long and short term samples
+        if (Math.abs(l10Pct - seasonPct) >= 20 || Math.abs(l5Pct - l10Pct) >= 25) {
+            modelScore -= 5;
+            propFactors.push('🧨 High Stat Volatility');
+        } else if (Math.abs(l10Pct - seasonPct) <= 5 && l10Pct >= 60) {
+            modelScore += 3; // Bonus for surgical consistency
+            propFactors.push('⏱️ Surgical Consistency');
+        }
+
+        // Fix A: Graduated hit rate bonus (was binary +5; now scales with actual strength)
+        if (l10Pct >= 80 && l5Pct >= 75) { modelScore += 8; propFactors.push('🎯 Elite Form (L5/L10)'); }
+        else if (l10Pct >= 70 && l5Pct >= 65) { modelScore += 5; propFactors.push('✅ Strong Recent Form'); }
+        else if (l10Pct >= 60 && l5Pct >= 55) { modelScore += 2; }
+        else if (l10Pct < 40 && l5Pct < 40) { modelScore -= 4; propFactors.push('🥶 Cold Form Warning'); }
+
+        // Fix B: Signed streak logic — penalize miss streaks, not just reward hit streaks
+        if (league === 'MLB') {
+          if (streak >= 5) { modelScore += 4; propFactors.push('🔥 Massive Streak'); }
+          else if (streak >= 3) { modelScore += 1; propFactors.push('🔥 Heating Up'); }
+          else if (streak <= -5) { modelScore -= 4; }
+          else if (streak <= -3) { modelScore -= 2; }
+        } else {
+          if (streak >= 4) { modelScore += 4; propFactors.push('🔥 Massive Streak'); }
+          else if (streak >= 3) { modelScore += 3; propFactors.push('🔥 Heating Up'); }
+          else if (streak <= -3) { modelScore -= 3; }
+          else if (streak <= -2) { modelScore -= 1; }
+        }
+
+        // Fix G: Matchup bonus guarded by consistency gate
+        const hasConsistentHistory = l20Pct >= 50 && seasonPct >= 48;
         const isGoodOverMatchup = sznMatchup >= 1 && sznMatchup <= 10;
-        // FIX 4: MLB under matchup — remove under bonus for MLB (matchup rank reflects hitter vs. pitcher,
-        // a high rank = weak pitcher = more hits = OVER, so under bonus doesn't apply)
         const isGoodUnderMatchup = league === 'MLB'
           ? false
           : (league === 'NFL' || league === 'NHL')
             ? sznMatchup >= 23 && sznMatchup <= 32
             : sznMatchup >= 21 && sznMatchup <= 30;
-        if (direction === 'OVER' && isGoodOverMatchup) modelScore += 3;
-        if (direction === 'UNDER' && isGoodUnderMatchup) modelScore += 3;
+        if (direction === 'OVER' && isGoodOverMatchup && hasConsistentHistory) { modelScore += 3; propFactors.push('🛡️ Favorable Matchup'); }
+        if (direction === 'UNDER' && isGoodUnderMatchup && hasConsistentHistory) { modelScore += 3; propFactors.push('🛡️ Favorable Matchup'); }
+
+        // Home/Away Bonus
+        const teamAbbr = typeof window.normalizeTeam === 'function' ? window.normalizeTeam(getValue(cols.team)) : getValue(cols.team);
+        const homeAway = window._gameLocations && window._gameLocations[league] ? window._gameLocations[league][teamAbbr] : null;
+        if (homeAway === 'home' && direction === 'OVER') {
+            modelScore += 3;
+            propFactors.push('🏠 Home Matchup Advantage');
+        } else if (homeAway === 'away' && direction === 'OVER') {
+            modelScore -= 1;
+        }
+
+        // Note: Sharp money (Fix D) applied after load via rescoreSharpMoney()
+        // ────────────────────────────────────────────────────────────────────
 
         // FIX 3: MLB true probability — weight longer samples more heavily (L20 + season)
         // because daily variance in baseball makes L5/L10 less predictive than in NBA/NHL
+        // Fix C: Sport-specific hit rate weighting
         const weightedHitRate = league === 'MLB'
-          ? (l5Pct * 0.15 + l10Pct * 0.25 + l20Pct * 0.30 + seasonPct * 0.30) / 100
-          : (l5Pct * 0.30 + l10Pct * 0.30 + l20Pct * 0.20 + seasonPct * 0.20) / 100;
+          ? (l5Pct * 0.10 + l10Pct * 0.20 + l20Pct * 0.35 + seasonPct * 0.35) / 100
+          : league === 'NBA'
+            ? (l5Pct * 0.40 + l10Pct * 0.25 + l20Pct * 0.20 + seasonPct * 0.15) / 100
+            : (l5Pct * 0.30 + l10Pct * 0.30 + l20Pct * 0.20 + seasonPct * 0.20) / 100; // NHL/NFL
         const trueProb = weightedHitRate;
         const edge = ((trueProb - impliedProb) * 100);
         
@@ -5934,11 +6530,10 @@
 
         const isValue = edge >= valueThreshold && (trueProb - impliedProb) >= 0.10;
 
-        // FIX 1: MLB meetsUltimate — require consistency over longer windows (L20 + season)
-        // rather than just L5/L10 which can be fluky over a short baseball stretch
+        // Fix F: Raise meetsUltimate bar — requires genuine multi-window consistency
         const meetsUltimate = league === 'MLB'
-          ? pfRating >= 80 && l10Pct >= 65 && l20Pct >= 60 && seasonPct >= 58
-          : pfRating >= 82 && l10Pct >= 70 && l5Pct >= 65;
+          ? pfRating >= 80 && l10Pct >= 65 && l20Pct >= 62 && seasonPct >= 60
+          : pfRating >= 84 && l10Pct >= 75 && l5Pct >= 70 && l20Pct >= 65;
 
         let tier = 'spec';
         if (meetsUltimate) tier = 'ultimate';
@@ -5965,14 +6560,19 @@
           l5Pct,
           l10Pct,
           l20Pct,
+          l30Pct,
           seasonPct,
           streak,
           sznMatchup,
           modelScore: Math.round(modelScore),
+          baseModelScore: Math.round(modelScore), // preserved for sharp money re-scoring
+          sharpBoost: 0,                           // populated by rescoreSharpMoney()
           edge: parseFloat(edge.toFixed(1)),
           tier,
           isValue,
-          meetsUltimate
+          meetsUltimate,
+          isHome: homeAway === 'home',
+          propFactors
         });
       }
 
@@ -6050,7 +6650,7 @@
           
           if (player && propType) {
             const key = `${player.toLowerCase()}|${propType.toLowerCase()}`;
-            state.fdLines[key] = { player, propType, line, overOdds, underOdds, sport };
+            state.fdLines[key] = { player, propType, line, overOdds, underOdds, sport, fromFD: true };
             loadedCount++;
           }
         }
@@ -6062,6 +6662,164 @@
       } catch (e) {
         console.error('Error loading FanDuel lines:', e);
       }
+    }
+
+    // ==========================================
+    // FANDUEL LIVE LINES — THE ODDS API
+    // ==========================================
+    const ODDS_API_KEY  = 'c746eaeaafba77026cd36d420b150be3';
+    const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
+    const ODDS_SPORT_KEYS = { NBA: 'basketball_nba', NHL: 'icehockey_nhl', MLB: 'baseball_mlb' };
+    const ODDS_MARKETS = {
+      NBA: 'player_points,player_rebounds,player_assists,player_threes,player_blocks,player_steals,player_points_rebounds_assists,player_points_rebounds,player_points_assists,player_rebounds_assists',
+      NHL: 'player_shots_on_goal,player_goals,player_points',
+      MLB: 'batter_hits,pitcher_strikeouts,batter_home_runs,batter_rbis,batter_total_bases',
+    };
+    // Maps Odds API market key → prop type keywords used in our sheet
+    const ODDS_MARKET_MAP = {
+      player_points:                    ['points','pts'],
+      player_rebounds:                  ['rebounds','reb','rebs'],
+      player_assists:                   ['assists','ast'],
+      player_threes:                    ['3-pointers','threes','3pt','three'],
+      player_blocks:                    ['blocks','blk'],
+      player_steals:                    ['steals','stl'],
+      player_points_rebounds_assists:   ['points + rebounds + assists','pts + reb + ast','pts+reb+ast','points+rebounds+assists','p+r+a'],
+      player_points_rebounds:           ['points + rebounds','pts + reb','pts+reb','points+rebounds'],
+      player_points_assists:            ['points + assists','pts + ast','pts+ast','points+assists'],
+      player_rebounds_assists:          ['rebounds + assists','reb + ast','reb+ast','rebounds+assists'],
+      player_shots_on_goal:             ['shots on goal','shots','sog'],
+      player_goals:                     ['goals'],
+      player_points:                    ['points','pts'],
+      batter_hits:                      ['hits'],
+      pitcher_strikeouts:               ['strikeouts','ks','k'],
+      batter_home_runs:                 ['home runs','hr','hrs'],
+      batter_rbis:                      ['rbis','rbi'],
+      batter_total_bases:               ['total bases','tb'],
+    };
+
+    async function loadFanDuelLinesFromOddsAPI(force = false) {
+      // Cache key includes 4-hour window so lines refresh as FanDuel posts them pregame
+      const now = new Date();
+      const slot = Math.floor(now.getHours() / 4); // 0=midnight,1=4am,2=8am,3=noon,4=4pm,5=8pm
+      const cacheKey = `propedge_oddsapi_v2_${now.toISOString().slice(0,10)}_${slot}`;
+      if (!force) {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Object.keys(parsed).length > 0) {
+              _applyOddsAPILines(parsed);
+              console.log(`[OddsAPI] Loaded ${Object.keys(parsed).length} FD lines from cache`);
+              return;
+            }
+          } catch(e) { localStorage.removeItem(cacheKey); }
+        }
+      }
+
+      // Figure out which sports have props loaded today
+      const activeSports = [...new Set(state.props.map(p => p.league))].filter(l => ODDS_SPORT_KEYS[l]);
+      if (!activeSports.length) return;
+
+      const allLines = {}; // "playername|propkeyword" → { line, overOdds, underOdds }
+      let reqCount = 0;
+
+      for (const league of activeSports) {
+        const sportKey = ODDS_SPORT_KEYS[league];
+        const markets  = ODDS_MARKETS[league];
+        if (!markets) continue;
+
+        try {
+          // 1. Fetch event list for this sport
+          const evRes = await fetch(`${ODDS_API_BASE}/sports/${sportKey}/events?apiKey=${ODDS_API_KEY}`);
+          reqCount++;
+          if (!evRes.ok) { console.warn(`[OddsAPI] Events fetch failed for ${league}: ${evRes.status}`); continue; }
+          const events = await evRes.json();
+
+          // Filter to today's events only
+          const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+          const todayEnd   = new Date(); todayEnd.setHours(23,59,59,999);
+          const todayEvents = events.filter(ev => {
+            const d = new Date(ev.commence_time);
+            return d >= todayStart && d <= todayEnd;
+          });
+
+          // 2. Fetch player props per event (limit to 8 events to guard budget)
+          for (const ev of todayEvents.slice(0, 8)) {
+            try {
+              const url = `${ODDS_API_BASE}/sports/${sportKey}/events/${ev.id}/odds?apiKey=${ODDS_API_KEY}&regions=us&markets=${markets}&bookmakers=fanduel`;
+              const r = await fetch(url);
+              reqCount++;
+              if (!r.ok) continue;
+              const data = await r.json();
+              const fd = data.bookmakers?.find(b => b.key === 'fanduel');
+              if (!fd) continue;
+
+              for (const mkt of fd.markets || []) {
+                const keywords = ODDS_MARKET_MAP[mkt.key] || [];
+                if (!keywords.length) continue;
+                const propKeyword = keywords[0]; // primary keyword
+
+                // Group outcomes by player (each player has Over + Under)
+                const byPlayer = {};
+                for (const outcome of mkt.outcomes || []) {
+                  const playerName = (outcome.description || '').toLowerCase().trim();
+                  if (!playerName) continue;
+                  if (!byPlayer[playerName]) byPlayer[playerName] = { line: outcome.point };
+                  if (outcome.name === 'Over')  byPlayer[playerName].overOdds  = outcome.price;
+                  if (outcome.name === 'Under') byPlayer[playerName].underOdds = outcome.price;
+                }
+
+                for (const [playerName, pData] of Object.entries(byPlayer)) {
+                  const normPlayer = playerName.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                  // Store under all keyword variants so matching is flexible
+                  for (const kw of keywords) {
+                    const key = `${normPlayer}|${kw}`;
+                    allLines[key] = { line: pData.line, overOdds: pData.overOdds ?? null, underOdds: pData.underOdds ?? null, source: 'live' };
+                  }
+                }
+              }
+            } catch(evErr) { console.warn('[OddsAPI] Event props error:', evErr); }
+          }
+        } catch(sportErr) { console.warn(`[OddsAPI] ${league} error:`, sportErr); }
+      }
+
+      console.log(`[OddsAPI] Fetched ${Object.keys(allLines).length} FD lines via ${reqCount} requests`);
+      if (Object.keys(allLines).length > 0) {
+        // Clear old slot caches for today to save localStorage space
+        for (let s = 0; s < 6; s++) {
+          const oldKey = `propedge_oddsapi_v2_${now.toISOString().slice(0,10)}_${s}`;
+          if (oldKey !== cacheKey) localStorage.removeItem(oldKey);
+        }
+        localStorage.setItem(cacheKey, JSON.stringify(allLines));
+        _applyOddsAPILines(allLines);
+        showToast(`✅ ${Object.keys(allLines).length} live FD lines loaded`);
+      } else {
+        showToast('⚠️ No FD lines posted yet — FanDuel typically posts lines 2-3 hrs before tip');
+      }
+    }
+
+    window.refreshFDLines = async function() {
+      const btn = document.getElementById('fdRefreshBtn');
+      if (btn) { btn.textContent = '⏳'; btn.style.pointerEvents = 'none'; }
+      // Wipe live lines so stale matches clear before re-render
+      for (const key of Object.keys(state.fdLines)) {
+        if (state.fdLines[key].fromLive) delete state.fdLines[key];
+      }
+      state.fdLinesSource = 'sheet';
+      await loadFanDuelLinesFromOddsAPI(true);
+      if (btn) { btn.textContent = '🔄'; btn.style.pointerEvents = ''; }
+    };
+
+    function _applyOddsAPILines(liveLines) {
+      // Merge live lines into state.fdLines — live data wins over sheet data
+      for (const [key, val] of Object.entries(liveLines)) {
+        state.fdLines[key] = { ...val, fromLive: true };
+      }
+      state.fdLinesSource = 'live';
+
+      // FD Live switch removed as it is now redundant
+
+      renderProps();
     }
 
     function isOnFanDuel(prop) {
@@ -6087,21 +6845,43 @@
       return false;
     }
 
+    // Strip diacritical marks so "valančiūnas" → "valanciunas"
+    function _normName(s) {
+      return (s || '').toLowerCase().trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    // Prop types the Odds API genuinely can't cover (multi-sport combos, custom markets)
+    const _COMBO_PROP_RE = /singles|total bases.*hits|hits.*runs.*rbi/i;
+
     function getFanDuelLine(prop) {
-      const playerLower = prop.player.toLowerCase().trim();
-      const propType = (prop.prop || '').trim().toLowerCase();
-      
-      const direct = state.fdLines[`${playerLower}|${propType}`];
+      const playerNorm = _normName(prop.player);
+      const propRaw    = (prop.prop || '').trim().toLowerCase();
+
+      // 1. Direct match (normalized)
+      const direct = state.fdLines[`${playerNorm}|${propRaw}`];
       if (direct) return direct;
-      
-      const lastName = playerLower.split(' ').pop();
+
+      // 2. Try each Odds API keyword variant for this prop type
+      for (const [, keywords] of Object.entries(ODDS_MARKET_MAP)) {
+        const match = keywords.find(kw => propRaw.includes(kw) || kw.includes(propRaw));
+        if (!match) continue;
+        const byKw = state.fdLines[`${playerNorm}|${match}`];
+        if (byKw) return byKw;
+      }
+
+      // 3. Last-name fuzzy match (handles "C.J." vs "CJ" edge cases)
+      const lastName = playerNorm.split(' ').pop();
       for (const fdKey of Object.keys(state.fdLines)) {
-        const [fdPlayer, fdPropType] = fdKey.split('|');
-        if (fdPlayer.split(' ').pop() === lastName && (fdPropType.includes(propType) || propType.includes(fdPropType))) {
+        const pipeIdx  = fdKey.lastIndexOf('|');
+        const fdPlayer = fdKey.slice(0, pipeIdx);
+        const fdProp   = fdKey.slice(pipeIdx + 1);
+        if (fdPlayer.split(' ').pop() === lastName &&
+            (fdProp.includes(propRaw) || propRaw.includes(fdProp))) {
           return state.fdLines[fdKey];
         }
       }
-      
+
       return null;
     }
 
@@ -10781,10 +11561,12 @@
 
     function getPlayerHeadshot(playerName, league) {
       if (!playerName || !league) return '';
-      const id = PLAYER_IDS[playerName];
+      // Normalize name to strip accents (e.g., Porziņģis -> Porzingis)
+      const normalized = playerName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const id = PLAYER_IDS[normalized];
       if (!id) {
         // Try last name only match as fallback
-        const lastName = playerName.split(' ').pop();
+        const lastName = normalized.split(' ').pop();
         const match = Object.keys(PLAYER_IDS).find(k => k.split(' ').pop() === lastName);
         if (!match) return '';
         return `https://a.espncdn.com/i/headshots/${league.toLowerCase()}/players/full/${PLAYER_IDS[match]}.png`;
@@ -10894,12 +11676,43 @@
         if (gameCount > 0) {
           console.log(`📈 Line movement: ${gameCount} game(s) flagged`);
           showToast(`📈 ${gameCount} line movement${gameCount > 1 ? 's' : ''} detected`);
+          rescoreSharpMoney(); // Fix D: apply sharp money boosts to already-scored props
           renderProps();
         }
 
       } catch (e) {
         console.log('Line movement load failed:', e.message);
       }
+    }
+
+    // ==========================================
+    // SHARP MONEY RE-SCORER (Fix D)
+    // ==========================================
+    function rescoreSharpMoney() {
+      const leagueConfig = (league) => leagueThresholds[league] || { strong: 72, value: 8 };
+      let boosted = 0;
+      state.props.forEach(prop => {
+        const movement = state.lineMovements?.[prop.team?.toUpperCase().trim()];
+        if (!movement) {
+          prop.modelScore = prop.baseModelScore;
+          prop.sharpBoost = 0;
+        } else {
+          const boost = movement.type === 'steam' ? 5 : movement.type === 'split' ? 3 : 2;
+          prop.sharpBoost = boost;
+          prop.modelScore = prop.baseModelScore + boost;
+          boosted++;
+        }
+        const strongThreshold = leagueConfig(prop.league).strong;
+        const meetsUltimate = prop.league === 'MLB'
+          ? prop.pfRating >= 80 && prop.l10Pct >= 65 && prop.l20Pct >= 62 && prop.seasonPct >= 60
+          : prop.pfRating >= 84 && prop.l10Pct >= 75 && prop.l5Pct >= 70 && prop.l20Pct >= 65;
+        prop.tier = 'spec';
+        if (meetsUltimate)                           prop.tier = 'ultimate';
+        else if (prop.modelScore >= THRESHOLDS.prime) prop.tier = 'prime';
+        else if (prop.modelScore >= strongThreshold)  prop.tier = 'strong';
+        else if (prop.modelScore >= THRESHOLDS.solid)  prop.tier = 'solid';
+      });
+      if (boosted > 0) console.log(`📈 Sharp money applied to ${boosted} prop(s)`);
     }
 
     // ==========================================
@@ -10936,7 +11749,12 @@
         }
       }
 
-      renderTicker(allGames);
+      // ── Only render ticker if NO live games are running (to avoid interrupting countdown)
+      // When games are live, _startLiveTickerPoll() handles in-place updates via _startPropClockCountdown()
+      const hasLiveGames = allGames.some(g => g.status === 'live');
+      if (!hasLiveGames) {
+        renderTicker(allGames);
+      }
       updateStatus(); // Update status after games are loaded
     }
 
@@ -11043,25 +11861,198 @@
     // ── Live ticker score poll — fetches fresh ESPN data every 30s while games are live ──
     let _liveTickerTimer = null;
 
+    // ════════════════════════════════════════════════════════════════════════
+    // AUTONOMOUS BACKGROUND CLOCK SYNC
+    // Runs independently, no user action needed. Syncs all live game clocks
+    // to ESPN every 10 seconds across modal, ticker, and prop cards.
+    // ════════════════════════════════════════════════════════════════════════
+    let _backgroundClockSyncTimer = null;
+
+    async function _autonomousGameClockSync() {
+      // Get all live games from current state
+      const allGames = [
+        ...(state.games.NBA || []),
+        ...(state.games.NHL || []),
+        ...(state.games.MLB || []),
+        ...(state.games.NFL || []),
+      ];
+      const liveGames = allGames.filter(g => g.status === 'live' && g.league !== 'MLB');
+
+      if (liveGames.length === 0) {
+        _stopLiveTickerPoll(); // Stop if no live games
+        return;
+      }
+
+      console.log(`[Background Clock Sync] Found ${liveGames.length} live games, fetching ESPN data...`);
+
+      // Fetch fresh ESPN data for all live games in parallel
+      const promises = liveGames.map(async (g) => {
+        const cfg = ESPN_SPORT_MAP[g.league];
+        if (!cfg) {
+          console.log(`[Background Clock Sync] No config for league ${g.league}`);
+          return null;
+        }
+
+        try {
+          const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${cfg.sport}/${cfg.league}/scoreboard?_=${Date.now()}`).catch(() => null);
+          if (!res || !res.ok) {
+            console.log(`[Background Clock Sync] ESPN fetch failed for ${g.league}`);
+            return null;
+          }
+          const sb = await res.json();
+          console.log(`[Background Clock Sync] ESPN returned ${(sb.events || []).length} events for ${g.league}`);
+
+          const event = (sb.events || []).find(e => String(e.id) === String(g.id));
+          if (!event) {
+            console.log(`[Background Clock Sync] Event not found for game ID ${g.id} in ${g.league}. Available IDs: ${(sb.events || []).map(e => e.id).join(', ')}`);
+            return null;
+          }
+
+          // Check if game is live — ESPN uses status.type.state, not status.state
+          const isLive = event.status?.type?.state === 'in';
+          const displayClock = event.status?.displayClock || '';
+
+          if (!isLive || !displayClock) {
+            console.log(`[Background Clock Sync] Game ${g.id} not in-progress or no clock (isLive: ${isLive}, clock: "${displayClock}", status:`, event.status, ')');
+            return null;
+          }
+
+          const comp = event.competitions?.[0];
+          const competitors = comp?.competitors || [];
+          const away = competitors.find(c => c.homeAway === 'away');
+          const home = competitors.find(c => c.homeAway === 'home');
+
+          console.log(`[Background Clock Sync] ✅ Game ${g.id} (${g.league}): ${displayClock} P${event.status?.period}`);
+
+          return {
+            gameId: g.id,
+            league: g.league,
+            displayClock,
+            period: event.status?.period || 0,
+            awayScore: away?.score ?? '-',
+            homeScore: home?.score ?? '-',
+          };
+        } catch (err) {
+          console.error(`[Background Clock Sync] Error fetching game ${g.id}:`, err);
+          return null;
+        }
+      });
+
+      const freshGameData = await Promise.all(promises);
+      console.log(`[Background Clock Sync] Fetched data for ${freshGameData.filter(d => d).length} games:`, freshGameData.filter(d => d));
+
+      // Update all DOM elements with fresh ESPN data simultaneously
+      freshGameData.forEach(data => {
+        if (!data) return;
+        const { gameId, league, displayClock, period, awayScore, homeScore } = data;
+
+        // Write back to state.games so the 30s renderTicker re-render uses fresh data, not stale snapshot
+        const leagueGames = state.games[league] || [];
+        const stateGame = leagueGames.find(g => String(g.id) === String(gameId));
+        if (stateGame) {
+          if (displayClock) stateGame.displayClock = displayClock;
+          if (period) stateGame.period = period;
+          stateGame.awayScore = awayScore;
+          stateGame.homeScore = homeScore;
+        }
+
+        console.log(`[Background Clock Sync] Updating game ${gameId} (${league}): ${displayClock} P${period}`);
+
+        // Update ticker card with fresh ESPN data
+        const tickerCard = document.querySelector(`.tck-clock[data-gameid="${gameId}"]`);
+        if (tickerCard && displayClock) {
+          tickerCard.setAttribute('data-period', period);
+          tickerCard.textContent = displayClock + ' · ' + _tickerPeriodLabel(league, period);
+        }
+
+        // Update ticker score
+        const scoreCard = document.querySelector(`.live-game-card[data-gameid="${gameId}"] .live-game-score`);
+        if (scoreCard) scoreCard.textContent = `${awayScore}-${homeScore}`;
+
+        // Update modal if open — use String() on both sides to avoid type mismatch
+        if (_modalState.game && String(_modalState.game.id) === String(gameId)) {
+          const clockLabel = _svgClockLabel(league, period, displayClock);
+
+          if (displayClock) {
+            const modalClock = document.getElementById('modalClock');
+            if (modalClock) modalClock.textContent = displayClock;
+
+            const trackerBadge = document.getElementById('liveTrackerBadge');
+            if (trackerBadge) trackerBadge.innerHTML = clockLabel;
+
+            // querySelectorAll hits all 4 sport-court SVGs (NBA/NHL/MLB/NFL each have id="svgCourtClock")
+            document.querySelectorAll('[id="svgCourtClock"]').forEach(el => {
+              el.textContent = clockLabel;
+            });
+
+            _modalState.countdownPeriod = period;
+          }
+
+          // Also sync period label and score in modal header in real-time
+          const periodEl = document.getElementById('modalPeriod');
+          if (periodEl && period) periodEl.textContent = _modalPeriodLabel(league, period);
+
+          const scoreEl = document.getElementById('modalScore');
+          if (scoreEl) scoreEl.textContent = `${awayScore} – ${homeScore}`;
+        }
+
+        // Update prop card badges
+        document.querySelectorAll(`.game-clock-badge[data-gameid="${gameId}"]`).forEach(el => {
+          if (displayClock) {
+            el.textContent = displayClock;
+            el.setAttribute('data-displayclock', displayClock);
+          }
+        });
+
+        // Update prop card live context strips (score + clock + period chips)
+        document.querySelectorAll(`.live-ctx-strip[data-gameid="${gameId}"]`).forEach(strip => {
+          // Score numbers — away then home
+          const nums = strip.querySelectorAll('.live-ctx-num');
+          if (nums.length >= 2) { nums[0].textContent = awayScore; nums[1].textContent = homeScore; }
+          // Clock in score row header
+          const ctxClock = strip.querySelector('.live-ctx-clock');
+          if (ctxClock && displayClock) ctxClock.textContent = displayClock;
+          // Period chip
+          const periodChip = strip.querySelector('.live-ctx-chip.period');
+          if (periodChip && period) {
+            if (league === 'NBA') periodChip.textContent = period <= 4 ? `Q${period}` : `OT${period > 5 ? period-4 : ''}`;
+            else if (league === 'NHL') periodChip.textContent = period <= 3 ? `P${period}` : 'OT';
+            else if (league === 'NFL') periodChip.textContent = period <= 4 ? `Q${period}` : 'OT';
+          }
+          // Clock chip
+          const clockChip = strip.querySelector('.live-ctx-chip.clock');
+          if (clockChip && displayClock) clockChip.textContent = `⏱ ${displayClock}`;
+        });
+      });
+    }
+
+    // ── Ticker arrow scroll
+    window.scrollTicker = function(dir) {
+      const ticker = document.getElementById('gamesTicker');
+      if (!ticker) return;
+      const cardWidth = ticker.querySelector('.live-game-card')?.offsetWidth || 240;
+      ticker.scrollBy({ left: dir * (cardWidth + 10), behavior: 'smooth' });
+      // Update arrow visibility after scroll settles
+      setTimeout(_updateTickerArrows, 350);
+    };
+
+    function _updateTickerArrows() {
+      const ticker = document.getElementById('gamesTicker');
+      const left   = document.getElementById('tickerArrowLeft');
+      const right  = document.getElementById('tickerArrowRight');
+      if (!ticker || !left || !right) return;
+      const atStart = ticker.scrollLeft <= 4;
+      const atEnd   = ticker.scrollLeft + ticker.clientWidth >= ticker.scrollWidth - 4;
+      left.classList.toggle('hidden', atStart);
+      right.classList.toggle('hidden', atEnd);
+    }
+
     function _startLiveTickerPoll() {
       if (_liveTickerTimer) return;
-      _startTickerClockCountdown(); // tick live clocks on ticker every second between API refreshes
-      _startPropClockCountdown(); // also tick live clocks on prop cards
-      _liveTickerTimer = setInterval(async () => {
-        await fetchGames(true); // silent=true: skip spinner, no flicker on background refresh
-        const allGames = [
-          ...(state.games.NBA || []),
-          ...(state.games.NHL || []),
-          ...(state.games.MLB || []),
-          ...(state.games.NFL || []),
-        ];
-        const hasLive = allGames.some(g => g.status === 'live');
-        if (!hasLive) {
-          _stopLiveTickerPoll(); // no live games left — stop polling
-          return;
-        }
-        renderTicker(allGames);
-      }, 30 * 1000);
+      _liveTickerTimer = setInterval(() => {
+        // Autonomous background sync — no dependencies on user actions
+        _autonomousGameClockSync();
+      }, 4000); // Every 4 seconds (smooth ticker updates with minimal buffering)
     }
 
     function _stopLiveTickerPoll() {
@@ -11070,22 +12061,11 @@
       _stopPropClockCountdown();
     }
 
-    // ── 1-second countdown for live clock labels on ticker cards ──────────────
+    // ── Ticker clock countdown disabled
     let _tickerClockTimer = null;
 
     function _startTickerClockCountdown() {
-      if (_tickerClockTimer) return;
-      _tickerClockTimer = setInterval(() => {
-        document.querySelectorAll('.tck-clock[data-secs]').forEach(el => {
-          let secs = parseInt(el.getAttribute('data-secs'), 10);
-          if (isNaN(secs) || secs < 0) return;
-          secs = Math.max(0, secs - 1);
-          el.setAttribute('data-secs', secs);
-          const period = parseInt(el.getAttribute('data-period'), 10);
-          const league = el.getAttribute('data-league');
-          el.textContent = _secsToClockStr(secs) + ' · ' + _tickerPeriodLabel(league, period);
-        });
-      }, 1000);
+      // ESPN sync updates ticker directly — no local countdown needed
     }
 
     function _stopTickerClockCountdown() {
@@ -11095,6 +12075,7 @@
     // ── Live clock countdown for prop card game info ──────────────────────────
     let _propClockTimer = null;
 
+    let _lastESPNSyncTime = 0; // Track when we last synced with ESPN
     function _startPropClockCountdown() {
       if (_propClockTimer) return;
       _propClockTimer = setInterval(async () => {
@@ -11102,7 +12083,7 @@
         const badges = document.querySelectorAll('.game-clock-badge[data-displayclock]');
         if (badges.length === 0) return;
 
-        // Collect unique game IDs to fetch
+        // Collect unique game IDs
         const gameIds = new Set();
         badges.forEach(el => {
           const gameId = el.getAttribute('data-gameid');
@@ -11112,61 +12093,95 @@
 
         if (gameIds.size === 0) return;
 
-        // Fetch fresh game data from ESPN for each unique game
+        // Only fetch fresh ESPN data every 30 seconds (not every second)
+        const now = Date.now();
+        const shouldFetchESPN = (now - _lastESPNSyncTime) >= 30000;
+
         const gameDataMap = new Map();
-        for (const gameId of gameIds) {
-          try {
-            // Determine league from the badge
-            const badge = Array.from(badges).find(el => el.getAttribute('data-gameid') === gameId);
-            if (!badge) continue;
-            const league = badge.getAttribute('data-league');
-            const cfg = ESPN_SPORT_MAP[league];
-            if (!cfg) continue;
+        if (shouldFetchESPN) {
+          _lastESPNSyncTime = now;
+          // Fetch fresh game data from ESPN
+          for (const gameId of gameIds) {
+            try {
+              const badge = Array.from(badges).find(el => el.getAttribute('data-gameid') === gameId);
+              if (!badge) continue;
+              const league = badge.getAttribute('data-league');
+              const cfg = ESPN_SPORT_MAP[league];
+              if (!cfg) continue;
 
-            const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${cfg.sport}/${cfg.league}/scoreboard?_=${Date.now()}`).catch(() => null);
-            if (!res || !res.ok) continue;
-            const sb = await res.json();
-            const event = (sb.events || []).find(e => String(e.id) === String(gameId));
-            if (!event) continue;
+              const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${cfg.sport}/${cfg.league}/scoreboard?_=${Date.now()}`).catch(() => null);
+              if (!res || !res.ok) continue;
+              const sb = await res.json();
+              const event = (sb.events || []).find(e => String(e.id) === String(gameId));
+              if (!event) continue;
 
-            const status = event.status?.type;
-            const isLive = status?.state === 'in';
-            if (!isLive) continue;
+              const status = event.status?.type;
+              const isLive = status?.state === 'in';
+              if (!isLive) continue;
 
-            const displayClock = event.status?.displayClock || '';
-            const period = event.status?.period || 0;
-            gameDataMap.set(gameId, { displayClock, period, league });
-          } catch (err) {
-            // Silent fail - keep using old data
+              const displayClock = event.status?.displayClock || '';
+              const period = event.status?.period || 0;
+              gameDataMap.set(gameId, { displayClock, period, league });
+            } catch (err) {
+              // Silent fail - keep using local countdown
+            }
           }
         }
 
-        // Update all badge elements with fresh data
-        badges.forEach(el => {
+        // Single tick helper — used for both prop card badges and ticker clocks
+        function _tickClockEl(el) {
           const gameId = el.getAttribute('data-gameid');
           const secs = parseInt(el.getAttribute('data-secs') || '-1', 10);
-          if (secs < 0) return; // Not in live mode
+          if (secs < 0) return;
 
-          // If we have fresh data for this game, use it; otherwise tick down the old seconds
+          let newSecs = secs;
+          let period = parseInt(el.getAttribute('data-period') || '0', 10);
+          const league = el.getAttribute('data-league') || el.getAttribute('data-league');
+          let displayClock = el.getAttribute('data-displayclock') || el.getAttribute('data-displayclock') || '';
+
           if (gameDataMap.has(gameId)) {
             const freshData = gameDataMap.get(gameId);
-            const freshSecs = _clockToSecs(freshData.displayClock) || 0;
+            newSecs = _clockToSecs(freshData.displayClock) || 0;
+            period = freshData.period;
+            displayClock = freshData.displayClock;
             el.setAttribute('data-displayclock', freshData.displayClock);
-            el.setAttribute('data-period', freshData.period);
-            el.setAttribute('data-secs', freshSecs);
-            const clockStr = freshSecs > 0 ? _secsToClockStr(freshSecs) : '0:00';
-            el.textContent = clockStr + ' · ' + _tickerPeriodLabel(freshData.league, freshData.period);
+            el.setAttribute('data-period', period);
           } else {
-            // Fallback: tick down locally if no fresh data available
-            const newSecs = Math.max(0, secs - 1);
-            el.setAttribute('data-secs', newSecs);
-            const period = parseInt(el.getAttribute('data-period'), 10);
-            const league = el.getAttribute('data-league');
-            const clockStr = newSecs > 0 ? _secsToClockStr(newSecs) : '0:00';
-            el.textContent = clockStr + ' · ' + _tickerPeriodLabel(league, period);
+            newSecs = Math.max(0, secs - 1);
           }
+
+          el.setAttribute('data-secs', newSecs);
+          const clockStr = gameDataMap.has(gameId) ? displayClock : (newSecs > 0 ? _secsToClockStr(newSecs) : '0:00');
+          el.textContent = clockStr + ' · ' + _tickerPeriodLabel(league, period);
+        }
+
+        // Tick prop card game-clock badges
+        badges.forEach(_tickClockEl);
+
+        // Tick ticker bar tck-clock elements — same logic, unified source
+        document.querySelectorAll('.tck-clock[data-secs]').forEach(el => {
+          const gameId = el.getAttribute('data-gameid');
+          const secs = parseInt(el.getAttribute('data-secs') || '-1', 10);
+          if (secs < 0) return;
+          let newSecs = gameDataMap.has(gameId)
+            ? (_clockToSecs(gameDataMap.get(gameId).displayClock) || 0)
+            : Math.max(0, secs - 1);
+          const period = gameDataMap.has(gameId)
+            ? gameDataMap.get(gameId).period
+            : parseInt(el.getAttribute('data-period') || '0', 10);
+          const league = el.getAttribute('data-league') || '';
+          if (gameDataMap.has(gameId)) {
+            el.setAttribute('data-displayclock', gameDataMap.get(gameId).displayClock);
+            el.setAttribute('data-period', period);
+          }
+          el.setAttribute('data-secs', newSecs);
+          const clockStr = gameDataMap.has(gameId)
+            ? gameDataMap.get(gameId).displayClock
+            : (newSecs > 0 ? _secsToClockStr(newSecs) : '0:00');
+          el.textContent = clockStr + ' · ' + _tickerPeriodLabel(league, period);
         });
-      }, 1000);
+
+      }, 1000); // Tick every 1 second locally
     }
 
     function _stopPropClockCountdown() {
@@ -11205,9 +12220,17 @@
     function renderTicker(games) {
       const ticker = document.getElementById('gamesTicker');
 
-      let displayGames = games;
+      // Dedupe games by ID to prevent duplicates
+      const seenIds = new Set();
+      const deduped = games.filter(g => {
+        if (seenIds.has(g.id)) return false;
+        seenIds.add(g.id);
+        return true;
+      });
+
+      let displayGames = deduped;
       if (state.hideCompleted) {
-        displayGames = games.filter(g => g.status !== 'final');
+        displayGames = deduped.filter(g => g.status !== 'final');
       }
 
       if (displayGames.length === 0) {
@@ -11255,7 +12278,7 @@
           }
           ${isLive || isFinal ? `<div class="live-game-status">${
             isLive && g.displayClock && g.league !== 'MLB'
-              ? `<span class="tck-clock" data-secs="${_clockToSecs(g.displayClock) ?? -1}" data-period="${g.period}" data-league="${g.league}">${g.displayClock} · ${_tickerPeriodLabel(g.league, g.period)}</span>`
+              ? `<span class="tck-clock" data-secs="${_clockToSecs(g.displayClock) ?? -1}" data-period="${g.period}" data-league="${g.league}" data-gameid="${g.id}">${g.displayClock} · ${_tickerPeriodLabel(g.league, g.period)}</span>`
               : g.statusDisplay
           }</div>` : ''}
           <!-- Action buttons — shown when card is selected -->
@@ -11273,6 +12296,10 @@
         ticker.style.scrollSnapType = '';
         ticker.style.scrollBehavior = '';
       });
+
+      // Update arrow visibility after ticker renders
+      requestAnimationFrame(_updateTickerArrows);
+      ticker.onscroll = _updateTickerArrows;
 
       // Kick off live countdown refresh if any upcoming games are present
       _startCountdownRefresh();
@@ -11432,8 +12459,6 @@
       ` : '';
 
       content.innerHTML = `
-        <button class="game-modal-close" onclick="closeGameModal()">✕</button>
-
         <!-- Hero -->
         <div class="game-modal-hero">
           <div class="game-modal-teams">
@@ -11788,8 +12813,7 @@
                   const clockEl = document.getElementById('modalClock');
                   if (clockEl) clockEl.textContent = clock;
 
-                  const svgClockEl = document.getElementById('svgCourtClock');
-                  if (svgClockEl) svgClockEl.textContent = clockLabel;
+                  document.querySelectorAll('[id="svgCourtClock"]').forEach(el => { el.textContent = clockLabel; });
 
                   const trackerBadgeEl = document.getElementById('liveTrackerBadge');
                   if (trackerBadgeEl) trackerBadgeEl.innerHTML = clockLabel;
@@ -11797,11 +12821,9 @@
               }
 
               if (status.completed) {
-                const finalEls = [
-                  document.getElementById('svgCourtClock'),
-                  document.getElementById('liveTrackerBadge')
-                ];
-                finalEls.forEach(el => { if (el) el.textContent = 'FINAL'; });
+                document.querySelectorAll('[id="svgCourtClock"]').forEach(el => { el.textContent = 'FINAL'; });
+                const trackerFinal = document.getElementById('liveTrackerBadge');
+                if (trackerFinal) trackerFinal.textContent = 'FINAL';
               }
             }
           } catch (e) {
@@ -11822,74 +12844,63 @@
       }
     }
 
-    // ── Start (or re-seed) the client-side 1-second countdown
-    // Called every time _refreshModalData() gets a fresh clock value from the API
+    // ── UNIFIED ESPN CLOCK — single source of truth for modal + ticker
+    // Fetches ESPN's displayClock every 10 seconds and updates both components immediately
+    const _espnUnifiedClock = {}; // gameId -> { displayClock, period, league }
+
+    async function _fetchAndUpdateGameClock(gameId, cfg, league) {
+      if (!gameId || !cfg) return false;
+      try {
+        const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${cfg.sport}/${cfg.league}/scoreboard?_=${Date.now()}`).catch(() => null);
+        if (!r || !r.ok) return false;
+        const sb = await r.json();
+        const ev = (sb.events || []).find(e => String(e.id) === String(gameId));
+        if (!ev || ev.status?.state !== 'in') return false;
+
+        const displayClock = ev.status?.displayClock || '';
+        const period = ev.status?.period || 0;
+
+        if (!displayClock) return false; // Halftime/between periods
+
+        // Store in unified state
+        _espnUnifiedClock[gameId] = { displayClock, period, league };
+
+        // Update modal if this is the open game — String() prevents type mismatch
+        if (_modalState.game && String(_modalState.game.id) === String(gameId)) {
+          const clockLabel = _svgClockLabel(league, period, displayClock);
+
+          const clockEl = document.getElementById('modalClock');
+          if (clockEl) clockEl.textContent = displayClock;
+
+          const trackerBadge = document.getElementById('liveTrackerBadge');
+          if (trackerBadge) trackerBadge.innerHTML = clockLabel;
+
+          document.querySelectorAll('[id="svgCourtClock"]').forEach(el => {
+            el.textContent = clockLabel;
+          });
+
+          _modalState.countdownPeriod = period;
+        }
+
+        // Update ticker card for this game (if visible)
+        const tickerCard = document.querySelector(`.tck-clock[data-gameid="${gameId}"]`);
+        if (tickerCard) {
+          tickerCard.setAttribute('data-period', period);
+          tickerCard.textContent = displayClock + ' · ' + _tickerPeriodLabel(league, period);
+        }
+
+        return true;
+      } catch (err) {
+        return false;
+      }
+    }
+
+    // ── Modal countdown disabled — background sync handles all updates
     function _startCountdown(clockStr, period, league, isLive) {
-      // Stop any existing countdown first
-      if (_modalState.countdownTimer) { clearInterval(_modalState.countdownTimer); _modalState.countdownTimer = null; }
       if (!isLive || !clockStr || league === 'MLB') return;
-
-      const initialSecs = _clockToSecs(clockStr);
-      if (initialSecs === null) return;
-
-      _modalState.countdownSecs   = initialSecs;
       _modalState.countdownPeriod = period;
-
-      // Fetch fresh game data every second for real-time accuracy
-      _modalState.countdownTimer = setInterval(async () => {
-        if (!_modalState.game || !_modalState.cfg) return;
-
-        try {
-          // Fetch fresh game data from ESPN
-          const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${_modalState.cfg.sport}/${_modalState.cfg.league}/scoreboard?_=${Date.now()}`).catch(() => null);
-          if (!r || !r.ok) {
-            // Fallback: tick down locally if fetch fails
-            _modalState.countdownSecs = Math.max(0, _modalState.countdownSecs - 1);
-          } else {
-            const sb = await r.json();
-            const ev = (sb.events || []).find(e => String(e.id) === String(_modalState.game.id));
-            if (ev && ev.status?.state === 'in') {
-              const freshClock = ev.status?.displayClock || '';
-              const freshPeriod = ev.status?.period || _modalState.countdownPeriod;
-              if (freshClock) {
-                const freshSecs = _clockToSecs(freshClock);
-                if (freshSecs !== null) {
-                  _modalState.countdownSecs = freshSecs;
-                  _modalState.countdownPeriod = freshPeriod;
-                }
-              }
-            }
-          }
-        } catch (err) {
-          // Silent fail - use local tick
-          _modalState.countdownSecs = Math.max(0, _modalState.countdownSecs - 1);
-        }
-
-        const newClockStr = _secsToClockStr(_modalState.countdownSecs);
-
-        // Update modal clock
-        const clockEl = document.getElementById('modalClock');
-        if (clockEl) clockEl.textContent = newClockStr;
-
-        // Update detail panel badge
-        const trackerBadge = document.getElementById('liveTrackerBadge');
-        if (trackerBadge) {
-          const newLabel = _svgClockLabel(league, _modalState.countdownPeriod, newClockStr);
-          trackerBadge.innerHTML = newLabel;
-        }
-
-        // Update SVG court clock
-        const svgClock = document.getElementById('svgCourtClock');
-        if (svgClock) {
-          svgClock.textContent = _svgClockLabel(league, _modalState.countdownPeriod, newClockStr);
-        }
-
-        // Stop if game ends
-        if (_modalState.countdownSecs <= 0) {
-          clearInterval(_modalState.countdownTimer);
-          _modalState.countdownTimer = null;
-        }
-      }, 1000);
+      // Background sync via _autonomousGameClockSync() now owns all clock updates
+      // No local timer needed
     }
 
     async function _refreshModalData() {
@@ -11944,25 +12955,12 @@
         // The countdown interval fetches fresh data every second and updates the clock
         // If we update it here too, it will interrupt the smooth countdown every 10s
 
-        // ── Update SVG court clock + live-tracker top badge immediately from API
-        const svgClockEl = document.getElementById('svgCourtClock');
-        const trackerBadgeEl = document.getElementById('liveTrackerBadge');
-        if (isLive) {
-          if (game.league === 'MLB') {
-            const inning     = ev.status?.period || 1;
-            const inningHalf = ev.status?.type?.shortDetail?.toLowerCase().includes('bottom') ? 'bottom' : 'top';
-            const halfArrow  = inningHalf === 'top' ? '\u25b2' : '\u25bc';
-            const mlbLabel   = `${halfArrow} INN ${inning}`;
-            if (svgClockEl)     svgClockEl.textContent     = mlbLabel;
-            if (trackerBadgeEl) trackerBadgeEl.textContent = mlbLabel;
-          } else if (displayClock) {
-            const clockLabel = _svgClockLabel(game.league, period, displayClock);
-            if (svgClockEl)     svgClockEl.textContent     = clockLabel;
-            if (trackerBadgeEl) trackerBadgeEl.textContent = clockLabel;
-          }
-        }
+        // ── SVG court clock + live-tracker top badge are updated by _startCountdown() every 1 second
+        // Do NOT update them here — that causes the 10s reset jump
+        // Only update final status
         if (isFinal) {
-          if (svgClockEl)     svgClockEl.textContent     = 'FINAL';
+          document.querySelectorAll('[id="svgCourtClock"]').forEach(el => { el.textContent = 'FINAL'; });
+          const trackerBadgeEl = document.getElementById('liveTrackerBadge');
           if (trackerBadgeEl) trackerBadgeEl.textContent = 'FINAL';
         }
 
@@ -14440,6 +15438,156 @@
     }
 
     // ==========================================
+    // BET SCORE ENGINE
+    // Multi-factor scoring: edge + trend + matchup + line + juice + context + pace
+    // Returns { score 0-100, action, actionClass, actionIcon, forFactors[], againstFactors[] }
+    // ==========================================
+    function computeBetScore(p, fdLine, intel, _edge, _modelProb) {
+      const forFactors = [];
+      const againstFactors = [];
+      let score = 50;
+
+      // ── 1. EDGE (±28 pts) — core math advantage ──────────────
+      if (_edge !== null) {
+        if      (_edge >= 15) { score += 28; forFactors.push(`+${_edge}% edge — model significantly beats book`); }
+        else if (_edge >= 10) { score += 20; forFactors.push(`+${_edge}% edge — strong model advantage`); }
+        else if (_edge >=  5) { score += 12; forFactors.push(`+${_edge}% edge — solid value`); }
+        else if (_edge >=  2) { score +=  5; forFactors.push(`+${_edge}% edge — marginal`); }
+        else if (_edge >= -3) { score -=  5; againstFactors.push(`Near-zero edge (${_edge}%) — book has this priced correctly`); }
+        else if (_edge >= -8) { score -= 15; againstFactors.push(`Negative edge (${_edge}%) — book has advantage`); }
+        else                  { score -= 28; againstFactors.push(`Strong negative edge (${_edge}%) — major book advantage`); }
+      }
+
+      // ── 2. HIT RATE TREND (±15 pts) — L30→L20→L10 direction ─
+      const l10 = p.l10Pct, l20 = p.l20Pct, l30 = p.l30Pct;
+      const hasFullTrend = l10 != null && l20 != null && l30 != null;
+      if (hasFullTrend) {
+        if (l10 > l20 && l20 >= l30)      { score += 15; forFactors.push(`Trending up: ${l30}% → ${l20}% → ${l10}% (L30/L20/L10)`); }
+        else if (l10 >= l20 && l10 >= 62) { score +=  8; forFactors.push(`Stable at strong level: L10 ${l10}%, L30 ${l30}%`); }
+        else if (l10 < l20 && l20 < l30)  { score -= 15; againstFactors.push(`Trending down: ${l30}% → ${l20}% → ${l10}% (L30/L20/L10)`); }
+        else if (l10 < 50)                { score -=  8; againstFactors.push(`Below 50% hit rate: L10 ${l10}%`); }
+      } else if (l10 != null) {
+        if (l10 >= 70)     { score += 8;  forFactors.push(`Strong L10 hit rate: ${l10}%`); }
+        else if (l10 < 50) { score -= 8;  againstFactors.push(`Weak L10 hit rate: ${l10}%`); }
+        score -= 3;
+        againstFactors.push('Limited sample — no L20/L30 for trend confirmation');
+      }
+
+      // ── 3. MODEL CONFIDENCE (±8 pts) — blended prob level ────
+      const modelPct = _modelProb !== null ? Math.round(_modelProb * 100) : null;
+      if (modelPct !== null) {
+        if      (modelPct >= 74) { score += 8; forFactors.push(`High model confidence: ${modelPct}% probability (capped)`); }
+        else if (modelPct >= 65) { score += 3; }
+        else if (modelPct <  52) { score -= 6; againstFactors.push(`Low model confidence: ${modelPct}%`); }
+      }
+
+      // ── 4. MATCHUP QUALITY (±12 pts) — season matchup rank ───
+      const mu = parseInt(p.sznMatchup);
+      if (!isNaN(mu)) {
+        const favorable = (p.direction === 'OVER'  && mu <= 8)  || (p.direction === 'UNDER' && mu >= 23);
+        const tough     = (p.direction === 'OVER'  && mu >= 23) || (p.direction === 'UNDER' && mu <= 8);
+        if (favorable) { score += 12; forFactors.push(`Favorable matchup: #${mu} season rank for this prop type`); }
+        else if (tough){ score -= 10; againstFactors.push(`Tough matchup: #${mu} season rank for this prop type`); }
+      }
+
+      // ── 5. LINE SECURITY (±10 pts) — FD vs model alignment ──
+      const fdLineVal = fdLine ? parseFloat(fdLine.line) : null;
+      const cardLine  = parseFloat(p.line) || 0;
+      if (fdLineVal !== null) {
+        const diff = Math.abs(fdLineVal - cardLine);
+        if      (diff <= 0.5) { score += 8;  forFactors.push(`FD line matches model (${fdLineVal}) — no movement`); }
+        else if (diff <= 1.5) { score += 2;  forFactors.push(`FD line close to model: ${fdLineVal} vs ${cardLine}`); }
+        else if (diff <= 3)   { score -= 8;  againstFactors.push(`Line moved ${diff.toFixed(1)} pts: FD ${fdLineVal} vs model ${cardLine}`); }
+        else                  { score -= 12; againstFactors.push(`Large line gap: FD ${fdLineVal} vs model ${cardLine} (${diff.toFixed(1)} pts)`); }
+      }
+
+      // ── 6. JUICE / PRICE (±8 pts) — is the price fair? ───────
+      const cardOdds = p.odds;
+      if (cardOdds != null) {
+        if      (cardOdds >= -115)  { score += 8; forFactors.push(`Fair price (${cardOdds > 0 ? '+' : ''}${cardOdds}) — low juice`); }
+        else if (cardOdds >= -150)  { score += 3; }
+        else if (cardOdds <= -200)  {
+          const be = Math.round(Math.abs(cardOdds) / (Math.abs(cardOdds) + 100) * 100);
+          score -= 8;
+          againstFactors.push(`Heavy juice (${cardOdds}) — need ${be}%+ to profit long-term`);
+        }
+      }
+
+      // ── 7. CONTEXT: LINEUP + INJURY (±15 pts) ────────────────
+      if (intel) {
+        if (intel.lineupStatus === 'out') {
+          score -= 35; againstFactors.push('⛔ Player listed as OUT — do not bet');
+        } else if (intel.lineupStatus === 'locked') {
+          score += 6; forFactors.push('Lineup confirmed by ESPN');
+        } else if (intel.lineupStatus === 'projected') {
+          score -= 3; againstFactors.push('Lineup not yet official — DNP risk');
+        }
+        if (intel.opportunityAlert) {
+          const { injuredPlayer, status } = intel.opportunityAlert;
+          score += 10; forFactors.push(`Usage spike expected — ${injuredPlayer} (${status}) is out`);
+        }
+      }
+
+      // ── 8. LIVE PACE CONTEXT (±6 pts) — opponent pace rank ───
+      // Uses live ESPN team stats fetched at startup
+      if (Object.keys(window._teamStats?.NBA || {}).length > 0 && p.league === 'NBA') {
+        const gameInfo = getGameInfo(p.team, p.league);
+        if (gameInfo) {
+          const myAbbr  = normalizeTeam(p.team)?.toUpperCase();
+          const homeAbbr = normalizeTeam(gameInfo.homeTeam)?.toUpperCase();
+          const oppAbbr = homeAbbr === myAbbr
+            ? normalizeTeam(gameInfo.awayTeam)?.toUpperCase()
+            : homeAbbr;
+          const oppData = oppAbbr ? window._teamStats.NBA[oppAbbr] : null;
+          const paceRank = oppData?.paceRank;
+          if (paceRank != null) {
+            const isVolumeStatProp = /points|assists|rebounds|blocks|steals|three|3-point|field goal|fga|turnovers/i.test(p.prop || '');
+            if (isVolumeStatProp) {
+              if      (p.direction === 'OVER'  && paceRank <= 8)  { score += 6; forFactors.push(`Fast opponent pace (#${paceRank}/30) — more possessions for OVER`); }
+              else if (p.direction === 'OVER'  && paceRank >= 23) { score -= 6; againstFactors.push(`Slow opponent pace (#${paceRank}/30) — fewer possessions hurts OVER`); }
+              else if (p.direction === 'UNDER' && paceRank >= 23) { score += 6; forFactors.push(`Slow opponent pace (#${paceRank}/30) — fewer possessions favors UNDER`); }
+              else if (p.direction === 'UNDER' && paceRank <= 8)  { score -= 6; againstFactors.push(`Fast opponent pace (#${paceRank}/30) — hurts UNDER on volume stat`); }
+            }
+          }
+        }
+      }
+
+      // ── GATES — prevent inflated ratings ────────────────────────
+      // Gate 1: Negative model edge → cap at BET (64). True prob must beat implied for STRONG BET.
+      const _trueP = p.trueProb ?? null;
+      const _impP  = p.impliedProb ?? null;
+      if (_trueP !== null && _impP !== null && _trueP <= _impP) {
+        score = Math.min(score, 64);
+        if (!againstFactors.some(f => f.includes('edge')))
+          againstFactors.push(`True prob (${Math.round(_trueP*100)}%) ≤ implied (${Math.round(_impP*100)}%) — model has no edge`);
+      }
+
+      // Gate 2: STRONG BET requires ≥ 5% positive edge AND ≥ 4 for-factors
+      if (score >= 80) {
+        const edgeVal = (_trueP !== null && _impP !== null) ? Math.round((_trueP - _impP) * 100) : null;
+        if (edgeVal !== null && edgeVal < 5) {
+          score = Math.min(score, 74);
+          againstFactors.push(`Edge too thin (${edgeVal > 0 ? '+' : ''}${edgeVal}%) for STRONG BET — need ≥ +5%`);
+        }
+        if (forFactors.length < 4) {
+          score = Math.min(score, 74);
+          againstFactors.push(`Only ${forFactors.length} confirming factors — need 4+ for STRONG BET`);
+        }
+      }
+
+      // ── CLAMP + MAP TO ACTION ─────────────────────────────────
+      score = Math.max(5, Math.min(97, score));
+      let action, actionClass, actionIcon;
+      if      (score >= 80) { action = 'STRONG BET'; actionClass = 'score-strong'; actionIcon = '🔥'; }
+      else if (score >= 65) { action = 'BET';        actionClass = 'score-bet';    actionIcon = '✅'; }
+      else if (score >= 50) { action = 'LEAN';       actionClass = 'score-lean';   actionIcon = '→'; }
+      else if (score >= 35) { action = 'PASS';       actionClass = 'score-pass';   actionIcon = '⚠️'; }
+      else                  { action = 'FADE';       actionClass = 'score-fade';   actionIcon = '⛔'; }
+
+      return { score, action, actionClass, actionIcon, forFactors, againstFactors };
+    }
+
+    // ==========================================
     // RENDER PROPS
     // ==========================================
     function renderProps() {
@@ -14579,6 +15727,7 @@
         case 'hot': props = props.filter(p => p.streak >= 3); break;
         case 'overs': props = props.filter(p => p.direction === 'OVER'); break;
         case 'unders': props = props.filter(p => p.direction === 'UNDER'); break;
+        // Removed fd_verified filter switch since it defaults to ALL logic now
       }
 
       // ============================================
@@ -14613,6 +15762,11 @@
         case 'l10': props.sort((a, b) => b.l10Pct - a.l10Pct); break;
         case 'streak': props.sort((a, b) => b.streak - a.streak); break;
         case 'odds': props.sort((a, b) => b.odds - a.odds); break;
+        case 'propiq': props.sort((a, b) => {
+          const bsA = computeBetScore(a, getFanDuelLine(a), _intel(a), a.edge, a.trueProb);
+          const bsB = computeBetScore(b, getFanDuelLine(b), _intel(b), b.edge, b.trueProb);
+          return bsB.score - bsA.score;
+        }); break;
       }
 
       state.filteredProps = props;
@@ -14623,11 +15777,26 @@
       document.getElementById('propCount').textContent = countText;
 
       if (props.length === 0) {
+        const isFdFilter = state.filter === 'fd_verified';
+        const liveCount = Object.values(state.fdLines).filter(v => v.fromLive).length;
         container.innerHTML = `
           <div class="empty-state">
-            <div class="empty-icon">🔍</div>
-            <div class="empty-title">No Props Found</div>
-            <div class="empty-text">${state.gameFilter ? 'No props for this game. Click game again to clear.' : 'Try adjusting your filters'}</div>
+            <div class="empty-icon">${isFdFilter ? '🟢' : '🔍'}</div>
+            <div class="empty-title">${isFdFilter ? 'No FD Live Lines Yet' : 'No Props Found'}</div>
+            <div class="empty-text">${
+              isFdFilter && liveCount === 0 && state.fdLinesSource !== 'live'
+                ? 'No FD lines in sheet yet. Load a daily build with FD lines, or hit 🔄 to fetch live FanDuel lines.'
+                : isFdFilter && liveCount === 0
+                ? 'FanDuel hasn\'t posted player props yet. Lines typically appear 2–3 hours before tip. Hit 🔄 to refresh.'
+                : isFdFilter && state.gameFilter
+                ? `No live FD lines found for ${state.gameFilter.awayTeam} @ ${state.gameFilter.homeTeam} yet. Lines post closer to tip — hit 🔄 to refresh.`
+                : isFdFilter
+                ? 'No FD-verified props match your current filters. Hit 🔄 to refresh lines or try a broader filter.'
+                : state.gameFilter
+                ? 'No props for this game. Click the game again to clear.'
+                : 'Try adjusting your filters.'
+            }</div>
+            ${isFdFilter ? `<div style="margin-top:14px;"><button onclick="refreshFDLines()" style="background:rgba(0,230,118,0.15);color:var(--accent-green);border:1px solid rgba(0,230,118,0.3);border-radius:8px;padding:8px 18px;font-size:13px;cursor:pointer;">🔄 Refresh FD Lines</button></div>` : ''}
           </div>
         `;
         return;
@@ -14668,6 +15837,101 @@
           if (intel.lineupStatus === 'out')       return `<span class="intel-badge-wrap"><span class="prop-badge lineup-out">❌ OUT</span><span class="intel-tip">Listed as OUT in lineup data</span></span>`;
           return '';
         })();
+
+        // LINE MISMATCH badge + HOW TO BET logic
+        const cardLine = parseFloat(p.line) || 0;
+        const fdLineVal = fdLine ? parseFloat(fdLine.line) : null;
+        const fdOdds = fdLine ? (p.direction === 'OVER' ? fdLine.overOdds : fdLine.underOdds) : null;
+        const lineDiff = fdLineVal !== null ? Math.abs(fdLineVal - cardLine) : 0;
+        const isMismatch = fdLineVal !== null && lineDiff > 2;
+        const isAltLine = fdOdds !== null && fdOdds <= -280;
+
+        const mismatchBadge = isMismatch
+          ? `<span class="intel-badge-wrap"><span class="prop-badge line-mismatch">⚠️ LINE GAP ${lineDiff.toFixed(1)}</span><span class="intel-tip">${isAltLine ? `FD showing alt line ${fdLineVal} (${fdOdds}). Main line is likely ${cardLine} — bet that instead.` : `FD line (${fdLineVal}) differs from model line (${cardLine}) by ${lineDiff.toFixed(1)} pts. Recheck before betting.`}</span></span>`
+          : '';
+
+        // ── BET SCORE PANEL ───────────────────────────────
+        const _htbId  = `htb-${p.id}`;
+        const _l10    = p.l10Pct ?? null;
+        const _tier   = p.tier;
+        const _oddsJuice = fdOdds ?? null;
+
+        // Use p.trueProb / p.impliedProb directly — same values displayed on card
+        // This prevents a hidden _modelProb diverging from what the user sees
+        const _modelProb    = p.trueProb    != null ? Math.min(0.88, Math.max(0.12, p.trueProb))    : null;
+        const _bookImpl     = p.impliedProb != null ? p.impliedProb : null;
+        const _modelProbPct = _modelProb != null ? Math.round(_modelProb * 100) : null;
+        const _edge = (_modelProb != null && _bookImpl != null) ? Math.round((_modelProb - _bookImpl) * 100) : null;
+        const _edgeDisplay  = _edge == null ? '—' : (_edge > 0 ? '+' : '') + _edge + '%';
+        const _edgeClass    = _edge == null ? '' : _edge >= 8 ? 'green' : _edge >= 2 ? 'gold' : 'red';
+        const _bookImpDisp  = _bookImpl != null ? Math.round(_bookImpl * 100) + '%' : '—';
+
+        // ── Run multi-factor score ───────────────────────
+        const _bs = computeBetScore(p, fdLine, intel, _edge, _modelProb);
+
+        // ── Alt line note ────────────────────────────────
+        const _altLineNote = isAltLine
+          ? `<div class="bs-factor against" style="margin-top:6px;">⚡ FD showing alt line (${fdOdds}) — bet the main line ${p.direction} ${cardLine} instead</div>`
+          : '';
+
+        // ── FD line reference row ────────────────────────
+        const _fdRefRow = fdLineVal != null
+          ? `<div class="htb-row" style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border-color);opacity:0.7;">
+               <span class="htb-label">FD Line</span>
+               <span class="htb-val ${isMismatch ? 'gold' : ''}">${fdLineVal}${isMismatch ? ' ⚠️' : ''}${_oddsJuice != null ? ' <span style="font-size:11px;opacity:0.7;">('+(_oddsJuice>0?'+':'')+_oddsJuice+')</span>' : ''}</span>
+             </div>`
+          : '';
+
+        const howToBetHtml = `
+          <div class="how-to-bet-wrap">
+            <button class="how-to-bet-btn" onclick="toggleHtb('${_htbId}',event)">
+              <span>📊 PropIQ™</span>
+              <span class="bs-action ${_bs.actionClass}" style="font-size:12px;">${_bs.actionIcon} ${_bs.action}</span>
+            </button>
+            <div class="how-to-bet-content" id="${_htbId}">
+              <div class="htb-inner">
+
+                <!-- PropIQ tagline -->
+                <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;text-align:center;letter-spacing:0.3px;">PropIQ™ weighs 8 live factors so you don't have to</div>
+
+                <!-- Score header -->
+                <div class="bs-header">
+                  <div class="bs-circle ${_bs.actionClass}">
+                    <span>${_bs.score}</span>
+                    <span class="bs-circle-label">PropIQ™</span>
+                  </div>
+                  <div class="bs-action-wrap">
+                    <div class="bs-action ${_bs.actionClass}">${_bs.actionIcon} ${_bs.action}</div>
+                    <div class="bs-edge-line">Edge ${_edgeDisplay} · Model ${_modelProbPct != null ? _modelProbPct+'%' : '—'} vs Book ${_bookImpDisp}</div>
+                  </div>
+                </div>
+
+                <!-- Key stat chips -->
+                <div class="bs-stats">
+                  <div class="bs-stat"><span class="bs-stat-val ${_edgeClass}">${_edgeDisplay}</span>Edge</div>
+                  <div class="bs-stat"><span class="bs-stat-val ${_modelProbPct >= 70 ? 'green' : _modelProbPct < 52 ? 'red' : ''}">${_modelProbPct != null ? _modelProbPct+'%' : '—'}</span>Model</div>
+                  <div class="bs-stat"><span class="bs-stat-val">${_bookImpDisp}</span>Book</div>
+                  <div class="bs-stat"><span class="bs-stat-val ${_tier === 'ultimate' ? 'gold' : _tier === 'prime' ? 'green' : ''}">${(_tier || '—').toUpperCase()}</span>Tier</div>
+                  <div class="bs-stat"><span class="bs-stat-val">${p.direction} ${cardLine}${p.odds ? ' <span style="font-size:10px;opacity:0.6;">'+(p.odds>0?'+':'')+p.odds+'</span>' : ''}</span>Line</div>
+                </div>
+
+                <!-- FOR factors -->
+                ${_bs.forFactors.length > 0 ? `
+                  <div class="bs-section-title for">✅ For This Bet</div>
+                  ${_bs.forFactors.map(f => `<div class="bs-factor for">${f}</div>`).join('')}
+                ` : ''}
+
+                <!-- AGAINST factors -->
+                ${_bs.againstFactors.length > 0 ? `
+                  <div class="bs-section-title against">⚠️ Against This Bet</div>
+                  ${_bs.againstFactors.map(f => `<div class="bs-factor against">${f}</div>`).join('')}
+                ` : ''}
+
+                ${_altLineNote}
+                ${_fdRefRow}
+              </div>
+            </div>
+          </div>`;
 
         // Feature 3: Line Moving badge
         const lineMoveBadge = intel.lineMoving
@@ -14748,14 +16012,30 @@
                   ${p.isValue ? '<span class="prop-badge value">💰 VALUE</span>' : ''}
                   ${p.streak >= 3 ? `<span class="prop-badge hot">🔥 ${p.streak}</span>` : ''}
                   ${p.edge > 5 ? `<span class="prop-badge edge">+${p.edge}%</span>` : ''}
-                  ${fdLine ? `<span class="prop-badge fd">FD ${fdLine.line}</span>` : ''}
+                  ${fdLine
+                    ? (fdLine.fromLive || fdLine.fromFD)
+                      ? `<span class="prop-badge fd" style="background:rgba(0,230,118,0.15);color:var(--accent-green);border-color:rgba(0,230,118,0.4);" title="${fdLine.fromLive ? 'Confirmed live on FanDuel right now' : 'FanDuel line from PropFinder scraper'}">✅ FD ${fdLine.line}</span>`
+                      : `<span class="prop-badge fd" title="FD line from model sheet — not yet verified">FD ${fdLine.line}</span>`
+                    : state.fdLinesSource === 'live'
+                      ? _COMBO_PROP_RE.test(p.prop || '')
+                        ? `<span class="prop-badge" style="opacity:0.5;font-size:9px;border-color:rgba(255,255,255,0.15);" title="Custom market — FD availability unverified">📋 Unverified</span>`
+                        : `<span class="prop-badge" style="opacity:0.45;font-size:9px;" title="Not currently available on FanDuel">❌ Not on FD</span>`
+                      : `<span class="prop-badge" style="opacity:0.5;font-size:9px;border-color:rgba(255,255,255,0.15);" title="FD live check pending…">📋 Sheet Only</span>`
+                  }
+                  ${mismatchBadge}
                   ${moveBadge}
                   ${opptyBadge}
                   ${lineupBadge}
                   ${lineMoveBadge}
                 </div>
               </div>
-              <div class="prop-score ${p.tier}">${p.modelScore}</div>
+              <div class="prop-scores-wrap">
+                <div class="prop-score-label">Model</div>
+                <div class="prop-score ${p.tier}" title="PropEdge Model Score — data quality rating">${p.modelScore}</div>
+                <div class="propiq-badge ${_bs.actionClass}" title="PropIQ™ — 8-factor live analysis score">
+                  <span class="propiq-num">${_bs.score}</span><span class="propiq-lbl">IQ</span>
+                </div>
+              </div>
             </div>
             ${liveStrip}
             ${valueDriftHtml}
@@ -14793,11 +16073,20 @@
                 <div class="prop-stat-label">SZN MU</div>
               </div>
               <div class="prop-stat">
-                <div class="prop-stat-value ${p.edge > 5 ? 'green' : p.edge < 0 ? 'red' : ''}">${p.edge > 0 ? '+' : ''}${p.edge}%</div>
+                <div class="prop-stat-value ${_edge != null && _edge >= 8 ? 'green' : _edge != null && _edge < 0 ? 'red' : ''}">${_edge != null ? (_edge > 0 ? '+' : '') + _edge + '%' : '—'}</div>
                 <div class="prop-stat-label">Edge</div>
               </div>
             </div>
 
+            ${(() => {
+              const pts = [p.l5Pct, p.l10Pct, p.l20Pct].filter(x => x != null && x > 0);
+              if (pts.length < 2) return '';
+              const last = pts[pts.length - 1], prev = pts[pts.length - 2];
+              const icon = last > prev ? '📈' : last < prev ? '📉' : '→';
+              const color = last > prev ? 'var(--accent-green)' : last < prev ? 'var(--accent-red)' : 'var(--text-muted)';
+              const label = last > prev ? 'Trending Up' : last < prev ? 'Trending Down' : 'Stable';
+              return `<div style="padding:4px 12px 6px;font-size:12px;color:${color};display:flex;align-items:center;gap:4px;">${icon} <span style="font-weight:600;">${label}</span></div>`;
+            })()}
             </div><!-- end prop-card-clickable -->
             <div class="prop-footer">
               <div class="prop-probs">
@@ -14811,21 +16100,17 @@
                 </div>
               </div>
               <div class="prop-actions">
-                <button class="prop-action-btn ${inParlay ? 'added' : ''} ${state.parlayOnlyMode ? 'parlay-text' : ''}"
-                  data-pid="${p.id}" data-player="${p.player}" data-league="${p.league}" data-edge="${p.edge}" data-direction="${p.direction}" data-line="${p.line}" data-prop="${p.prop}"
-                  onclick="state.parlayOnlyMode ? toggleParlay(this.dataset.pid) : promptPropAction(this)"
-                  title="${state.parlayOnlyMode ? 'Add to Parlay' : 'Add to Parlay or Track'}">
-                  ${inParlay ? '✓' : (state.parlayOnlyMode ? 'Add to Parlay' : '+')}
+                <button class="prop-action-btn ${inParlay ? 'added' : ''}"
+                  data-pid="${p.id}"
+                  onclick="toggleParlay(this.dataset.pid)"
+                  title="${inParlay ? 'Remove from Parlay' : 'Add to Parlay'}">
+                  ${inParlay ? '✓' : '+'}
                 </button>
-                <button class="prop-action-btn ${fdLine ? 'fd' : ''}"
+                <!-- Primary CTA: FanDuel — sport-aware icon -->
+                <button class="prop-action-btn fd"
                   data-pid="${p.id}" onclick="openFanDuelDirect(this.dataset.pid)"
-                  title="Open in FanDuel">
-                  🔗
-                </button>
-                <button class="prop-action-btn odds-btn"
-                  data-pid="${p.id}" onclick="viewAllProps(this.dataset.pid, '${p.player}')"
-                  title="View All Props">
-                  📊 Props
+                  title="Bet on FanDuel" style="width:auto;background:rgba(0,100,255,0.18);color:#4a8fff;border-color:rgba(74,143,255,0.5);font-weight:700;padding:0 10px;font-size:11px;gap:4px;display:flex;align-items:center;white-space:nowrap;">
+                  <span style="font-size:13px;">${p.league==='NBA'?'🏀':p.league==='NHL'?'🏒':p.league==='MLB'?'⚾':p.league==='NFL'?'🏈':'🎯'}</span> FanDuel
                 </button>
                 <button class="prop-watch-btn ${_ticketHasPlayer(p.player) ? 'watched' : ''}"
                   data-player="${p.player}" data-league="${p.league}" data-team="${p.team}" data-prop="${p.prop}" data-line="${p.line}" data-dir="${p.direction}"
@@ -14835,6 +16120,7 @@
                 </button>
               </div>
             </div>
+            ${howToBetHtml}
           </div>
         `;
         }).join('');
@@ -14956,7 +16242,7 @@
         sportHtml += `</div>`;
       }
 
-      return `<div class="live-ctx-strip">${scoreHtml}${sportHtml}</div>`;
+      return `<div class="live-ctx-strip" data-gameid="${game.id}" data-league="${game.league}">${scoreHtml}${sportHtml}</div>`;
     }
 
     // ==========================================
@@ -15187,17 +16473,41 @@
       generateSuggestedParlays();
     }
 
-    function updateParlayCalcs() {
+    async function updateParlayCalcs(useSheetOdds = false) {
       if (state.parlay.length === 0) return;
 
       const wager = parseFloat(document.getElementById('wagerAmount')?.value) || 10;
       // Persist wager amount to localStorage
       localStorage.setItem('propEdgeParlaywager', wager.toString());
 
+      // Optionally fetch fresh odds from Google Sheet
+      let sheetOdds = null;
+      if (useSheetOdds) {
+        console.log('[PropEdge] Fetching fresh FanDuel odds from sheet...');
+        sheetOdds = await fetchFanDuelOddsFromSheet();
+        if (sheetOdds) {
+          console.log('[PropEdge] Using live sheet odds for parlay calculation');
+        } else {
+          console.log('[PropEdge] Sheet fetch failed, using cached odds');
+        }
+      }
+
       // Calculate combined decimal odds
       let totalDecimal = 1;
       state.parlay.forEach(p => {
-        const decimal = p.odds > 0 ? (p.odds / 100) + 1 : (100 / Math.abs(p.odds)) + 1;
+        // Try to use live odds from sheet first, fallback to prop.odds
+        let decimal = p.odds > 0 ? (p.odds / 100) + 1 : (100 / Math.abs(p.odds)) + 1;
+
+        if (sheetOdds) {
+          const key = `${p.player}|${p.prop}|${p.line}`;
+          if (sheetOdds[key]) {
+            // Use the appropriate direction (over/under) — sheet has decimal odds
+            const sheetData = sheetOdds[key];
+            const sheetDecimal = p.direction === 'OVER' ? sheetData.overOdds : sheetData.underOdds;
+            decimal = sheetDecimal; // Use decimal directly from sheet
+            console.log(`[PropEdge] Updated ${p.player} ${p.prop}: ${p.odds} → decimal ${decimal.toFixed(2)}`);
+          }
+        }
         totalDecimal *= decimal;
       });
 
@@ -15360,11 +16670,73 @@
       `;
     }
 
+    // ── Fetch live FanDuel odds from Google Sheet ──
+    let _fanduelOddsCache = null;
+    let _fanduelOddsCacheTime = 0;
+
+    async function fetchFanDuelOddsFromSheet() {
+      // Cache for 2 minutes to avoid excessive API calls
+      const now = Date.now();
+      if (_fanduelOddsCache && (now - _fanduelOddsCacheTime) < 120000) {
+        return _fanduelOddsCache;
+      }
+
+      try {
+        const SHEET_ID = '1xQEGclOjfDpTBHau6qMZ5i2j8tLlHbGJiWwyxeupOrw';
+        const GID = '1156044706'; // FanDuel_Lines tab
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+
+        const res = await fetch(csvUrl);
+        if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+
+        const csv = await res.text();
+        const lines = csv.split('\n').filter(l => l.trim());
+        if (lines.length < 2) throw new Error('Empty sheet');
+
+        // Parse CSV header (expected: Sport,Game,Commence Time,Player,Prop Type,Line,Over Odds,Under Odds,Last Updated,Game ID)
+        const header = lines[0].split(',').map(h => h.trim());
+        const odds = {};
+
+        for (let i = 1; i < lines.length; i++) {
+          const cells = lines[i].split(',').map(c => c.trim());
+          if (cells.length < 8) continue;
+
+          const player = cells[3];
+          const propType = cells[4];
+          const line = cells[5];
+          const overOdds = parseFloat(cells[6]);
+          const underOdds = parseFloat(cells[7]);
+
+          // Build lookup key: "player|propType|line"
+          const key = `${player}|${propType}|${line}`;
+          odds[key] = { overOdds, underOdds };
+        }
+
+        _fanduelOddsCache = odds;
+        _fanduelOddsCacheTime = now;
+        console.log(`[PropEdge] Fetched ${Object.keys(odds).length} FanDuel odds from sheet`);
+        return odds;
+      } catch (err) {
+        console.error('[PropEdge] Failed to fetch FanDuel odds:', err);
+        return null;
+      }
+    }
+
+    async function refreshParlayOdds() {
+      if (state.parlay.length === 0) {
+        showToast('Add props to your parlay first');
+        return;
+      }
+      showToast('Refreshing odds from FanDuel...');
+      await updateParlayCalcs(true); // Fetch fresh odds from sheet
+      showToast('Odds updated from live FanDuel data');
+    }
+
     function copyParlay() {
-      const text = state.parlay.map(p => 
+      const text = state.parlay.map(p =>
         `${p.player} ${p.direction} ${p.line} ${p.prop} (${p.oddsStr})`
       ).join('\n');
-      
+
       navigator.clipboard.writeText(text);
       showToast('Parlay copied!');
     }
@@ -15383,6 +16755,19 @@
         showToast('Link copied!');
       }
     }
+
+    // Open Gambly for a single prop (shop other books)
+    window.openGamblyForProp = function(propId) {
+      const prop = state.props.find(p => p.id === propId);
+      if (!prop) return;
+      const pick = `${prop.player} ${prop.direction} ${prop.line} ${prop.prop}`;
+      navigator.clipboard.writeText(pick).then(() => {
+        showToast('Pick copied — paste in Gambly to shop other books');
+        window.open('https://gambly.com/gambly-bot', '_blank');
+      }).catch(() => {
+        window.open('https://gambly.com/', '_blank');
+      });
+    };
 
     function openGamblyBot() {
       if (state.parlay.length === 0) {
@@ -15532,38 +16917,6 @@
       console.log('[PropEdge Parlay] Logged parlay:', parlayBet);
     }
 
-    function promptPropAction(btn) {
-      const propId = btn.dataset.pid;
-      const player = btn.dataset.player;
-      const direction = btn.dataset.direction;
-      const line = btn.dataset.line;
-
-      // Check if prop is already in parlay
-      const inParlay = state.parlay.find(p => p.id === propId);
-
-      if (inParlay) {
-        // If already in parlay, toggle it off (remove from parlay)
-        toggleParlay(propId);
-        return;
-      }
-
-      // Show modal dialog to choose action
-      const choice = confirm(`${player} ${direction}${line}\n\nOK = Add to Parlay\nCancel = Track Individually`);
-
-      if (choice) {
-        // Add to parlay only
-        toggleParlay(propId);
-      } else {
-        // Track as individual prop with custom wager
-        const wagerInput = prompt(`Wager amount for ${player} ${direction}${line}?`, '10');
-        if (wagerInput !== null) {
-          const wagerAmount = parseFloat(wagerInput) || 10;
-          // Call updated trackPropLog with the button
-          btn.dataset.wagerAmount = wagerAmount;
-          trackPropLog(btn);
-        }
-      }
-    }
 
     function openInFanDuel() {
       if (state.parlay.length === 0) {
@@ -15708,6 +17061,80 @@
     }
 
     // Initialize OneSignal alert triggers for pace data
+    // ==========================================
+    // EMAIL / ONBOARDING
+    // ==========================================
+    function _updateEmailPill() {
+      const btn = document.getElementById('emailPillBtn');
+      if (!btn) return;
+      const email = localStorage.getItem('pe_email') || '';
+      if (email) {
+        btn.textContent = '✓';
+        btn.title = email;
+        btn.style.width = '28px';
+        btn.style.height = '28px';
+        btn.style.padding = '0';
+        btn.style.borderRadius = '50%';
+        btn.style.color = 'var(--accent-green)';
+        btn.style.borderColor = 'rgba(0,230,118,0.35)';
+        btn.style.maxWidth = '28px';
+        btn.style.lineHeight = '26px';
+        btn.style.textAlign = 'center';
+      } else {
+        btn.textContent = 'Sign In';
+        btn.title = '';
+        btn.style.width = '';
+        btn.style.height = '';
+        btn.style.padding = '3px 10px';
+        btn.style.borderRadius = '20px';
+        btn.style.color = 'var(--text-secondary)';
+        btn.style.borderColor = 'rgba(255,255,255,0.15)';
+        btn.style.maxWidth = '150px';
+        btn.style.lineHeight = '';
+        btn.style.textAlign = '';
+      }
+    }
+    function checkOnboarding() {
+      try {
+        if (!localStorage.getItem('pe_onboarded')) {
+          const el = document.getElementById('onboardingOverlay');
+          if (el) el.style.display = 'flex';
+        }
+      } catch(e) {}
+    }
+    function dismissOnboarding() {
+      try {
+        const emailVal = document.getElementById('onboardEmailInput')?.value?.trim();
+        if (emailVal && emailVal.includes('@')) {
+          localStorage.setItem('pe_email', emailVal);
+          _updateEmailPill();
+        }
+        localStorage.setItem('pe_onboarded', '1');
+      } catch(e) {}
+      const el = document.getElementById('onboardingOverlay');
+      if (el) el.style.display = 'none';
+    }
+    function showEmailModal() {
+      const modal = document.getElementById('emailModal');
+      if (modal) { modal.style.display = 'flex'; document.getElementById('emailModalInput')?.focus(); }
+    }
+    function closeEmailModal() {
+      const modal = document.getElementById('emailModal');
+      if (modal) modal.style.display = 'none';
+    }
+    function saveEmailFromModal() {
+      const val = document.getElementById('emailModalInput')?.value?.trim();
+      if (val && val.includes('@')) {
+        localStorage.setItem('pe_email', val);
+        _updateEmailPill();
+      }
+      closeEmailModal();
+    }
+    function requestPushAlerts() {
+      const btn = document.getElementById('getAlertsBtn');
+      if (btn) btn.style.display = 'none';
+    }
+
     function initOneSignalAlerts() {
       if (typeof OneSignal === 'undefined' || !OneSignal) {
         console.warn('[PropEdge] OneSignal not loaded yet');
@@ -16167,6 +17594,7 @@
         btn.classList.toggle('active', btn.dataset.league === league);
       });
       filterPaceData();
+      loadPaceTrends();
     }
 
     function filterPaceData() {
@@ -16268,189 +17696,163 @@
       }
     });
 
-    // PACE TRENDS FROM SQLITE PIPELINE
+    // PACE TRENDS — LIVE (sourced from state.props + ESPN team stats)
     // ==========================================
     async function loadPaceTrends() {
       try {
-        // Live pace trends data (2025-26 season) - Updated April 3, 1:10 AM
-        // Source: NBA_Pace_Analysis.xlsx - Player Pace Data 2025-26 sheet
-        const fileData = {"version":"1.0.0","lastSync":"2026-04-03T14:32:00.000Z","players":[{"id":1,"name":"Luka Doncic","team":"LAL","position":"F-G","status":"Active"},{"id":2,"name":"Shai Gilgeous-Alexander","team":"OKC","position":"G","status":"Active"},{"id":3,"name":"Anthony Edwards","team":"MIN","position":"G","status":"Active"},{"id":4,"name":"Jaylen Brown","team":"BOS","position":"G-F","status":"Active"},{"id":5,"name":"Tyrese Maxey","team":"PHI","position":"G","status":"Active"},{"id":6,"name":"Kawhi Leonard","team":"LAC","position":"F","status":"Active"},{"id":7,"name":"Nikola Jokic","team":"DEN","position":"C","status":"Active"},{"id":8,"name":"Donovan Mitchell","team":"CLE","position":"G","status":"Active"},{"id":9,"name":"Giannis Antetokounmpo","team":"MIL","position":"F","status":"Active"},{"id":10,"name":"Stephen Curry","team":"GOL","position":"G","status":"Active"},{"id":11,"name":"Joel Embiid","team":"PHI","position":"C-F","status":"Active"},{"id":12,"name":"Lauri Markkanen","team":"UTA","position":"F-C","status":"Active"},{"id":13,"name":"Jalen Brunson","team":"NYK","position":"G","status":"Active"},{"id":14,"name":"Devin Booker","team":"PHO","position":"G","status":"Active"},{"id":15,"name":"Kevin Durant","team":"HOU","position":"F","status":"Active"},{"id":16,"name":"Jamal Murray","team":"DEN","position":"G","status":"Active"},{"id":17,"name":"James Harden","team":"LAC","position":"G","status":"Active"},{"id":18,"name":"Victor Wembanyama","team":"SAN","position":"F-C","status":"Active"},{"id":19,"name":"Cade Cunningham","team":"DET","position":"G","status":"Active"},{"id":20,"name":"Michael Porter Jr.","team":"BRO","position":"F","status":"Active"},{"id":21,"name":"Pascal Siakam","team":"IND","position":"F","status":"Active"},{"id":22,"name":"Deni Avdija","team":"POR","position":"F","status":"Active"},{"id":23,"name":"Keyonte George","team":"UTA","position":"G","status":"Active"},{"id":24,"name":"Austin Reaves","team":"LAL","position":"G","status":"Active"},{"id":25,"name":"Jalen Johnson","team":"ATL","position":"F","status":"Active"},{"id":26,"name":"Paolo Banchero","team":"ORL","position":"F","status":"Active"},{"id":27,"name":"Jaren Jackson Jr.","team":"UTA","position":"F-C","status":"Limited"},{"id":28,"name":"Norman Powell","team":"MIA","position":"G","status":"Active"},{"id":29,"name":"Trey Murphy III","team":"NOR","position":"F","status":"Active"},{"id":30,"name":"Tyler Herro","team":"MIA","position":"G","status":"Active"}],"paceData":[{"playerId":1,"date":"2026-04-03","pace":98.01,"possessions":1732,"minutes":35.9,"source":"nbastuffer-2025-26"},{"playerId":2,"date":"2026-04-03","pace":101.54,"possessions":1521,"minutes":33.6,"source":"nbastuffer-2025-26"},{"playerId":3,"date":"2026-04-03","pace":101.35,"possessions":1393,"minutes":35.3,"source":"nbastuffer-2025-26"},{"playerId":4,"date":"2026-04-03","pace":101.83,"possessions":1690,"minutes":34.4,"source":"nbastuffer-2025-26"},{"playerId":5,"date":"2026-04-03","pace":101.16,"possessions":1567,"minutes":38.4,"source":"nbastuffer-2025-26"},{"playerId":6,"date":"2026-04-03","pace":97.58,"possessions":1343,"minutes":32.1,"source":"nbastuffer-2025-26"},{"playerId":7,"date":"2026-04-03","pace":93.24,"possessions":1257,"minutes":34.9,"source":"nbastuffer-2025-26"},{"playerId":8,"date":"2026-04-03","pace":101.41,"possessions":1527,"minutes":33.4,"source":"nbastuffer-2025-26"},{"playerId":9,"date":"2026-04-03","pace":97.9,"possessions":758,"minutes":28.9,"source":"nbastuffer-2025-26"},{"playerId":10,"date":"2026-04-03","pace":101.47,"possessions":837,"minutes":31.3,"source":"nbastuffer-2025-26"},{"playerId":11,"date":"2026-04-03","pace":93.57,"possessions":800,"minutes":31.3,"source":"nbastuffer-2025-26"},{"playerId":12,"date":"2026-04-03","pace":97.02,"possessions":924,"minutes":34.3,"source":"nbastuffer-2025-26"},{"playerId":13,"date":"2026-04-03","pace":101.23,"possessions":1579,"minutes":35.0,"source":"nbastuffer-2025-26"},{"playerId":14,"date":"2026-04-03","pace":101.41,"possessions":1327,"minutes":33.3,"source":"nbastuffer-2025-26"},{"playerId":15,"date":"2026-04-03","pace":96.91,"possessions":1482,"minutes":36.4,"source":"nbastuffer-2025-26"},{"playerId":16,"date":"2026-04-03","pace":101.03,"possessions":1485,"minutes":35.2,"source":"nbastuffer-2025-26"},{"playerId":17,"date":"2026-04-03","pace":101.33,"possessions":939,"minutes":35.4,"source":"nbastuffer-2025-26"},{"playerId":18,"date":"2026-04-03","pace":97.42,"possessions":1215,"minutes":29.2,"source":"nbastuffer-2025-26"},{"playerId":19,"date":"2026-04-03","pace":101.26,"possessions":1324,"minutes":34.4,"source":"nbastuffer-2025-26"},{"playerId":20,"date":"2026-04-03","pace":97.25,"possessions":1061,"minutes":32.5,"source":"nbastuffer-2025-26"},{"playerId":21,"date":"2026-04-03","pace":97.21,"possessions":1298,"minutes":33.2,"source":"nbastuffer-2025-26"},{"playerId":22,"date":"2026-04-03","pace":97.12,"possessions":1223,"minutes":33.1,"source":"nbastuffer-2025-26"},{"playerId":23,"date":"2026-04-03","pace":101.0,"possessions":1049,"minutes":33.1,"source":"nbastuffer-2025-26"},{"playerId":24,"date":"2026-04-03","pace":100.87,"possessions":918,"minutes":34.7,"source":"nbastuffer-2025-26"},{"playerId":25,"date":"2026-04-03","pace":96.9,"possessions":1333,"minutes":35.4,"source":"nbastuffer-2025-26"},{"playerId":26,"date":"2026-04-03","pace":96.97,"possessions":1309,"minutes":34.9,"source":"nbastuffer-2025-26"},{"playerId":27,"date":"2026-04-03","pace":97.8,"possessions":58,"minutes":24.1,"source":"nbastuffer-2025-26"},{"playerId":28,"date":"2026-04-03","pace":100.91,"possessions":996,"minutes":30.1,"source":"nbastuffer-2025-26"},{"playerId":29,"date":"2026-04-03","pace":96.49,"possessions":1131,"minutes":35.5,"source":"nbastuffer-2025-26"},{"playerId":30,"date":"2026-04-03","pace":100.72,"possessions":534,"minutes":31.7,"source":"nbastuffer-2025-26"}],"predictions":[{"playerId":1,"predictionDate":"2026-04-03","predictedPace":98.01,"trend":"STABLE","volatility":1.1,"ma7":97.81,"ma14":97.62,"confidence":0.829},{"playerId":2,"predictionDate":"2026-04-03","predictedPace":101.54,"trend":"UP","volatility":2.8,"ma7":101.34,"ma14":101.13,"confidence":0.842},{"playerId":3,"predictionDate":"2026-04-03","predictedPace":101.35,"trend":"UP","volatility":0.7,"ma7":101.15,"ma14":100.94,"confidence":0.776},{"playerId":4,"predictionDate":"2026-04-03","predictedPace":101.83,"trend":"DOWN","volatility":0.7,"ma7":101.63,"ma14":101.42,"confidence":0.882},{"playerId":5,"predictionDate":"2026-04-03","predictedPace":101.16,"trend":"STABLE","volatility":0.6,"ma7":100.96,"ma14":100.76,"confidence":0.842},{"playerId":6,"predictionDate":"2026-04-03","predictedPace":97.58,"trend":"UP","volatility":1.1,"ma7":97.38,"ma14":97.19,"confidence":0.789},{"playerId":7,"predictionDate":"2026-04-03","predictedPace":93.24,"trend":"UP","volatility":2.7,"ma7":93.05,"ma14":92.87,"confidence":0.803},{"playerId":8,"predictionDate":"2026-04-03","predictedPace":101.41,"trend":"STABLE","volatility":0.9,"ma7":101.21,"ma14":101.0,"confidence":0.882},{"playerId":9,"predictionDate":"2026-04-03","predictedPace":97.9,"trend":"UP","volatility":1.5,"ma7":97.7,"ma14":97.51,"confidence":0.474},{"playerId":10,"predictionDate":"2026-04-03","predictedPace":101.47,"trend":"UP","volatility":0.6,"ma7":101.27,"ma14":101.06,"confidence":0.513},{"playerId":11,"predictionDate":"2026-04-03","predictedPace":93.57,"trend":"STABLE","volatility":0.7,"ma7":93.38,"ma14":93.2,"confidence":0.474},{"playerId":12,"predictionDate":"2026-04-03","predictedPace":97.02,"trend":"STABLE","volatility":0.5,"ma7":96.83,"ma14":96.63,"confidence":0.553},{"playerId":13,"predictionDate":"2026-04-03","predictedPace":101.23,"trend":"DOWN","volatility":0.9,"ma7":101.03,"ma14":100.83,"confidence":0.921},{"playerId":14,"predictionDate":"2026-04-03","predictedPace":101.41,"trend":"STABLE","volatility":0.6,"ma7":101.21,"ma14":101.0,"confidence":0.789},{"playerId":15,"predictionDate":"2026-04-03","predictedPace":96.91,"trend":"UP","volatility":1.1,"ma7":96.72,"ma14":96.52,"confidence":0.961},{"playerId":16,"predictionDate":"2026-04-03","predictedPace":101.03,"trend":"UP","volatility":0.9,"ma7":100.83,"ma14":100.63,"confidence":0.947},{"playerId":17,"predictionDate":"2026-04-03","predictedPace":101.33,"trend":"STABLE","volatility":0.5,"ma7":101.13,"ma14":100.92,"confidence":0.579},{"playerId":18,"predictionDate":"2026-04-03","predictedPace":97.42,"trend":"UP","volatility":2.1,"ma7":97.23,"ma14":97.03,"confidence":0.803},{"playerId":19,"predictionDate":"2026-04-03","predictedPace":101.26,"trend":"DOWN","volatility":1.3,"ma7":101.06,"ma14":100.85,"confidence":0.803},{"playerId":20,"predictionDate":"2026-04-03","predictedPace":97.25,"trend":"STABLE","volatility":0.5,"ma7":97.06,"ma14":96.86,"confidence":0.684},{"playerId":21,"predictionDate":"2026-04-03","predictedPace":97.21,"trend":"DOWN","volatility":0.5,"ma7":97.02,"ma14":96.82,"confidence":0.803},{"playerId":22,"predictionDate":"2026-04-03","predictedPace":97.12,"trend":"STABLE","volatility":0.9,"ma7":96.93,"ma14":96.73,"confidence":0.803},{"playerId":23,"predictionDate":"2026-04-03","predictedPace":101.0,"trend":"STABLE","volatility":0.5,"ma7":100.8,"ma14":100.6,"confidence":0.711},{"playerId":24,"predictionDate":"2026-04-03","predictedPace":100.87,"trend":"UP","volatility":1.0,"ma7":100.67,"ma14":100.47,"confidence":0.658},{"playerId":25,"predictionDate":"2026-04-03","predictedPace":96.9,"trend":"STABLE","volatility":0.8,"ma7":96.71,"ma14":96.51,"confidence":0.895},{"playerId":26,"predictionDate":"2026-04-03","predictedPace":96.97,"trend":"DOWN","volatility":0.5,"ma7":96.78,"ma14":96.58,"confidence":0.868},{"playerId":27,"predictionDate":"2026-04-03","predictedPace":97.8,"trend":"STABLE","volatility":0.5,"ma7":97.6,"ma14":97.41,"confidence":0.039},{"playerId":28,"predictionDate":"2026-04-03","predictedPace":100.91,"trend":"STABLE","volatility":0.6,"ma7":100.71,"ma14":100.51,"confidence":0.724},{"playerId":29,"predictionDate":"2026-04-03","predictedPace":96.49,"trend":"STABLE","volatility":0.7,"ma7":96.3,"ma14":96.1,"confidence":0.842},{"playerId":30,"predictionDate":"2026-04-03","predictedPace":100.72,"trend":"STABLE","volatility":0.5,"ma7":100.52,"ma14":100.32,"confidence":0.395}]};
-
-        // SPRINT APRIL 4: Store globally for alerts system
-        window.fileData = fileData;
-        window.latestPredictions = fileData.predictions;
-        window.sentAlerts = new Set();
-
-        // Get all games from today across all leagues
-        const allGames = [
-          ...(state.games.NBA || []),
-          ...(state.games.NHL || []),
-          ...(state.games.MLB || []),
-          ...(state.games.NFL || [])
-        ];
-
-        console.log('Pace Trends - Today\'s games:', allGames.length, 'games');
-        console.log('Pace Trends - Available players:', fileData.players.map(p => p.team).join(', '));
-
-        // Get teams playing today (more flexible matching)
-        const teamsPlayingToday = new Set();
-        allGames.forEach(game => {
-          // Add raw abbreviations
-          if (game.homeTeam) teamsPlayingToday.add(game.homeTeam?.toUpperCase());
-          if (game.awayTeam) teamsPlayingToday.add(game.awayTeam?.toUpperCase());
-          // Also add full team names if available
-          if (game.home?.displayName) teamsPlayingToday.add(game.home.displayName.toUpperCase());
-          if (game.away?.displayName) teamsPlayingToday.add(game.away.displayName.toUpperCase());
+        // ── Pull players from today's actual prop sheet ────────────────
+        // state.props is already loaded from the Google Sheet scraper.
+        // De-dupe by player+team so each player appears once per league.
+        const propPlayers = state.props || [];
+        const seen = new Set();
+        const livePlayers = [];
+        propPlayers.forEach(p => {
+          const key = `${p.player}|${p.team}|${p.league}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            livePlayers.push({ name: p.player, team: normalizeTeam(p.team)?.toUpperCase() || p.team, position: p.pos || '', league: (p.league || 'NBA').toUpperCase(), status: 'Active' });
+          }
         });
 
-        console.log('Pace Trends - Teams playing today:', Array.from(teamsPlayingToday).join(', '));
+        // ── Build per-player pace context from live ESPN team stats ────
+        // window._teamStats[league][abbr] populated by fetchLiveTeamStats()
+        function getTeamPaceContext(teamAbbr, league) {
+          const ts = window._teamStats?.[league]?.[teamAbbr];
+          if (!ts) return { paceRank: null, paceVal: null };
+          // Get the primary pace/scoring value
+          const paceVal = ts.pace || ts.possessionspergame || ts.avgpossessions || ts.pointspergame || ts.goalspergame || ts.runspergame || null;
+          return { paceRank: ts.paceRank || null, paceVal };
+        }
 
-        // Filter players: only those with teams playing today AND not injured
-        const data = {
-          trends: fileData.players
-            .filter(player => {
-              // Check if player's team is in today's game slate (case-insensitive, partial match)
-              const teamMatch = Array.from(teamsPlayingToday).some(gameTeam =>
-                player.team.toUpperCase() === gameTeam ||
-                gameTeam.includes(player.team.toUpperCase())
-              );
+        // ── Build today's game opponent map ─────────────────────────
+        const gameOpponentMap = {}; // teamAbbr → oppAbbr
+        const allGames = [...(state.games.NBA||[]),...(state.games.NHL||[]),...(state.games.MLB||[]),...(state.games.NFL||[])];
+        allGames.forEach(g => {
+          const h = normalizeTeam(g.homeTeam)?.toUpperCase();
+          const a = normalizeTeam(g.awayTeam)?.toUpperCase();
+          if (h && a) { gameOpponentMap[h] = a; gameOpponentMap[a] = h; }
+        });
 
-              // Check if player is active (filter out Limited/Injured)
-              const isActive = player.status === 'Active';
+        // ── Filter by selected league ──────────────────────────────
+        const leagueFilter = (paceState.league || 'all').toUpperCase();
+        let filteredPlayers = leagueFilter === 'ALL' ? livePlayers : livePlayers.filter(p => p.league === leagueFilter);
 
-              console.log(`Pace Trends - ${player.name} (${player.team}): ${teamMatch ? 'PLAYING TODAY' : 'NOT PLAYING'} | ${isActive ? 'ACTIVE' : 'FILTERED - ' + player.status}`);
-              return teamMatch && isActive;
-            })
-            .map(player => {
-              const prediction = fileData.predictions.find(p => p.playerId === player.id);
-              return {
-                id: player.id,
-                name: player.name,
-                team: player.team,
-                position: player.position,
-                predictedPace: prediction?.predictedPace || 0,
-                trend: prediction?.trend || 'STABLE',
-                volatility: prediction?.volatility || 0,
-                ma7: prediction?.ma7 || 0,
-                ma14: prediction?.ma14 || 0,
-                confidence: prediction?.confidence || 0
-              };
-            })
-        };
+        // ── Build trend objects ────────────────────────────────────
+        const trendData = filteredPlayers.map(player => {
+          const myCtx  = getTeamPaceContext(player.team, player.league);
+          const oppAbbr = gameOpponentMap[player.team];
+          const oppCtx = oppAbbr ? getTeamPaceContext(oppAbbr, player.league) : { paceRank: null, paceVal: null };
 
-        const trendsSection = document.getElementById('paceTrendsSection');
+          // Derive trend from relative pace rank
+          let trend = 'STABLE';
+          if (myCtx.paceRank != null) {
+            if (myCtx.paceRank <= 8)       trend = 'UP';
+            else if (myCtx.paceRank >= 23)  trend = 'DOWN';
+          }
+
+          // Edge = how favorable is today's matchup (negative paceRank diff = faster opp)
+          let matchupEdge = 0;
+          if (myCtx.paceRank != null && oppCtx.paceRank != null) {
+            // Opponent faster than average = more possessions = positive edge for volume
+            matchupEdge = Math.round((15 - oppCtx.paceRank) * 0.7);
+          }
+
+          const dataSource = Object.keys(window._teamStats?.[player.league] || {}).length > 0
+            ? 'ESPN Live' : 'Pending';
+
+          return {
+            name:       player.name,
+            team:       player.team,
+            position:   player.position,
+            league:     player.league,
+            oppTeam:    oppAbbr || '—',
+            paceRank:   myCtx.paceRank,
+            paceVal:    myCtx.paceVal != null ? +myCtx.paceVal.toFixed(1) : null,
+            oppPaceRank:oppCtx.paceRank,
+            oppPaceVal: oppCtx.paceVal != null ? +oppCtx.paceVal.toFixed(1) : null,
+            trend,
+            matchupEdge,
+            dataSource
+          };
+        }).sort((a, b) => b.matchupEdge - a.matchupEdge);
+
+        // Keep global references for alerts system
+        window.fileData = { players: filteredPlayers, predictions: trendData };
+        window.latestPredictions = trendData;
+        if (!window.sentAlerts) window.sentAlerts = new Set();
+
+        // ── Render ────────────────────────────────────────────────
+        const trendsSection   = document.getElementById('paceTrendsSection');
         const trendsContainer = document.getElementById('paceTrendsContainer');
 
-        if (!trendsContainer || !data.trends || data.trends.length === 0) {
+        if (!trendsContainer || trendData.length === 0) {
           if (trendsSection) trendsSection.style.display = 'none';
           return;
         }
-
-        // Show trends section
         if (trendsSection) trendsSection.style.display = 'block';
-
         trendsContainer.innerHTML = '';
 
-        data.trends.forEach(player => {
-          const trendColor = player.trend === 'UP' ? 'var(--accent-green)' :
-                            player.trend === 'DOWN' ? 'var(--accent-red)' :
-                            'var(--accent-blue)';
+        trendData.forEach(player => {
+          const trendArrow = player.trend === 'UP' ? '📈' : player.trend === 'DOWN' ? '📉' : '→';
+          const trendColor = player.trend === 'UP' ? 'var(--accent-green)' : player.trend === 'DOWN' ? 'var(--accent-red)' : 'var(--text-muted)';
+          const lg = player.league;
+          const metricLabel = lg === 'NHL' ? 'SOG/G' : lg === 'MLB' ? 'Runs/G' : 'Possessions/G';
 
-          const trendArrow = player.trend === 'UP' ? '📈' :
-                            player.trend === 'DOWN' ? '📉' : '➡️';
+          const paceDisplay = player.paceVal != null ? player.paceVal : '—';
+          const oppPaceDisplay = player.oppPaceVal != null ? player.oppPaceVal : '—';
+          const rankDisplay = player.paceRank != null ? `#${player.paceRank}/30` : '—';
+          const oppRankDisplay = player.oppPaceRank != null ? `#${player.oppPaceRank}/30` : '—';
+
+          const edgeClass = player.matchupEdge > 5 ? 'var(--accent-green)' : player.matchupEdge < 0 ? 'var(--accent-red)' : 'var(--accent-gold)';
+          const edgeLabel = player.matchupEdge > 5 ? '✅ Favorable' : player.matchupEdge < 0 ? '❌ Unfavorable' : '→ Neutral';
 
           const card = document.createElement('div');
-          card.style.cssText = `
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-          `;
-
-          // Get trend description for tooltip
-          const trendDescriptions = {
-            'UP': '📈 Pace increasing - Team using faster tempo, more possessions available',
-            'STABLE': '→ Pace stable - Consistent tempo, predictable workload',
-            'DOWN': '📉 Pace decreasing - Slower tempo, fewer possessions, lower ceiling'
-          };
-          const trendDesc = trendDescriptions[player.trend] || '';
-
-          // Volatility interpretation
-          let volDescription = '✅ Very stable - Predictable';
-          if (player.volatility > 2.5) volDescription = '⚠️ Very volatile - Unpredictable';
-          else if (player.volatility > 1.5) volDescription = '⚡ Volatile - Less predictable';
-          else if (player.volatility > 0.5) volDescription = '→ Stable - Generally consistent';
-
-          // Team pace rankings (simplified for display)
-          const teamPaceRanks = {
-            'OKC': '⚡ #1 Fastest', 'BOS': '⚡ #2 Fast', 'NYK': '⚡ #3 Fast', 'CLE': '⚡ #4 Fast', 'PHI': '⚡ #5 Fast',
-            'MIN': '→ #6 Mid', 'LAL': '→ #7 Mid', 'MIA': '→ #8 Mid', 'ATL': '→ #9 Mid', 'DEN': '→ #10 Mid',
-            'LAC': '→ #11 Mid', 'PHO': '→ #12 Mid', 'HOU': '🐢 #13 Slow', 'DET': '🐢 #14 Slow', 'BRO': '🐢 #15 Slow',
-            'SAN': '🐢 #16 Slow', 'IND': '🐢 #17 Slow', 'POR': '🐢 #18 Slow', 'UTA': '🐢 #19 Slow', 'ORL': '🐢 #20 Slowest', 'GOL': '⚡ #9 Fast'
-          };
-          const teamRank = teamPaceRanks[player.team] || '→ Ranked';
-
+          card.style.cssText = 'background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:12px;display:flex;flex-direction:column;gap:10px;';
           card.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
               <div>
-                <div style="font-weight: 600; color: var(--text-primary);">${player.name}</div>
-                <div style="font-size: 12px; color: var(--text-muted);">${player.team} • ${player.position || 'N/A'}</div>
+                <div style="font-weight:600;color:var(--text-primary);">${player.name}</div>
+                <div style="font-size:12px;color:var(--text-muted);">${player.team} · ${player.position || lg} · vs ${player.oppTeam}</div>
               </div>
-              <div style="text-align: right;">
-                <div style="font-size: 24px;">${trendArrow}</div>
-                <div style="font-size: 11px; color: var(--text-muted);" title="${trendDesc}">${player.trend}</div>
-              </div>
-            </div>
-
-            <div style="background: rgba(255,255,255,0.05); padding: 6px; border-radius: 4px; font-size: 11px; text-align: center; color: var(--accent-blue); font-weight: 500;" title="Team pace ranking among all 30 NBA teams">
-              ${teamRank}
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
-              <div title="Player's predicted pace for today's game">
-                <div style="color: var(--text-muted);">Predicted Pace</div>
-                <div style="color: var(--accent-blue); font-weight: 600;">${player.predictedPace?.toFixed(2) || 'N/A'}</div>
-              </div>
-              <div title="${volDescription}">
-                <div style="color: var(--text-muted);">Volatility</div>
-                <div style="color: var(--accent-gold); font-weight: 600;">${player.volatility?.toFixed(2) || 'N/A'}</div>
-              </div>
-              <div title="7-day moving average">
-                <div style="color: var(--text-muted);">7-day MA</div>
-                <div style="color: var(--text-primary); font-weight: 600;">${player.ma7?.toFixed(2) || 'N/A'}</div>
-              </div>
-              <div title="Prediction confidence level">
-                <div style="color: var(--text-muted);">Confidence</div>
-                <div style="color: var(--accent-green); font-weight: 600;">${(player.confidence * 100)?.toFixed(0) || '0'}%</div>
+              <div style="text-align:right;">
+                <div style="font-size:22px;">${trendArrow}</div>
+                <div style="font-size:10px;color:${trendColor};font-weight:600;">${player.trend}</div>
               </div>
             </div>
-
-            <div style="font-size: 11px; color: var(--text-muted); padding-top: 4px; border-top: 1px solid var(--border-color); text-align: center;" title="14-day moving average pace">
-              14-day MA: ${player.ma14?.toFixed(2) || 'N/A'}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+              <div><div style="color:var(--text-muted);">${metricLabel} (Team)</div><div style="color:var(--accent-blue);font-weight:600;">${paceDisplay} <span style="font-size:10px;opacity:0.7;">${rankDisplay}</span></div></div>
+              <div><div style="color:var(--text-muted);">${metricLabel} (Opp)</div><div style="color:var(--accent-gold);font-weight:600;">${oppPaceDisplay} <span style="font-size:10px;opacity:0.7;">${oppRankDisplay}</span></div></div>
             </div>
-
-            <!-- SPRINT APRIL 4: Sportsbook buttons -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border-color);">
-              <button onclick="openDraftKingsDirect()" style="background: linear-gradient(135deg, #4a1f1f, #2d0f0f); color: var(--text-primary); border: 1px solid #6b3333; padding: 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                🎲 DraftKings
-              </button>
-              <button onclick="openFanDuelDirect({player: '${player.name}', league: 'NBA', line: 0, direction: 'OVER', edge: 0})" style="background: linear-gradient(135deg, #1a3a5c, #0d1f36); color: var(--text-primary); border: 1px solid #2d5a8f; padding: 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                🎯 FanDuel
-              </button>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:6px;">
+              <span style="font-size:12px;color:var(--text-muted);">Matchup Edge</span>
+              <span style="font-weight:700;color:${edgeClass};">${player.matchupEdge > 0 ? '+' : ''}${player.matchupEdge}% · ${edgeLabel}</span>
+            </div>
+            <div style="font-size:10px;color:var(--text-muted);text-align:right;">Source: ${player.dataSource}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:4px;border-top:1px solid var(--border-color);">
+              <button onclick="openDraftKingsDirect()" style="background:rgba(138,43,226,0.18);color:#a82be7;border:1px solid rgba(138,43,226,0.35);padding:8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">🎲 DK</button>
+              <button onclick="openFanDuelDirect({player:'${player.name.replace(/'/g,"\\'")}',league:'${lg}',line:0,direction:'OVER',edge:0})" style="background:rgba(74,143,255,0.18);color:var(--accent-blue);border:1px solid rgba(74,143,255,0.35);padding:8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">🎯 FD</button>
             </div>
           `;
-
           trendsContainer.appendChild(card);
         });
+
+        if (trendData.length === 0) {
+          trendsContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">No pace data yet</div><div class="empty-text">Load props first — pace data pulls from today\'s prop cards</div></div>';
+        }
+
       } catch (error) {
-        console.error('Error loading pace trends:', error);
+        console.error('[PropEdge] loadPaceTrends error:', error);
       }
     }
 
-    // ==========================================
+    // ── LEGACY: kept so old references don't break ──
+    // (was large hardcoded blob — replaced with live ESPN data above)
+    // Original hardcoded fileData removed 2026-04-08
+    // ── dummy to avoid any lingering refs ─────────────────────────────
+    if (!window.fileData) { window.fileData = {"version":"1.0.0","lastSync":"","players":[],"paceData":[],"predictions":[]}; }
+    if (!window.latestPredictions) { window.latestPredictions = []; }
+    if (!window.sentAlerts) { window.sentAlerts = new Set(); }
+
     // TABS & FILTERS
     // ==========================================
     function initTabs() {
@@ -16555,16 +17957,6 @@
       renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL]);
     }
 
-    function toggleParlayOnlyMode() {
-      state.parlayOnlyMode = document.getElementById('parlayOnlyMode').checked;
-      localStorage.setItem('propedge_parlayOnly', state.parlayOnlyMode);
-
-      // Re-render props to update button styling
-      renderProps();
-
-      showToast(state.parlayOnlyMode ? '🎟 Parlay-Only Mode ON' : '📊 Parlay-Only Mode OFF');
-      console.log('[PropEdge] Parlay-Only Mode:', state.parlayOnlyMode);
-    }
 
     function updateStatus() {
       const now = new Date();
@@ -16757,6 +18149,31 @@
     // Track which player detail is open so rerenderAllVisibleUI() can refresh it
     let _activeDetailPropId = null;
 
+    window.toggleUsageBump = function(checkbox, baseScore) {
+      const isChecked = checkbox.checked;
+      const newScore = isChecked ? Math.min(100, baseScore + 5) : baseScore;
+      const scoreEl = document.getElementById('dynamicModelScore');
+      const circleEl = document.getElementById('dynamicScoreCircle');
+      if (scoreEl) scoreEl.textContent = newScore;
+      if (circleEl) {
+         circleEl.style.strokeDashoffset = (2 * Math.PI * 30 * (1 - newScore / 100));
+         circleEl.style.transition = 'stroke-dashoffset 0.4s ease-out';
+      }
+      const listEl = document.getElementById('factorBreakdownList');
+      if (listEl) {
+        if (isChecked) {
+           const div = document.createElement('div');
+           div.id = 'usageBumpFactor';
+           div.style.cssText = 'font-size:11px; color:var(--accent-green); display:flex; gap:6px; font-weight:700;';
+           div.innerHTML = '<span>⚡</span> <span>Key Teammate Out (Usage Spike)</span>';
+           listEl.prepend(div);
+        } else {
+           const div = document.getElementById('usageBumpFactor');
+           if (div) div.remove();
+        }
+      }
+    };
+
     async function openPlayerDetail(propId) {
       _activeDetailPropId = propId;
       const prop = state.props.find(p => p.id === propId);
@@ -16804,12 +18221,22 @@
       // Parlay state
       const inParlay = state.parlay.find(x => x.id === prop.id);
 
+      // Insights logic
+      const insights = [];
+      if (prop.edge > 10) insights.push({ label: 'Elite Edge', icon: '💎', type: 'positive' });
+      if (prop.l10Pct >= 80) insights.push({ label: 'Hot Streak', icon: '🔥', type: 'positive' });
+      if (prop.l5Pct <= 20) insights.push({ label: 'Cold Streak', icon: '❄️', type: 'negative' });
+      if (prop.trueProb >= 0.85) insights.push({ label: 'Model Confidence', icon: '🧠', type: 'positive' });
+      if (Math.abs(prop.edge) < 2) insights.push({ label: 'Efficient Line', icon: '⚖️', type: 'neutral' });
+      if (prop.streak >= 3) insights.push({ label: 'Trending Up', icon: '📈', type: 'positive' });
+
       content.innerHTML = `
         <!-- Handle -->
         <div class="detail-handle"></div>
 
         <!-- Hero -->
         <div class="detail-hero">
+          <div style="position:absolute; top: -50px; left: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(0,230,118,0.1) 0%, transparent 70%); pointer-events: none;"></div>
           ${hsUrl
             ? `<img class="detail-hero-photo ${prop.tier}" src="${hsUrl}" onerror="this.style.display='none'" />`
             : `<div class="detail-hero-photo ${prop.tier}" style="display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>`
@@ -16824,22 +18251,44 @@
               <span>•</span>
               <span>${prop.league}</span>
             </div>
-            <div style="margin-top:6px;">
+            <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
               <span class="detail-tier-badge ${prop.tier}">
                 ${prop.tier === 'ultimate' ? '⭐ ULTIMATE' : prop.tier === 'prime' ? '🎯 PRIME' : prop.tier === 'strong' ? '✅ STRONG' : prop.tier === 'solid' ? '💎 SOLID' : '📋 SPEC'}
               </span>
+              <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">PROPIQ SCORE: ${prop.modelScore}</div>
             </div>
           </div>
-          <button class="detail-close-btn" onclick="closePlayerDetail()">✕</button>
         </div>
+
+        <div class="detail-insight-row">
+          ${insights.map(i => `
+            <div class="detail-insight-pill ${i.type}">
+              <span>${i.icon}</span>
+              <span>${i.label}</span>
+            </div>
+          `).join('')}
+          ${insights.length === 0 ? `<div class="detail-insight-pill neutral"><span>🔍</span><span>Consistent Performer</span></div>` : ''}
+        </div>
+        
+        <div class="detail-section-divider" style="margin: 16px 0;"></div>
 
         <!-- Prop strip -->
         <div class="detail-prop-strip">
-          <span class="detail-prop-dir ${prop.direction.toLowerCase()}">${prop.direction}</span>
-          <span class="detail-prop-line">${prop.line}</span>
-          <span class="detail-prop-type">${prop.prop}</span>
-          <span class="detail-prop-odds">${prop.oddsStr}</span>
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <span style="font-size:10px; color:rgba(255,255,255,0.4); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Today's Market</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="detail-prop-dir ${prop.direction.toLowerCase()}">${prop.direction}</span>
+              <span class="detail-prop-line">${prop.line}</span>
+              <span class="detail-prop-type">${prop.prop}</span>
+            </div>
+          </div>
+          <div style="text-align:right;">
+             <span class="detail-prop-odds" style="font-size:16px;">${prop.oddsStr}</span>
+             <div style="font-size:9px; color:rgba(255,255,255,0.4); margin-top:2px;">BEST ODDS ON SITE</div>
+          </div>
         </div>
+
+        <div class="detail-section-divider" style="margin-top: 24px;"></div>
 
         <!-- PHASE 3: FanDuel-style live tracker — populated async -->
         ${(() => {
@@ -16898,19 +18347,33 @@
 
         <!-- Model & Key Metrics -->
         <div class="detail-section">
-          <div class="detail-section-title">📊 Model Analysis</div>
+          <div class="detail-section-title">📊 PropIQ™ Analysis</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">PropIQ™ weighs 8 live factors so you don't have to</div>
+
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+               <span style="font-size:11px; color:#fff; font-weight:600;">Key Teammate / Starter Out?</span>
+               <label class="switch" style="transform: scale(0.7); margin: 0; position:relative; top:-2px;">
+                 <input type="checkbox" onchange="window.toggleUsageBump(this, ${prop.modelScore})">
+                 <span class="slider round"></span>
+               </label>
+            </div>
+            <div style="font-size:10px; color:var(--accent-green); margin-top:2px;">Simulate usage spike opportunity</div>
+          </div>
+
           <div class="detail-model-row">
             <div class="detail-score-ring" id="scoreRing">
               <svg viewBox="0 0 72 72">
                 <circle class="detail-score-ring-bg" cx="36" cy="36" r="30" />
-                <circle class="detail-score-ring-fill ${prop.tier}" cx="36" cy="36" r="30"
+                <circle id="dynamicScoreCircle" class="detail-score-ring-fill ${prop.tier}" cx="36" cy="36" r="30"
                   stroke-dasharray="${2 * Math.PI * 30}"
                   stroke-dashoffset="${2 * Math.PI * 30 * (1 - prop.modelScore / 100)}"
+                  style="transition: stroke-dashoffset 0.4s ease-out;"
                 />
               </svg>
               <div class="detail-score-ring-label">
-                <span class="detail-score-ring-num">${prop.modelScore}</span>
-                <span class="detail-score-ring-sub">Score</span>
+                <span class="detail-score-ring-num" id="dynamicModelScore">${prop.modelScore}</span>
+                <span class="detail-score-ring-sub">PropIQ™</span>
               </div>
             </div>
             <div class="detail-metric-tiles">
@@ -16940,93 +18403,121 @@
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Hit Rates -->
-        <div class="detail-section">
-          <div class="detail-section-title">🎯 Hit Rates</div>
-          <div class="detail-hitrate-grid" id="hitRateGrid">
-            ${[
-              { label: 'Last 5',   pct: prop.l5Pct   },
-              { label: 'Last 10',  pct: prop.l10Pct  },
-              { label: 'Last 20',  pct: prop.l20Pct  },
-              { label: 'Season',   pct: prop.seasonPct },
-            ].map(h => `
-              <div class="detail-hitrate-item">
-                <div class="detail-hitrate-top">
-                  <span class="detail-hitrate-label">${h.label}</span>
-                  <span class="detail-hitrate-pct" style="color:${barColor(h.pct)}">${h.pct.toFixed(0)}%</span>
+          <div style="margin: 12px 0 16px 0; background: rgba(0,0,0,0.2); border-radius: 6px; padding: 12px;">
+            <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; letter-spacing: 0.5px;">PROPIQ FACTOR BREAKDOWN</div>
+            <div id="factorBreakdownList" style="display: flex; flex-direction: column; gap: 8px;">
+              ${(prop.propFactors || []).map(f => `<div style="font-size:11px; color:#ddd; display:flex; gap:6px;"><span>✅</span> <span>${f}</span></div>`).join('')}
+              ${(!prop.propFactors || prop.propFactors.length === 0) ? `<div style="font-size:11px; color:#888;">No extreme modifiers active. Base rating applies.</div>` : ''}
+            </div>
+          </div>
+
+          <div class="detail-section-divider"></div>
+
+          <!-- Hit Rates -->
+          <div class="detail-section">
+            <div class="detail-section-title">🎯 Hit Rates</div>
+            <div class="detail-hitrate-grid" id="hitRateGrid">
+              ${[
+                { label: 'Last 5',   pct: prop.l5Pct   },
+                { label: 'Last 10',  pct: prop.l10Pct  },
+                { label: 'Last 20',  pct: prop.l20Pct  },
+                { label: 'Last 30',  pct: prop.l30Pct  },
+                { label: 'Season',   pct: prop.seasonPct },
+              ].map(h => `
+                <div class="detail-hitrate-item">
+                  <div class="detail-hitrate-top">
+                    <span class="detail-hitrate-label">${h.label}</span>
+                    <span class="detail-hitrate-pct" style="color:${barColor(h.pct)}">${h.pct.toFixed(0)}%</span>
+                  </div>
+                  <div class="detail-hitrate-bar-bg">
+                    <div class="detail-hitrate-bar-fill" style="width:${h.pct}%;background:${barColor(h.pct)};"></div>
+                  </div>
                 </div>
-                <div class="detail-hitrate-bar-bg">
-                  <div class="detail-hitrate-bar-fill" style="width:${h.pct}%;background:${barColor(h.pct)};"></div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="detail-section-divider"></div>
+
+          <!-- Game Log Chart -->
+          <div class="detail-section">
+            <div class="detail-section-title">📅 Last 20 Games — ${prop.prop}</div>
+            <div class="detail-gamelog">
+              <div id="gamelogChart" class="detail-gamelog-bars">
+                <div class="detail-gamelog-loading">
+                  <div class="spinner" style="width:16px;height:16px;margin-right:8px;"></div>
+                  Loading game log...
                 </div>
               </div>
-            `).join('')}
+            </div>
           </div>
-        </div>
 
-        <!-- Game Log Chart -->
-        <div class="detail-section">
-          <div class="detail-section-title">📅 Last 20 Games — ${prop.prop}</div>
-          <div class="detail-gamelog">
-            <div id="gamelogChart" class="detail-gamelog-bars">
-              <div class="detail-gamelog-loading">
-                <div class="spinner" style="width:16px;height:16px;margin-right:8px;"></div>
-                Loading game log...
+          <div class="detail-section-divider"></div>
+
+          <!-- Season Stats -->
+          <div class="detail-section">
+            <div class="detail-section-title">📈 ${prop.league} Season Averages (2025-26)</div>
+            <div class="detail-szn-grid" id="sznStatsGrid">
+              <div class="detail-szn-loading">
+                <div class="spinner" style="width:14px;height:14px;display:inline-block;margin-right:6px;"></div>
+                Loading stats...
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Season Stats -->
-        <div class="detail-section">
-          <div class="detail-section-title">📈 ${prop.league} Season Averages (2025-26)</div>
-          <div class="detail-szn-grid" id="sznStatsGrid">
-            <div class="detail-szn-loading">
-              <div class="spinner" style="width:14px;height:14px;display:inline-block;margin-right:6px;"></div>
-              Loading stats...
+          <div class="detail-section-divider"></div>
+
+          <!-- Matchup -->
+          <div class="detail-section">
+            <div class="detail-section-title">🛡️ Opponent Defensive Context</div>
+            <div class="detail-matchup-gauge" style="margin-top: 12px;">
+              <div class="detail-gauge-label">Opponent Rank</div>
+              <div class="detail-gauge-bar">
+                <div class="detail-gauge-fill" style="width: ${((mu / (prop.league === 'NFL' ? 32 : 30)) * 100)}%; background: ${muGood ? '#00e676' : muOk ? '#ffd740' : '#ff5252'};"></div>
+              </div>
+              <div class="detail-gauge-val">#${mu}</div>
+            </div>
+            <div style="font-size:12px; color: #fff; font-weight:700; margin-top: 14px; display:flex; align-items:center; gap:8px;">
+               <div style="width:10px; height:10px; border-radius:50%; background: ${muGood ? '#00e676' : muOk ? '#ffd740' : '#ff5252'}"></div>
+               ${muDesc}
+            </div>
+            <div style="font-size:11px; color: var(--text-muted); margin-top: 4px;">
+               ${prop.direction === 'OVER' ? 'Lower rank = Easier matchup for OVER' : 'Higher rank = Easier matchup for UNDER'} this season.
             </div>
           </div>
-        </div>
 
-        <!-- Matchup -->
-        <div class="detail-section">
-          <div class="detail-section-title">🏟 Matchup Rank</div>
-          <div class="detail-matchup-row">
-            <div class="detail-matchup-rank ${muClass}">#${mu}</div>
-            <div class="detail-matchup-info">
-              <div class="detail-matchup-label">${muDesc}</div>
-              <div class="detail-matchup-sub">${prop.direction === 'OVER' ? 'Lower rank = easier for OVER' : 'Higher rank = easier for UNDER'} this season</div>
+          <div class="detail-section-divider"></div>
+
+          <!-- Streak dots -->
+          <div class="detail-section">
+            <div class="detail-section-title">🔥 L10 Hit Pattern</div>
+            <div class="detail-streak-row">
+              <div class="detail-streak-dots">${streakDots}</div>
+              <div class="detail-streak-label">~${hitCount}/10 hits over last 10 games</div>
+              ${prop.streak >= 3 ? `<div class="detail-streak-count">${prop.streak} STREAK</div>` : ''}
             </div>
           </div>
-        </div>
 
-        <!-- Streak dots -->
-        <div class="detail-section">
-          <div class="detail-section-title">🔥 L10 Hit Pattern</div>
-          <div class="detail-streak-row">
-            <div class="detail-streak-dots">${streakDots}</div>
-            <div class="detail-streak-label">~${hitCount}/10 hits over last 10 games</div>
-            ${prop.streak >= 3 ? `<div class="detail-streak-count">${prop.streak} STREAK</div>` : ''}
-          </div>
-        </div>
+          <div class="detail-section-divider"></div>
 
-        <!-- Line movement -->
-        ${movement ? `
-        <div class="detail-section">
-          <div class="detail-section-title">📡 Line Movement</div>
-          <div class="detail-movement-row">
-            <div class="detail-movement-icon">${movement.type === 'steam' ? '🔥' : '📈'}</div>
-            <div class="detail-movement-info">
-              <div class="detail-movement-title">${movement.type === 'steam' ? 'Steam Move Detected' : movement.type === 'split' ? 'Sharp Split Action' : 'Line Moving'} +${movement.moveAmt} pts</div>
-              <div class="detail-movement-sub">Sharp money is active on this line</div>
+          <!-- Line movement -->
+          ${movement ? `
+          <div class="detail-section">
+            <div class="detail-section-title">📡 Line Movement</div>
+            <div class="detail-movement-row">
+              <div class="detail-movement-icon">${movement.type === 'steam' ? '🔥' : '📈'}</div>
+              <div class="detail-movement-info">
+                <div class="detail-movement-title">${movement.type === 'steam' ? 'Steam Move Detected' : movement.type === 'split' ? 'Sharp Split Action' : 'Line Moving'} +${movement.moveAmt} pts</div>
+                <div class="detail-movement-sub">Sharp money is active on this line</div>
+              </div>
             </div>
           </div>
-        </div>
-        ` : ''}
+          <div class="detail-section-divider"></div>
+          ` : ''}
 
-        <!-- Action buttons -->
-        <div class="detail-actions">
+          <!-- Action buttons -->
+          <div class="detail-actions">
           <button class="detail-action-btn detail-parlay-btn ${inParlay ? 'added' : 'primary'}"
             data-pid="${prop.id}"
             data-player="${prop.player}"
@@ -17255,7 +18746,8 @@
       const cfg = ESPN_SPORT_MAP[prop.league];
       if (!cfg) return;
 
-      const pid = PLAYER_IDS[prop.player];
+      const normalized = prop.player.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const pid = PLAYER_IDS[normalized] || PLAYER_IDS[prop.player] || PLAYER_IDS[normalized.replace(/[^a-zA-Z\s]/g, "")];
       const propLine = prop.line || 1;
       const propLower = prop.prop.toLowerCase();
 
@@ -17545,7 +19037,8 @@
       const cfg = ESPN_SPORT_MAP[prop.league];
       if (!cfg) return;
 
-      const pid = PLAYER_IDS[prop.player];
+      const normalized = prop.player.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const pid = PLAYER_IDS[normalized] || PLAYER_IDS[prop.player] || PLAYER_IDS[normalized.replace(/[^a-zA-Z\s]/g, "")];
       if (!pid) {
         document.getElementById('sznStatsGrid').innerHTML = '<div class="detail-szn-loading" style="color:var(--text-muted)">Stats not available</div>';
         document.getElementById('gamelogChart').innerHTML = '<div class="detail-gamelog-loading" style="font-size:11px">Game log not available</div>';
@@ -17809,6 +19302,7 @@
         const espnL5  = calcHitPct(games, 5);
         const espnL10 = calcHitPct(games, 10);
         const espnL20 = calcHitPct(games, 20);
+        const espnL30 = calcHitPct(games, 30);
         const espnSzn = calcSeasonPct(games);
 
         // Update the hit rate grid with ESPN-calculated values
@@ -17818,6 +19312,7 @@
             { label: 'Last 5',  pct: espnL5  ?? prop.l5Pct   },
             { label: 'Last 10', pct: espnL10 ?? prop.l10Pct  },
             { label: 'Last 20', pct: espnL20 ?? prop.l20Pct  },
+            { label: 'Last 30', pct: espnL30 ?? prop.l30Pct  },
             { label: 'Season',  pct: espnSzn ?? prop.seasonPct },
           ];
           hitRateGrid.innerHTML = espnRates.map(h => `
@@ -18397,18 +19892,79 @@
 
   </script>
   <!-- Player Detail Panel -->
-  <div class="detail-overlay" id="detailOverlay"></div>
+  <div class="detail-overlay" id="detailOverlay" onclick="closePlayerDetail()"></div>
   <div class="detail-panel" id="detailPanel">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding: 32px 20px 12px; width: 100%; flex-shrink: 0; background: #1c2033; z-index: 10000; border-bottom: 1px solid rgba(255,255,255,0.05);">
+       <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8;">Advanced Analysis</div>
+       <button class="detail-close-btn" style="width:36px; height:36px; font-size:16px;" onclick="closePlayerDetail(); return false;">✕</button>
+    </div>
     <div class="detail-scroll" id="detailContent">
       <!-- populated by JS -->
+    </div>
+    <div class="detail-footer">
+       <button class="detail-action-btn primary" style="flex:1; background: var(--bg-tertiary); color: #fff; border: 1px solid var(--border-color); font-weight: 700;" onclick="closePlayerDetail()">Close Analysis</button>
     </div>
   </div>
 
   <!-- Game Modal -->
-  <div class="game-overlay" id="gameOverlay"></div>
+  <div class="game-overlay" id="gameOverlay" onclick="closeGameModal()"></div>
   <div class="game-modal" id="gameModal">
+    <!-- NATIVE STATIC APP HEADER FOR COMET BUGFIX -->
+    <div style="display:flex; justify-content:flex-end; padding: 16px 16px 0px; width: 100%; flex-shrink: 0; background: transparent; z-index: 10000; position: relative; pointer-events: none;">
+      <button class="game-modal-close" style="pointer-events: auto;" onclick="closeGameModal(); return false;" ontouchend="closeGameModal(); return false;">✕</button>
+    </div>
     <div class="game-modal-scroll" id="gameModalContent">
       <!-- populated by JS -->
+    </div>
+  </div>
+
+  <!-- Onboarding Overlay -->
+  <div id="onboardingOverlay" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);max-width:420px;width:100%;padding:28px 24px;box-shadow:var(--shadow-lg);">
+      <div style="font-size:28px;margin-bottom:8px;text-align:center;">📊</div>
+      <div style="font-size:20px;font-weight:700;text-align:center;margin-bottom:4px;">Welcome to PropEdge</div>
+      <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:16px;">Here's how to read your prop cards</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+        <li style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="background:linear-gradient(135deg,var(--accent-gold),var(--accent-orange));color:var(--bg-primary);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;margin-top:1px;">⭐ ULTIMATE</span>
+          <span style="font-size:13px;color:var(--text-secondary);">Multi-factor lock: base rating 82+, L10 ≥ 70%, L5 ≥ 65% — all signals aligned</span>
+        </li>
+        <li style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="background:linear-gradient(135deg,var(--accent-purple),rgb(200,150,255));color:var(--bg-primary);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;margin-top:1px;">🎯 PRIME</span>
+          <span style="font-size:13px;color:var(--text-secondary);">Score 85+ — strong model signal with high recent hit rate</span>
+        </li>
+        <li style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="background:linear-gradient(135deg,var(--accent-green),rgb(50,255,150));color:var(--bg-primary);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;margin-top:1px;">✅ STRONG</span>
+          <span style="font-size:13px;color:var(--text-secondary);">Score 72+ — solid edge with consistent recent performance</span>
+        </li>
+        <li style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="background:linear-gradient(135deg,var(--accent-blue),rgb(100,180,255));color:var(--bg-primary);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;margin-top:1px;">SOLID</span>
+          <span style="font-size:13px;color:var(--text-secondary);">Score 62+ — decent value, use as part of a parlay</span>
+        </li>
+      </ul>
+      <div style="border-top:1px solid var(--border-color);padding-top:18px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;">✉️ Sync your bets across devices</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Enter your email to save your bet history and parlays.</div>
+        <input id="onboardEmailInput" type="email" placeholder="your@email.com" autocomplete="email"
+          style="width:100%;padding:10px 12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:var(--radius-md);color:var(--text-primary);font-size:14px;font-family:inherit;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter')dismissOnboarding()" />
+      </div>
+      <button onclick="dismissOnboarding()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--accent-green),rgb(50,255,150));color:var(--bg-primary);border:none;border-radius:var(--radius-md);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.3px;">Get Started →</button>
+    </div>
+  </div>
+
+  <!-- Email Sign-In Modal -->
+  <div id="emailModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);max-width:380px;width:100%;padding:28px 24px;box-shadow:var(--shadow-lg);">
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px;">✉️ Sign In</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Save your picks and parlays across devices.</div>
+      <input id="emailModalInput" type="email" placeholder="your@email.com" autocomplete="email"
+        style="width:100%;padding:10px 12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:var(--radius-md);color:var(--text-primary);font-size:14px;font-family:inherit;box-sizing:border-box;margin-bottom:12px;"
+        onkeydown="if(event.key==='Enter')saveEmailFromModal()" />
+      <div style="display:flex;gap:8px;">
+        <button onclick="saveEmailFromModal()" style="flex:1;padding:11px;background:linear-gradient(135deg,var(--accent-green),rgb(50,255,150));color:var(--bg-primary);border:none;border-radius:var(--radius-md);font-size:14px;font-weight:700;cursor:pointer;">Save</button>
+        <button onclick="closeEmailModal()" style="padding:11px 16px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:var(--radius-md);color:var(--text-secondary);font-size:14px;cursor:pointer;">Cancel</button>
+      </div>
     </div>
   </div>
 
