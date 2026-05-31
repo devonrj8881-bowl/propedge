@@ -15,16 +15,59 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli@latest
+
+      - name: Prepare publish bundle
+        run: |
+          set -euo pipefail
+          STAGE_DIR="$(mktemp -d)"
+          echo "STAGE_DIR=$STAGE_DIR" >> "$GITHUB_ENV"
+          rsync -a \
+            --exclude '.claude/' \
+            --exclude 'propedge-manual.zip' \
+            --exclude 'credentials.json' \
+            --exclude 'netlify/' \
+            --exclude 'node_modules/' \
+            --exclude '*.backup' \
+            --exclude 'index.html.bak' \
+            --exclude 'index.html.*backup*' \
+            --exclude 'scraper*.js' \
+            --exclude 'test-*.js' \
+            --exclude '*.log' \
+            --exclude '*.md' \
+            --exclude '.env' \
+            propedge-deploy/ "$STAGE_DIR/"
+          test -f "$STAGE_DIR/index.html"
+          grep -q 'app-version' "$STAGE_DIR/index.html"
+
+      - name: Sync Netlify functions
+        run: |
+          set -euo pipefail
+          mkdir -p netlify/functions
+          rsync -a \
+            --exclude node_modules \
+            --exclude '*.backup' \
+            propedge-deploy/netlify/functions/ netlify/functions/
+
       - name: Deploy to Netlify
         run: |
-          npm install -g netlify-cli
-          netlify deploy --prod --dir=.
-
+          set -euo pipefail
+          netlify deploy --prod --no-build \
+            --dir "$STAGE_DIR" \
+            --site "$NETLIFY_SITE_ID" \
+            --auth "$NETLIFY_AUTH_TOKEN" \
+            --functions netlify/functions
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+          NETLIFY_SITE_ID: 838cca00-a711-4175-b00e-95203cda9900
 
       - name: Deployment Summary
         run: |
-          echo "✅ Deployment complete!"
+          echo "Deployment complete"
           echo "Live URL: https://propedgemasters.netlify.app"
-          echo "Changes should be live in 10-30 seconds"
