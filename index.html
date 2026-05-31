@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.128-markets-game-filter">
+  <meta name="app-version" content="v7.129-process-layers">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -10910,6 +10910,40 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
     .prop-card-clickable {
       display: block;
+    }
+
+    .prop-process-layers {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 6px 14px 2px;
+    }
+
+    .process-layer-chip {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      letter-spacing: 0.3px;
+    }
+
+    .process-layer-chip.layer-vol {
+      background: rgba(0, 240, 160, 0.12);
+      color: #00f0a0;
+      border-color: rgba(0, 240, 160, 0.3);
+    }
+
+    .process-layer-chip.layer-ctx {
+      background: rgba(93, 173, 226, 0.12);
+      color: #5dade2;
+      border-color: rgba(93, 173, 226, 0.3);
+    }
+
+    .process-layer-chip.layer-conv {
+      background: rgba(255, 215, 0, 0.1);
+      color: #ffd966;
+      border-color: rgba(255, 215, 0, 0.25);
     }
 
     .prop-card:hover {
@@ -32304,6 +32338,153 @@ nav.tabs > button,
     }
 
     // ==========================================
+    // THREE-LAYER PROCESS FRAMEWORK (Volume → Quality/Context → Conversion)
+    // Sport-agnostic scoring from sheet + enrichment fields already on each prop.
+    // ==========================================
+    function _processPct(value) {
+      const n = parseFloat(value);
+      if (!Number.isFinite(n)) return null;
+      return n <= 1 ? n * 100 : n;
+    }
+
+    function _clampProcessScore(n) {
+      return Math.max(5, Math.min(95, Math.round(n)));
+    }
+
+    function computeProcessLayerScores(p, intel) {
+      const league = p.league || 'NBA';
+      const forFactors = [];
+      const againstFactors = [];
+
+      // ── 1. VOLUME (stable opportunity: minutes, role, usage trend) ──
+      let volume = 50;
+      const minBaseline = { NBA: 32, NHL: 18, MLB: 28, NFL: 40 }[league] || 30;
+      const expMin = parseFloat(p.expectedMinutes);
+      if (Number.isFinite(expMin) && expMin > 0) {
+        volume += ((expMin / minBaseline) - 1) * 45;
+      }
+
+      const perL5 = parseFloat(p.perMinL5) || 0;
+      const perL10 = parseFloat(p.perMinL10) || parseFloat(p.perMinAvg) || 0;
+      if (perL5 > 0 && perL10 > 0) {
+        volume += ((perL5 - perL10) / Math.max(perL10, 0.01)) * 90;
+      }
+
+      const injMult = parseFloat(p.injuryMultiplier);
+      if (Number.isFinite(injMult) && injMult > 1.05) {
+        volume += (injMult - 1) * 70;
+        forFactors.push(`📊 Volume: teammate-out usage lever (${injMult.toFixed(2)}x)`);
+      } else if (Number.isFinite(injMult) && injMult < 0.95) {
+        volume -= (1 - injMult) * 60;
+        againstFactors.push('📊 Volume: reduced role from injury context');
+      }
+
+      if ((league === 'MLB' || league === 'NFL') && !(Number.isFinite(expMin) && expMin > 0)) {
+        const l5Avg = parseFloat(p.l5Avg);
+        const l10Avg = parseFloat(p.l10Avg);
+        if (l5Avg > 0 && l10Avg > 0) {
+          volume += ((l5Avg / l10Avg) - 1) * 55;
+        }
+      }
+
+      if (intel?.opportunityAlert) volume += 10;
+
+      const paceVol = calculateElitePaceFactor(p);
+      if (paceVol.score) volume += paceVol.score * 0.45;
+
+      volume = _clampProcessScore(volume);
+
+      // ── 2. QUALITY / CONTEXT (matchup, pace, rest, opponent history) ──
+      let quality = 50;
+      const scalar = parseFloat(p.matchupScalar ?? p.matchup_scalar);
+      if (Number.isFinite(scalar)) quality += (scalar - 0.5) * 70;
+
+      const conf = _processPct(p.confidence ?? p.confidencePct ?? p.confidenceScore);
+      if (conf !== null) quality += (conf - 50) * 0.35;
+
+      const mu = parseInt(p.sznMatchup ?? p.matchupRank, 10);
+      if (!isNaN(mu)) {
+        const favorable = (p.direction === 'OVER' && mu <= 10) || (p.direction === 'UNDER' && mu >= 22);
+        const tough = (p.direction === 'OVER' && mu >= 22) || (p.direction === 'UNDER' && mu <= 10);
+        if (favorable) { quality += 14; forFactors.push(`🎯 Context: favorable matchup (#${mu})`); }
+        if (tough) { quality -= 12; againstFactors.push(`🛡️ Context: tough matchup (#${mu})`); }
+      }
+
+      const defRank = parseInt(p.defMatchupRank, 10);
+      if (!isNaN(defRank)) {
+        if (p.direction === 'OVER') quality += defRank >= 20 ? 8 : defRank <= 8 ? -8 : 0;
+        else quality += defRank <= 8 ? 8 : defRank >= 20 ? -8 : 0;
+      }
+
+      const vsOpp = _processPct(p.vsOppPct);
+      if (vsOpp !== null) {
+        if (p.direction === 'OVER' && vsOpp >= 62) quality += 8;
+        else if (p.direction === 'UNDER' && vsOpp <= 38) quality += 8;
+        else if (p.direction === 'OVER' && vsOpp <= 35) quality -= 8;
+      }
+
+      if (p.isB2b || p.backToBackFlag) {
+        if (league === 'NBA' || league === 'NHL') quality -= 8;
+      } else if (p.restPlus || (Number.isFinite(parseFloat(p.daysRest)) && parseFloat(p.daysRest) >= 2)) {
+        quality += 5;
+      }
+
+      if (p.revengeFlag) quality += 4;
+
+      quality = _clampProcessScore(quality);
+
+      // ── 3. CONVERSION (noisy output — capped influence via 20% processIQ weight) ──
+      let conversion = 50;
+      const l5 = _processPct(p.l5Pct);
+      const l10 = _processPct(p.l10Pct);
+      const l20 = _processPct(p.l20Pct);
+      const hitParts = [];
+      if (l5 !== null) hitParts.push([l5, 0.45]);
+      if (l10 !== null) hitParts.push([l10, 0.35]);
+      if (l20 !== null) hitParts.push([l20, 0.20]);
+      if (hitParts.length) {
+        const wSum = hitParts.reduce((s, [, w]) => s + w, 0);
+        conversion = hitParts.reduce((s, [v, w]) => s + v * (w / wSum), 0);
+      }
+
+      if (p.l5Avg > 0 && p.line > 0) {
+        const cushion = p.direction === 'OVER'
+          ? (p.l5Avg - p.line) / p.line
+          : (p.line - p.l5Avg) / p.line;
+        conversion += cushion * 35;
+      }
+
+      if (typeof p.streak === 'number' && p.streak !== 0) {
+        if (p.streak >= 4) conversion += 4;
+        else if (p.streak >= 3) conversion += 2;
+        else if (p.streak <= -4) conversion -= 5;
+        else if (p.streak <= -3) conversion -= 3;
+      }
+
+      conversion = _clampProcessScore(conversion);
+
+      const processIQ = _clampProcessScore(0.45 * volume + 0.35 * quality + 0.20 * conversion);
+
+      if (volume >= 72) forFactors.push(`📊 Strong volume layer (${volume})`);
+      else if (volume <= 38) againstFactors.push(`📊 Weak volume layer (${volume})`);
+      if (quality >= 72) forFactors.push(`🎯 Strong context layer (${quality})`);
+      else if (quality <= 38) againstFactors.push(`🎯 Weak context layer (${quality})`);
+
+      return { volume, quality, conversion, processIQ, forFactors, againstFactors };
+    }
+
+    function buildProcessLayerChipsHTML(p) {
+      const v = p.volumeScore;
+      const q = p.qualityScore;
+      const c = p.conversionScore;
+      if (!Number.isFinite(v) && !Number.isFinite(q) && !Number.isFinite(c)) return '';
+      const chip = (label, val, cls) => Number.isFinite(val)
+        ? `<span class="process-layer-chip ${cls}" title="${label} process layer (0–100)">${label} ${Math.round(val)}</span>`
+        : '';
+      return `<div class="prop-process-layers">${chip('Vol', v, 'layer-vol')}${chip('Ctx', q, 'layer-ctx')}${chip('Conv', c, 'layer-conv')}</div>`;
+    }
+
+    // ==========================================
     // BET SCORE ENGINE
     // Multi-factor scoring: edge + trend + matchup + line + juice + context + pace
     // Returns { score 0-100, action, actionClass, actionIcon, forFactors[], againstFactors[] }
@@ -32602,6 +32783,17 @@ nav.tabs > button,
       if (score >= 83 && !hasUltimateEvidence) {
         capScore(74, '🔒 Ultimate Gate: premium score requires strong confidence plus multi-window hit-rate support');
       }
+
+      // ── 16b. THREE-LAYER PROCESS FRAMEWORK (all sports) ─────────────────────
+      const processLayers = computeProcessLayerScores(p, intel);
+      p.volumeScore = processLayers.volume;
+      p.qualityScore = processLayers.quality;
+      p.conversionScore = processLayers.conversion;
+      p.processIQ = processLayers.processIQ;
+      const processAdjust = Math.round((processLayers.processIQ - 50) * 0.42);
+      score += processAdjust;
+      processLayers.forFactors.forEach(f => forFactors.push(f));
+      processLayers.againstFactors.forEach(f => againstFactors.push(f));
 
       // ── 17. SECRET SAUCE LAYER — prop weights + line value + multipliers ─────
       const sauceFd = fdLine || (typeof getFanDuelLine === 'function' ? getFanDuelLine(p) : null);
@@ -33567,6 +33759,8 @@ nav.tabs > button,
                 <div class="prop-stat-label">Edge</div>
               </div>
             </div>
+
+            ${buildProcessLayerChipsHTML(p)}
 
             ${(() => {
               const pts = [p.l5Pct, p.l10Pct, p.l20Pct].filter(x => x != null && x > 0);
@@ -36616,7 +36810,7 @@ nav.tabs > button,
       const games = state.games[league] || [];
       const game = games.find(g => String(g.id) === String(gameId));
       if (!game) return;
-      if (state.marketsGameFilter?.id === game.id) {
+      if (String(state.marketsGameFilter?.id) === String(game.id)) {
         clearMarketsGameFilter(evt);
         return;
       }
