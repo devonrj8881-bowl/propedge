@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 const PROP_FEED_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/prop-feed?sheet=propedge-main";
 
-const MODEL = "gemini-2.0-flash";
+const MODEL = "gemini-2.5-flash";
 
 async function fetchProps(): Promise<Record<string, string>[]> {
   const res = await fetch(PROP_FEED_URL, { next: { revalidate: 300 } });
