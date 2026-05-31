@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.127-games-card-refresh">
+  <meta name="app-version" content="v7.128-markets-game-filter">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -7912,6 +7912,136 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     .site-games-card:hover {
       border-color: rgba(77, 132, 255, 0.32);
       transform: translateY(-1px);
+    }
+
+    .markets-game-board-section {
+      margin: 0 0 18px;
+      padding: 14px 0 4px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .markets-game-board-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .markets-game-board-head .propai-board-meta-label {
+      margin: 0;
+    }
+
+    .markets-game-board-clear {
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .markets-game-board-clear:hover {
+      color: var(--text-primary);
+      border-color: rgba(77, 132, 255, 0.35);
+    }
+
+    .markets-game-board {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 2px 2px 10px;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .markets-game-board::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .markets-game-board::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.14);
+      border-radius: 999px;
+    }
+
+    .markets-game-chip {
+      flex: 0 0 auto;
+      min-width: 148px;
+      max-width: 196px;
+      display: grid;
+      gap: 6px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(145deg, rgba(16, 28, 50, 0.96), rgba(8, 14, 28, 0.96));
+      color: var(--text-primary);
+      text-align: left;
+      cursor: pointer;
+      scroll-snap-align: start;
+      transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .markets-game-chip:hover {
+      border-color: rgba(77, 132, 255, 0.32);
+      transform: translateY(-1px);
+    }
+
+    .markets-game-chip.active {
+      border-color: rgba(56, 189, 248, 0.55);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.18), 0 10px 24px rgba(0, 0, 0, 0.22);
+    }
+
+    .markets-game-chip--all {
+      min-width: 112px;
+      max-width: 132px;
+      align-content: center;
+      justify-items: start;
+    }
+
+    .markets-game-chip-logos {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .markets-game-chip-logos img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+
+    .markets-game-chip-matchup {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .markets-game-chip-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .markets-game-chip-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #7dd3fc;
+    }
+
+    .markets-game-board-empty {
+      padding: 10px 2px 4px;
+      font-size: 13px;
+      color: var(--text-muted);
     }
 
     .site-games-card-header {
@@ -18363,6 +18493,15 @@ nav.tabs > button,
           </div>
         </div>
       </div>
+      <div class="markets-game-board-section">
+        <div class="markets-game-board-head">
+          <div class="propai-board-meta-label">Filter by Game</div>
+          <button id="marketsClearGameFilterBtn" class="markets-game-board-clear" type="button" onclick="clearMarketsGameFilter(event)" style="display:none;">Clear Game Filter</button>
+        </div>
+        <div id="marketsGameBoard" class="markets-game-board">
+          <div class="markets-game-board-empty">Today&apos;s slate will appear here once games are loaded.</div>
+        </div>
+      </div>
       <div id="marketsBrowserList" class="propai-market-list">
         <div class="ai-context-empty">All available markets will appear here once props are loaded.</div>
       </div>
@@ -18864,6 +19003,7 @@ nav.tabs > button,
       sort: 'propiq',
       view: 'props',
       gameFilter: null,
+      marketsGameFilter: null,
       autoRefresh: false,
       hideCompleted: true,
       lastUpdated: null,
@@ -36375,6 +36515,7 @@ nav.tabs > button,
       let filtered = Array.isArray(state.props) ? state.props.slice() : [];
       const league = state.league;
       if (league && league !== 'ALL') filtered = filtered.filter(p => p.league === league);
+      if (state.marketsGameFilter) filtered = getPropsForGame(state.marketsGameFilter, filtered);
       const search = normalizeLiveOddsText(state.propAIMarketSearch || '');
       const marketFilter = state.propAIMarketFilter || 'ALL';
       if (marketFilter !== 'ALL') filtered = filtered.filter(p => propAIMarketCategory(p) === marketFilter);
@@ -36392,6 +36533,103 @@ nav.tabs > button,
         });
       }
       return filtered.sort((a, b) => buildPropAIScore(b) - buildPropAIScore(a));
+    }
+
+    function getMarketsSlateGames() {
+      const scopedLeague = String(state.league || 'ALL').toUpperCase();
+      const { start, end } = getTodayDateBounds();
+      const allGames = scopedLeague === 'ALL'
+        ? [...(state.games.NBA || []), ...(state.games.NHL || []), ...(state.games.MLB || []), ...(state.games.NFL || [])]
+        : [...(state.games[scopedLeague] || [])];
+      return allGames
+        .filter(game => {
+          if (!game) return false;
+          const gameTime = new Date(game.gameTime || game.date || game.startTime || 0);
+          if (!Number.isFinite(gameTime.getTime())) return true;
+          return gameTime >= start && gameTime <= end;
+        })
+        .slice()
+        .sort((a, b) => {
+          const aTime = new Date(a?.gameTime || a?.date || a?.startTime || 0).getTime() || 0;
+          const bTime = new Date(b?.gameTime || b?.date || b?.startTime || 0).getTime() || 0;
+          return aTime - bTime;
+        });
+    }
+
+    function buildMarketsGameChipHTML(game, propCount) {
+      const isActive = String(state.marketsGameFilter?.id) === String(game.id);
+      const isLive = game.status === 'live';
+      const isFinal = game.status === 'final';
+      const awayLogo = getTeamLogo(game.awayTeam, game.league);
+      const homeLogo = getTeamLogo(game.homeTeam, game.league);
+      const timeLabel = isLive
+        ? (game.displayClock || game.statusDisplay || 'Live')
+        : isFinal
+          ? (game.statusDisplay || 'Final')
+          : (game.gameTimeDisplay || new Date(game.gameTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
+      const badge = isLive
+        ? '<span class="markets-game-chip-badge">● Live</span>'
+        : isFinal
+          ? '<span class="markets-game-chip-badge">Final</span>'
+          : '';
+      const countLabel = `${Number(propCount || 0).toLocaleString()} prop${propCount === 1 ? '' : 's'}`;
+      return `
+        <button class="markets-game-chip ${isActive ? 'active' : ''}" type="button"
+          data-gameid="${escapeHTML(String(game.id))}" data-league="${escapeHTML(game.league || '')}"
+          onclick="selectMarketsGame(this.dataset.gameid, this.dataset.league, event)">
+          <div class="markets-game-chip-logos">
+            <span title="${escapeHTML(game.awayTeam)}">${awayLogo}</span>
+            <span class="markets-game-chip-matchup">@</span>
+            <span title="${escapeHTML(game.homeTeam)}">${homeLogo}</span>
+          </div>
+          <div class="markets-game-chip-matchup">${escapeHTML(game.awayTeam)} @ ${escapeHTML(game.homeTeam)}</div>
+          <div class="markets-game-chip-meta">${badge}${escapeHTML(timeLabel)} · ${escapeHTML(countLabel)}</div>
+        </button>`;
+    }
+
+    function renderMarketsGameBoard() {
+      const boardEl = document.getElementById('marketsGameBoard');
+      const clearBtn = document.getElementById('marketsClearGameFilterBtn');
+      if (!boardEl) return;
+      const slateGames = getMarketsSlateGames();
+      if (clearBtn) clearBtn.style.display = state.marketsGameFilter ? '' : 'none';
+      if (!slateGames.length) {
+        boardEl.innerHTML = '<div class="markets-game-board-empty">No games on today&apos;s slate for this league.</div>';
+        return;
+      }
+      const allProps = Array.isArray(state.props) ? state.props : [];
+      const chips = slateGames.map(game => {
+        const propCount = getPropsForGame(game, allProps).length;
+        return buildMarketsGameChipHTML(game, propCount);
+      }).join('');
+      const allActive = !state.marketsGameFilter ? ' active' : '';
+      boardEl.innerHTML = `
+        <button class="markets-game-chip markets-game-chip--all${allActive}" type="button" onclick="clearMarketsGameFilter(event)">
+          <div class="markets-game-chip-matchup">All Games</div>
+          <div class="markets-game-chip-meta">${slateGames.length} on slate · full board</div>
+        </button>
+        ${chips}`;
+    }
+
+    function selectMarketsGame(gameId, league, evt) {
+      if (evt && evt.stopPropagation) evt.stopPropagation();
+      const games = state.games[league] || [];
+      const game = games.find(g => String(g.id) === String(gameId));
+      if (!game) return;
+      if (String(state.marketsGameFilter?.id) === String(game.id)) {
+        clearMarketsGameFilter(evt);
+        return;
+      }
+      state.marketsGameFilter = game;
+      renderMarketsView({ force: true });
+      showToast(`Showing props for ${game.awayTeam} @ ${game.homeTeam}`);
+    }
+
+    function clearMarketsGameFilter(evt) {
+      if (evt && evt.stopPropagation) evt.stopPropagation();
+      if (!state.marketsGameFilter) return;
+      state.marketsGameFilter = null;
+      renderMarketsView({ force: true });
     }
 
     function getPropAIBrowserFiltered(question = '') {
@@ -36601,15 +36839,20 @@ nav.tabs > button,
         if (meta) {
           const leagueLabel = state.league && state.league !== 'ALL' ? state.league : 'All Leagues';
           const marketLabel = state.propAIMarketFilter && state.propAIMarketFilter !== 'ALL' ? state.propAIMarketFilter : 'All Markets';
+          const gameLabel = state.marketsGameFilter
+            ? `${state.marketsGameFilter.awayTeam} @ ${state.marketsGameFilter.homeTeam}`
+            : '';
           const capNote = totalCount > maxRows ? ` (showing ${maxRows.toLocaleString()})` : '';
-          meta.textContent = `${totalCount.toLocaleString()} props · ${leagueLabel} · ${marketLabel}${capNote}`;
+          meta.textContent = `${totalCount.toLocaleString()} props · ${leagueLabel} · ${marketLabel}${gameLabel ? ` · ${gameLabel}` : ''}${capNote}`;
         }
       }
       const propsLoaded = Array.isArray(state.props) && state.props.length > 0;
       if (!ranked.length) {
         const emptyMsg = !propsLoaded && isFullBoard
           ? 'No props loaded yet — board updates when data finishes loading.'
-          : 'No props match this league, search, or market filter.';
+          : state.marketsGameFilter
+            ? `No props match ${state.marketsGameFilter.awayTeam} @ ${state.marketsGameFilter.homeTeam} with the current search or market filter.`
+            : 'No props match this league, search, or market filter.';
         listEl.innerHTML = `<div class="ai-context-empty">${emptyMsg}</div>`;
         return;
       }
@@ -36631,6 +36874,7 @@ nav.tabs > button,
         state.gameFilter = null;
         renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL]);
       }
+      if (state.marketsGameFilter) state.marketsGameFilter = null;
       syncMarketsFilterUI();
       renderMarketsView();
       if (state.view === 'props') queueUserPropsRender('league-switch', 80);
@@ -36657,7 +36901,10 @@ nav.tabs > button,
     function renderMarketsView(opts) {
       const force = !!(opts && opts.force);
       syncMarketsFilterUI();
-      if (force || isMarketsTabActive()) renderMarketsBoard('marketsBrowserList');
+      if (force || isMarketsTabActive()) {
+        renderMarketsGameBoard();
+        renderMarketsBoard('marketsBrowserList');
+      }
       if (force || isPropAIMarketsBoardVisible()) renderMarketsBoard('propAIMarketBrowserList', 24);
     }
 
@@ -40367,6 +40614,9 @@ nav.tabs > button,
         ...(state.games.NFL || []),
       ];
       if (allGames.length && typeof renderTicker === 'function') renderTicker(allGames);
+      if (typeof renderMarketsGameBoard === 'function' && typeof isMarketsTabActive === 'function' && isMarketsTabActive()) {
+        renderMarketsGameBoard();
+      }
 
       // Player detail panel — rerender from latest store so it doesn't show stale data
       if (_activeDetailPropId) {
