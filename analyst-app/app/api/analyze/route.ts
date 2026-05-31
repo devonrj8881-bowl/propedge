@@ -27,7 +27,22 @@ function buildTopProps(rows: Record<string, string>[], league: string, limit = 8
   return filtered
     .filter((r) => r["Player"] && r["PF Rating"])
     .sort((a, b) => parseFloat(b["PF Rating"] || "0") - parseFloat(a["PF Rating"] || "0"))
-    .slice(0, limit);
+    .slice(0, limit > 8 ? 5 : limit);
+}
+
+function repairJson(raw: string): string {
+  // Attempt to close an unterminated JSON string/object if truncated
+  let s = raw.trim();
+  if (!s.endsWith("}")) {
+    // Close any open string, then close the object
+    const openStrings = (s.match(/(?<!\\)"/g) || []).length % 2;
+    if (openStrings) s += '"';
+    // Count unclosed braces
+    const opens = (s.match(/{/g) || []).length;
+    const closes = (s.match(/}/g) || []).length;
+    s += "}".repeat(Math.max(0, opens - closes));
+  }
+  return s;
 }
 
 export async function POST(req: NextRequest) {
@@ -73,7 +88,7 @@ Write a full analyst report enriched with Statcast data, splits, and pitcher con
       contents: [{ role: "user", parts: [{ text: userPrompt }] }],
       generationConfig: {
         temperature: 0.5,
-        maxOutputTokens: 2500,
+        maxOutputTokens: 4096,
         responseMimeType: "application/json",
         responseSchema: {
           type: "object",
@@ -104,7 +119,12 @@ Write a full analyst report enriched with Statcast data, splits, and pitcher con
     const raw = data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
     if (!raw) throw new Error("Gemini returned empty response");
 
-    const parsed = JSON.parse(raw);
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = JSON.parse(repairJson(raw));
+    }
     // Unescape literal \n that Gemini sometimes emits inside JSON strings
     for (const k of ["matchup_analysis", "key_numbers_breakdown", "featured_intro"]) {
       if (typeof parsed[k] === "string") {
