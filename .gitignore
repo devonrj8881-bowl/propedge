@@ -14,6 +14,9 @@ propedge-deploy/propedge-deploy-state.json
 # Local dev files
 .env
 .env.local
+credentials.json
+propedge.env.txt
+propedge-deploy/credentials.json
 node_modules/
 propedge-deploy/netlify/functions/node_modules/
 *.log
