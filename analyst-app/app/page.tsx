@@ -136,7 +136,7 @@ export default function Home() {
             <div style={{ background: "linear-gradient(135deg,rgba(34,197,94,0.08),rgba(56,189,248,0.06))", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 16, padding: 20 }}>
               <div style={{ color: "#22c55e", fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Model Assessment</div>
               <h2 style={{ color: "#fff", fontSize: 20, fontWeight: 900, margin: "0 0 12px" }}>{a.article_title}</h2>
-              <p style={{ color: "#cbd5e1", fontSize: 14, lineHeight: 1.7, margin: 0, borderLeft: "3px solid #22c55e", paddingLeft: 12 }}>{a.featured_intro}</p>
+              <div style={{ color: "#cbd5e1", fontSize: 14, lineHeight: 1.7, margin: 0, borderLeft: "3px solid #22c55e", paddingLeft: 12 }} dangerouslySetInnerHTML={{ __html: mdToHtml(a.featured_intro) }} />
             </div>
 
             {/* Prose */}

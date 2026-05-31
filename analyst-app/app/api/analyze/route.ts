@@ -79,17 +79,34 @@ Using the board as your foundation, write a full analyst report enriched with St
       prompt: userPrompt,
       temperature: 0.5,
       maxTokens: 2000,
+      providerOptions: {
+        google: { responseModalities: ["TEXT"], responseMimeType: "application/json" },
+      },
     });
 
-    const clean = text.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/,"").trim();
+    // Extract JSON — strip fences, find first { ... }
+    let clean = text.trim()
+      .replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/, "").trim();
+    if (!clean.startsWith("{")) {
+      const start = clean.indexOf("{");
+      const end = clean.lastIndexOf("}");
+      if (start !== -1 && end !== -1) clean = clean.slice(start, end + 1);
+    }
+
     let parsed: Record<string, unknown>;
     try {
       parsed = JSON.parse(clean);
+      // Unescape literal \n sequences Gemini sometimes emits inside JSON strings
+      for (const k of ["matchup_analysis", "key_numbers_breakdown", "featured_intro"]) {
+        if (typeof parsed[k] === "string") {
+          parsed[k] = (parsed[k] as string).replace(/\\n/g, "\n");
+        }
+      }
     } catch {
       parsed = {
         article_title: "PropEdge Board Analysis",
-        featured_intro: text.slice(0, 400),
-        matchup_analysis: text,
+        featured_intro: "Analysis generated from today's PropEdge board.",
+        matchup_analysis: clean.replace(/\\n/g, "\n"),
         key_numbers_breakdown: "",
         confidence_rating: 7,
       };
