@@ -1,0 +1,23 @@
+{
+  "skill_name": "pace-report-generator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create a pace report for this week's NBA games. Include LeBron James, Luka Doncic, and Jayson Tatum. I want to see their pace matchups with expected points ranges.",
+      "expected_output": "PDF with 3 cards showing each NBA player's matchup against opponent, pace metrics (player pace, team pace, opponent pace), favorability indicator (green/yellow/red), and expected points projections",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Generate a pace report for all three sports this week. NBA: LeBron and Luka. NHL: Connor McDavid. MLB: Mike Trout and Aaron Judge. Make it professional with a summary at the end.",
+      "expected_output": "Multi-page PDF organized by sport with title page, game cards for each player, sport-specific metrics, and summary page showing which matchups are most favorable",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I want to set up automatic weekly pace reports. Generate the first report for this week (sample players: LeBron, McDavid, Trout) and then set up a scheduled task to run every Monday morning at 8am.",
+      "expected_output": "PDF report generated immediately plus scheduled task configuration showing report will auto-generate weekly on Mondays at 8am",
+      "files": []
+    }
+  ]
+}
