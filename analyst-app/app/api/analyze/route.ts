@@ -1,11 +1,10 @@
-import { google } from "@ai-sdk/google";
-import { generateText } from "ai";
 import { NextRequest, NextResponse } from "next/server";
 
 const PROP_FEED_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/prop-feed?sheet=propedge-main";
 
-const MODEL = process.env.GEMINI_MODEL || process.env.GOOGLE_AI_MODEL || "gemini-2.0-flash";
+const MODEL = "gemini-2.5-flash";
+const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
 
 async function fetchProps(): Promise<Record<string, string>[]> {
   const res = await fetch(PROP_FEED_URL, { next: { revalidate: 300 } });
@@ -28,71 +27,109 @@ function buildTopProps(rows: Record<string, string>[], league: string, limit = 8
   return filtered
     .filter((r) => r["Player"] && r["PF Rating"])
     .sort((a, b) => parseFloat(b["PF Rating"] || "0") - parseFloat(a["PF Rating"] || "0"))
-    .slice(0, limit);
+    .slice(0, limit > 8 ? 5 : limit);
+}
+
+function repairJson(raw: string): string {
+  // Attempt to close an unterminated JSON string/object if truncated
+  let s = raw.trim();
+  if (!s.endsWith("}")) {
+    // Close any open string, then close the object
+    const openStrings = (s.match(/(?<!\\)"/g) || []).length % 2;
+    if (openStrings) s += '"';
+    // Count unclosed braces
+    const opens = (s.match(/{/g) || []).length;
+    const closes = (s.match(/}/g) || []).length;
+    s += "}".repeat(Math.max(0, opens - closes));
+  }
+  return s;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const { question, league = "ALL" } = await req.json();
 
+    if (!GEMINI_API_KEY) throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not set");
+
     const rows = await fetchProps();
     const topProps = buildTopProps(rows, league);
 
     if (!topProps.length) {
-      return NextResponse.json({ error: "No props available on the board right now." }, { status: 200 });
+      return NextResponse.json({ error: "No props available right now." }, { status: 200 });
     }
 
-    const systemPrompt = [
-      "You are a sharp sports betting analyst writing a premium prop report. Produce deep editorial analysis — professional handicapper quality, not a data dump.",
-      "",
-      "CRITICAL: USE YOUR FULL KNOWLEDGE.",
-      "The PropEdge board below gives ranked props with PF Rating, hit rates, edges, and matchup data. Use it as your foundation, then LAYER IN everything from your training: Statcast percentiles (xSLG, Barrel%, Exit Velocity, Hard-Hit%), platoon splits, pitcher FIP/ERA/K-rate vs handedness, ballpark factors, lineup context, and recent form. Write the kind of analysis that matches what a sharp Gemini query returns natively.",
-      "",
-      "OUTPUT: Strict JSON only. No markdown code fences around the outer object.",
-      "Inside JSON string values use rich markdown: **bold**, * bullets, ## section headers.",
-      "",
-      "matchup_analysis structure:",
-      "  ## Top Player Prop Values",
-      "  For each pick: **Player (TEAM) — Over/Under X.X Market (+odds)**",
-      "  3-5 sentence paragraph with board edge + Statcast/splits depth. Linemaker prose, not bullet lists.",
-      "  Blank line between picks.",
-      "  Optional: ## Game Lines & Totals (1-2 paragraphs) when data supports it.",
-      "",
-      "key_numbers_breakdown: markdown bullets — threshold stats, split gates, edge drivers.",
-      "Do NOT fabricate players, lines, or odds not in the board payload.",
-      "",
-      'JSON schema: { "article_title": "string", "featured_intro": "string", "matchup_analysis": "string", "key_numbers_breakdown": "string", "confidence_rating": 8 }',
-    ].join("\n");
+    const systemPrompt = `You are a sharp sports betting analyst writing a premium prop report. Produce deep editorial analysis — professional handicapper quality.
 
-    const userPrompt = `${question || "What are the best props on today's board?"}
+CRITICAL: USE YOUR FULL KNOWLEDGE.
+The PropEdge board gives ranked props with PF Rating, hit rates, edges, and matchup data. Use it as your foundation, then LAYER IN everything from your training: Statcast percentiles (xSLG, Barrel%, Exit Velocity, Hard-Hit%), platoon splits, pitcher FIP/ERA/K-rate vs handedness, ballpark factors, lineup context, and recent form.
+
+FORMAT:
+matchup_analysis MUST start with: ## Top Player Prop Values
+For each pick: **Player (TEAM) — Over/Under X.X Market (+odds)**
+Follow with a 3-5 sentence paragraph. Linemaker prose, cite board edge + Statcast/splits depth.
+Blank line between picks.
+Optional: ## Game Lines & Totals (1-2 paragraphs) when data supports it.
+
+key_numbers_breakdown: markdown bullets — threshold stats, split gates, edge drivers.
+Do NOT fabricate players, lines, or odds not in the board payload.`;
+
+    const userPrompt = `${question || `What are the best ${league} props today?`}
 
 LEAGUE: ${league}
 
-PROPEDGE BOARD (ranked props with PF Rating, edges, hit rates):
+PROPEDGE BOARD:
 ${JSON.stringify(topProps, null, 2)}
 
-Using the board as your foundation, write a full analyst report enriched with Statcast data, splits, pitcher context, and park factors from your training knowledge. Return one raw JSON object matching the schema.`;
+Write a full analyst report enriched with Statcast data, splits, and pitcher context.`;
 
-    const { text } = await generateText({
-      model: google(MODEL),
-      system: systemPrompt,
-      prompt: userPrompt,
-      temperature: 0.5,
-      maxTokens: 2000,
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+    const payload = {
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      generationConfig: {
+        temperature: 0.5,
+        maxOutputTokens: 4096,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            article_title: { type: "string" },
+            featured_intro: { type: "string" },
+            matchup_analysis: { type: "string" },
+            key_numbers_breakdown: { type: "string" },
+            confidence_rating: { type: "number" },
+          },
+          required: ["article_title", "featured_intro", "matchup_analysis", "key_numbers_breakdown", "confidence_rating"],
+        },
+      },
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
 
-    const clean = text.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/,"").trim();
-    let parsed: Record<string, unknown>;
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Gemini API ${res.status}: ${err.slice(0, 300)}`);
+    }
+
+    const data = await res.json();
+    const raw = data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
+    if (!raw) throw new Error("Gemini returned empty response");
+
+    let parsed;
     try {
-      parsed = JSON.parse(clean);
+      parsed = JSON.parse(raw);
     } catch {
-      parsed = {
-        article_title: "PropEdge Board Analysis",
-        featured_intro: text.slice(0, 400),
-        matchup_analysis: text,
-        key_numbers_breakdown: "",
-        confidence_rating: 7,
-      };
+      parsed = JSON.parse(repairJson(raw));
+    }
+    // Unescape literal \n that Gemini sometimes emits inside JSON strings
+    for (const k of ["matchup_analysis", "key_numbers_breakdown", "featured_intro"]) {
+      if (typeof parsed[k] === "string") {
+        parsed[k] = parsed[k].replace(/\\n/g, "\n");
+      }
     }
 
     return NextResponse.json({ ok: true, analysis: parsed, model: MODEL, propCount: topProps.length });
