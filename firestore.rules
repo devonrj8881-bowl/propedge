@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users can only read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Pace data is public read (for all authenticated users)
+    match /pace_data/{document=**} {
+      allow read: if request.auth != null;
+      // Only admin can write (via Cloud Functions)
+      allow write: if request.auth.token.admin == true;
+    }
+
+    // Predictions are public read
+    match /predictions/{document=**} {
+      allow read: if request.auth != null;
+      // Only admin can write
+      allow write: if request.auth.token.admin == true;
+    }
+
+    // Alerts are user-specific
+    match /alerts/{alertId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
+    }
+
+    // Edge tracking is user-specific
+    match /edge_tracking/{edgeId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
+    }
+
+    // Price history is public read
+    match /price_history/{document=**} {
+      allow read: if request.auth != null;
+      // Only admin can write
+      allow write: if request.auth.token.admin == true;
+    }
+
+    // Analytics snapshots are user-specific
+    match /analytics_snapshots/{snapshotId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
+    }
+
+    // Cache is public read (for caching strategies)
+    match /cache/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.token.admin == true;
+    }
+  }
+}
