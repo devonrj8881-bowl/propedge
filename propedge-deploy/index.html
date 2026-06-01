@@ -37537,8 +37537,11 @@ nav.tabs > button,
       document.querySelectorAll('.propai-league-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.league === activeLeague);
       });
-      document.querySelectorAll('.propai-market-tab').forEach(btn => {
+      document.querySelectorAll('.propai-market-tab:not(.propai-dir-tab)').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.market === (state.propAIMarketFilter || 'ALL'));
+      });
+      document.querySelectorAll('.propai-dir-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.dir === (state.propAIDirectionFilter || 'ALL'));
       });
       const search = state.propAIMarketSearch || '';
       ['propAIMarketSearch', 'marketsSearchInput'].forEach((id) => {
