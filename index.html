@@ -18590,6 +18590,11 @@ nav.tabs > button,
               </div>
               <div class="propai-board-meta">
                 <div class="propai-board-meta-label">Market Type</div>
+                <div class="propai-browser-tabs propai-dir-tabs">
+                  <button class="propai-market-tab propai-dir-tab active" type="button" data-dir="ALL" onclick="setPropAIDirectionFilter('ALL')">All</button>
+                  <button class="propai-market-tab propai-dir-tab" type="button" data-dir="OVER" onclick="setPropAIDirectionFilter('OVER')">Overs</button>
+                  <button class="propai-market-tab propai-dir-tab" type="button" data-dir="UNDER" onclick="setPropAIDirectionFilter('UNDER')">Unders</button>
+                </div>
                 <div class="propai-browser-tabs">
                 <button class="propai-market-tab active" type="button" data-market="ALL" onclick="setPropAIMarketFilter('ALL')">All</button>
                 <button class="propai-market-tab" type="button" data-market="Points" onclick="setPropAIMarketFilter('Points')">Points</button>
@@ -18700,6 +18705,12 @@ nav.tabs > button,
           <input id="marketsSearchInput" type="text" placeholder="Search player, team, or market" oninput="updatePropAIMarketSearch(this.value)" />
         </div>
         <div class="propai-board-meta">
+          <div class="propai-board-meta-label">Direction</div>
+          <div class="propai-browser-tabs propai-dir-tabs">
+            <button class="propai-market-tab propai-dir-tab active" type="button" data-dir="ALL" onclick="setPropAIDirectionFilter('ALL')">All</button>
+            <button class="propai-market-tab propai-dir-tab" type="button" data-dir="OVER" onclick="setPropAIDirectionFilter('OVER')">Overs</button>
+            <button class="propai-market-tab propai-dir-tab" type="button" data-dir="UNDER" onclick="setPropAIDirectionFilter('UNDER')">Unders</button>
+          </div>
           <div class="propai-board-meta-label">Market Type</div>
           <div class="propai-browser-tabs">
           <button class="propai-market-tab active" type="button" data-market="ALL" onclick="setPropAIMarketFilter('ALL')">All</button>
@@ -19276,7 +19287,8 @@ nav.tabs > button,
       propHits: {}, // { propId: { hits: 3, total: 5, accuracy: 60%, lastUpdated: ISO } }
       prevGameStatuses: {}, // Track previous game statuses to detect final transitions (gameId -> status)
       outcomes: {}, // { "Player|PropType|Line": { status: "HIT"|"MISS", date, timestamp } }
-      splitsIndex: {} // { player: { propType: { overall: %, l5: %, season: % } } } for fast lookups
+      splitsIndex: {}, // { player: { propType: { overall: %, l5: %, season: % } } } for fast lookups
+      propAIDirectionFilter: 'ALL' // 'ALL' | 'OVER' | 'UNDER'
     };
 
     let _propsRenderTimer = null;
@@ -37149,6 +37161,8 @@ nav.tabs > button,
       const search = normalizeLiveOddsText(state.propAIMarketSearch || '');
       const marketFilter = state.propAIMarketFilter || 'ALL';
       if (marketFilter !== 'ALL') filtered = filtered.filter(p => propAIMarketCategory(p) === marketFilter);
+      const dirFilter = state.propAIDirectionFilter || 'ALL';
+      if (dirFilter !== 'ALL') filtered = filtered.filter(p => (p.direction || 'OVER') === dirFilter);
       if (search) {
         filtered = filtered.filter(p => {
           const blob = [
@@ -37608,6 +37622,15 @@ nav.tabs > button,
 
     function setPropAIMarketFilter(filter) {
       state.propAIMarketFilter = filter || 'ALL';
+      renderMarketsView();
+      renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
+    }
+
+    function setPropAIDirectionFilter(dir) {
+      state.propAIDirectionFilter = dir || 'ALL';
+      document.querySelectorAll('.propai-dir-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.dir === state.propAIDirectionFilter);
+      });
       renderMarketsView();
       renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
     }
