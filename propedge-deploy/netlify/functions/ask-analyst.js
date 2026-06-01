@@ -190,8 +190,14 @@ async function callGeminiEvDetail(messages, options = {}) {
     .map((m) => m.content)
     .join("\n\n");
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_EV_DETAIL_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
-  const payload = {
+  const modelChain = Array.from(new Set([
+    GEMINI_EV_DETAIL_MODEL,
+    "gemini-2.0-flash",
+    "gemini-1.5-flash-002",
+    "gemini-1.5-flash",
+  ].filter(Boolean)));
+
+  const payloadBase = {
     ...(systemMessage ? { systemInstruction: { parts: [{ text: systemMessage }] } } : {}),
     contents: [{ role: "user", parts: [{ text: userMessage }] }],
     generationConfig: {
@@ -201,37 +207,62 @@ async function callGeminiEvDetail(messages, options = {}) {
     },
   };
 
-  let timeoutId;
-  const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(`Gemini API timeout (${DEFAULT_TIMEOUT_MS}ms)`)), DEFAULT_TIMEOUT_MS);
-  });
+  let lastErr;
+  for (const model of modelChain) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+      let timeoutId;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(`Gemini API timeout (${DEFAULT_TIMEOUT_MS}ms)`)), DEFAULT_TIMEOUT_MS);
+      });
 
-  try {
-    const res = await Promise.race([
-      fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }),
-      timeoutPromise,
-    ]);
-    clearTimeout(timeoutId);
+      try {
+        const res = await Promise.race([
+          fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payloadBase),
+          }),
+          timeoutPromise,
+        ]);
+        clearTimeout(timeoutId);
 
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => "");
-      throw new Error(`Gemini API HTTP ${res.status}: ${errBody.slice(0, 240)}`);
+        if (!res.ok) {
+          const errBody = await res.text().catch(() => "");
+          const transient = [429, 500, 502, 503, 504].includes(res.status)
+            || /UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded/i.test(errBody);
+          lastErr = new Error(`Gemini API HTTP ${res.status}: ${errBody.slice(0, 240)}`);
+          if (transient && attempt < 2) {
+            await new Promise((r) => setTimeout(r, 700 * 2 ** attempt));
+            continue;
+          }
+          if (transient) break;
+          throw lastErr;
+        }
+
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
+        if (!text.trim()) {
+          lastErr = new Error("Gemini returned empty response");
+          if (attempt < 2) continue;
+          throw lastErr;
+        }
+        return stripJsonFence(text);
+      } catch (err) {
+        clearTimeout(timeoutId);
+        lastErr = err;
+        const msg = err?.message || "";
+        const transient = /503|429|UNAVAILABLE|high demand|timeout/i.test(msg);
+        if (transient && attempt < 2) {
+          await new Promise((r) => setTimeout(r, 700 * 2 ** attempt));
+          continue;
+        }
+        if (!transient) throw err;
+      }
     }
-
-    const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
-    if (!text.trim()) {
-      throw new Error("Gemini returned empty response");
-    }
-    return stripJsonFence(text);
-  } catch (err) {
-    clearTimeout(timeoutId);
-    throw err;
   }
+
+  throw lastErr || new Error("Gemini unavailable");
 }
 
 function json(statusCode, body) {

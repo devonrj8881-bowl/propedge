@@ -79,7 +79,7 @@ export default function Home() {
   const [result, setResult] = useState<{ analysis: Analysis; model: string; propCount: number } | null>(null);
   const [error, setError] = useState("");
 
-  async function run() {
+  async function run(retryCount = 0) {
     setLoading(true);
     setError("");
     setResult(null);
@@ -90,10 +90,24 @@ export default function Home() {
         body: JSON.stringify({ question: question || `What are the best ${league} props today?`, league }),
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || "Analysis failed");
+      if (!data.ok) {
+        const msg = data.error || "Analysis failed";
+        const isBusy = /503|UNAVAILABLE|high demand|temporarily busy/i.test(msg + (data.detail || ""));
+        if (isBusy && retryCount < 2) {
+          await new Promise((r) => setTimeout(r, 1200 * (retryCount + 1)));
+          return run(retryCount + 1);
+        }
+        throw new Error(msg);
+      }
       setResult(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      const isBusy = /503|UNAVAILABLE|high demand|temporarily busy/i.test(msg);
+      setError(
+        isBusy
+          ? "Gemini is temporarily busy. We retried automatically — please tap Analyze again in a few seconds."
+          : msg,
+      );
     } finally {
       setLoading(false);
     }
@@ -172,7 +186,7 @@ export default function Home() {
             {/* Meta row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ color: "#475569", fontSize: 12 }}>
-                Gemini · {result?.model} · {result?.propCount} props analyzed
+                {result?.fallback ? "PropEdge backup" : "Gemini"} · {result?.model} · {result?.propCount} props analyzed
               </span>
               <span style={{
                 padding: "4px 12px", borderRadius: 999,

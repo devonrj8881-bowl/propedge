@@ -3,9 +3,23 @@ import { NextRequest, NextResponse } from "next/server";
 const PROP_FEED_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/prop-feed?sheet=propedge-main";
 
-const MODEL = "gemini-2.5-flash";
+const ASK_ANALYST_URL =
+  "https://propedgemasters.netlify.app/.netlify/functions/ask-analyst";
+
 const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
+const PRIMARY_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL_CHAIN = Array.from(
+  new Set(
+    [
+      PRIMARY_MODEL,
+      "gemini-2.0-flash",
+      "gemini-1.5-flash-002",
+      "gemini-1.5-flash",
+    ].filter(Boolean),
+  ),
+);
 const MAX_PROPS = 4;
+const MAX_GEMINI_ATTEMPTS = 3;
 
 async function fetchProps(): Promise<Record<string, string>[]> {
   const res = await fetch(PROP_FEED_URL, { next: { revalidate: 300 } });
@@ -125,8 +139,33 @@ function parseGeminiJson(raw: string) {
   throw new Error("Gemini returned malformed JSON");
 }
 
-async function callGemini(systemPrompt: string, userPrompt: string, maxOutputTokens: number) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+class GeminiApiError extends Error {
+  status: number;
+  body: string;
+
+  constructor(status: number, body: string) {
+    super(`Gemini API ${status}: ${body.slice(0, 300)}`);
+    this.status = status;
+    this.body = body;
+  }
+}
+
+function isTransientGeminiError(status: number, body: string): boolean {
+  if ([429, 500, 502, 503, 504].includes(status)) return true;
+  return /UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded|temporarily unavailable/i.test(body);
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function callGeminiModel(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+  maxOutputTokens: number,
+) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
   const payload = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: "user", parts: [{ text: userPrompt }] }],
@@ -156,7 +195,7 @@ async function callGemini(systemPrompt: string, userPrompt: string, maxOutputTok
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Gemini API ${res.status}: ${err.slice(0, 300)}`);
+    throw new GeminiApiError(res.status, err);
   }
 
   const data = await res.json();
@@ -164,6 +203,102 @@ async function callGemini(systemPrompt: string, userPrompt: string, maxOutputTok
   const finishReason = data?.candidates?.[0]?.finishReason || "";
   if (!raw) throw new Error("Gemini returned empty response");
   return { raw, finishReason };
+}
+
+async function callGeminiWithResilience(
+  systemPrompt: string,
+  userPrompt: string,
+  maxOutputTokens: number,
+) {
+  let lastErr: Error | null = null;
+
+  for (const model of MODEL_CHAIN) {
+    for (let attempt = 0; attempt < MAX_GEMINI_ATTEMPTS; attempt++) {
+      try {
+        const result = await callGeminiModel(model, systemPrompt, userPrompt, maxOutputTokens);
+        return { ...result, model, fallback: model !== PRIMARY_MODEL };
+      } catch (err) {
+        lastErr = err instanceof Error ? err : new Error(String(err));
+        const status = err instanceof GeminiApiError ? err.status : 0;
+        const body = err instanceof GeminiApiError ? err.body : lastErr.message;
+        const transient = isTransientGeminiError(status, body);
+        const hasRetriesLeft = attempt < MAX_GEMINI_ATTEMPTS - 1;
+
+        if (!transient) throw lastErr;
+        if (hasRetriesLeft) {
+          await delay(700 * 2 ** attempt + Math.floor(Math.random() * 300));
+          continue;
+        }
+      }
+    }
+  }
+
+  throw lastErr || new Error("Gemini unavailable");
+}
+
+function csvRowToAnalystProp(row: Record<string, string>, league: string) {
+  return {
+    player: row["Player"] || "",
+    team: row["Team"] || "",
+    prop: row["Prop"] || row["Market"] || "",
+    line: row["Line"] || "",
+    league: row["League"] || league,
+    pfRating: row["PF Rating"] || "",
+    l10Pct: row["L10 Hit %"] || row["L10"] || "",
+    edge: row["Edge %"] || row["Edge"] || "",
+    odds: row["Odds"] || "",
+    direction: row["Direction"] || row["O/U"] || "",
+  };
+}
+
+async function callPropEdgeAskAnalystFallback(
+  question: string,
+  league: string,
+  topProps: Record<string, string>[],
+) {
+  const props = topProps
+    .map((row) => csvRowToAnalystProp(row, league))
+    .filter((p) => p.player);
+
+  const res = await fetch(ASK_ANALYST_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      question,
+      league: league === "ALL" ? (props[0]?.league || "MLB") : league,
+      props,
+      response_mode: "ev_detail",
+      options: { temperature: 0.45, num_predict: 1500 },
+    }),
+  });
+
+  const data = await res.json().catch(() => null);
+  const answer = typeof data?.answer === "string" ? data.answer.trim() : "";
+  if (!answer) {
+    throw new Error(data?.error || "PropEdge analyst fallback returned no answer");
+  }
+
+  try {
+    return {
+      parsed: parseGeminiJson(answer),
+      model: data?.model || "propedge-ask-analyst",
+      finishReason: "STOP",
+      fallback: true,
+    };
+  } catch {
+    return {
+      parsed: normalizeAnalysis({
+        article_title: "PropEdge Analyst Report",
+        featured_intro: "Primary Gemini was temporarily busy — this report was generated via PropEdge backup analyst.",
+        matchup_analysis: answer.slice(0, 6000),
+        key_numbers_breakdown: "",
+        confidence_rating: 6,
+      }),
+      model: data?.model || "propedge-ask-analyst",
+      finishReason: "STOP",
+      fallback: true,
+    };
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -201,7 +336,34 @@ ${JSON.stringify(topProps, null, 2)}
 
 Return valid JSON only. Keep prose concise so the full JSON completes.`;
 
-    let { raw, finishReason } = await callGemini(systemPrompt, userPrompt, 8192);
+    let raw = "";
+    let finishReason = "";
+    let modelUsed = PRIMARY_MODEL;
+    let usedFallback = false;
+
+    try {
+      const gemini = await callGeminiWithResilience(systemPrompt, userPrompt, 8192);
+      raw = gemini.raw;
+      finishReason = gemini.finishReason;
+      modelUsed = gemini.model;
+      usedFallback = !!gemini.fallback;
+    } catch (geminiErr) {
+      console.warn("[analyze] Gemini exhausted retries:", geminiErr instanceof Error ? geminiErr.message : geminiErr);
+      const backup = await callPropEdgeAskAnalystFallback(
+        question || `What are the best ${league} props today?`,
+        league,
+        topProps,
+      );
+      return NextResponse.json({
+        ok: true,
+        analysis: backup.parsed,
+        model: backup.model,
+        propCount: topProps.length,
+        fallback: true,
+        fallback_reason: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
+      });
+    }
+
     let parsed;
     try {
       parsed = parseGeminiJson(raw);
@@ -209,17 +371,28 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       if (finishReason === "MAX_TOKENS") {
         const retryProps = buildTopProps(rows, league, 3);
         const retryPrompt = `${userPrompt}\n\nIMPORTANT: Cover only the top ${retryProps.length} picks with shorter paragraphs.`;
-        ({ raw, finishReason } = await callGemini(systemPrompt, retryPrompt, 8192));
-        parsed = parseGeminiJson(raw);
+        const retry = await callGeminiWithResilience(systemPrompt, retryPrompt, 8192);
+        parsed = parseGeminiJson(retry.raw);
+        modelUsed = retry.model;
+        usedFallback = usedFallback || !!retry.fallback;
       } else {
         throw firstErr;
       }
     }
 
-    return NextResponse.json({ ok: true, analysis: parsed, model: MODEL, propCount: topProps.length });
+    return NextResponse.json({
+      ok: true,
+      analysis: parsed,
+      model: modelUsed,
+      propCount: topProps.length,
+      fallback: usedFallback,
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[analyze]", msg);
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
+    const friendly = /503|UNAVAILABLE|high demand/i.test(msg)
+      ? "Gemini is temporarily busy. Please wait a few seconds and try again."
+      : msg;
+    return NextResponse.json({ ok: false, error: friendly, detail: msg }, { status: 500 });
   }
 }
