@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.106 — unified analyst visual + rich-text report — 2026-05-31 -->
+<!-- PropEdge v7.133 — PropIQ grade ties + ELITE PLAY badge fix — 2026-05-31 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.132-outcomes-flow">
+  <meta name="app-version" content="v7.133-propiq-grade-ties">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -18019,11 +18019,11 @@ nav.tabs > button,
       <div class="sort-bar" id="sortBar">
         <div class="sort-spotlight">
           <div class="sort-spotlight-copy">
-            <span class="sort-spotlight-label">Board Rank</span>
+            <span class="sort-spotlight-label">Bet Grade</span>
             <span class="sort-spotlight-value">PropIQ™</span>
           </div>
-          <select class="sort-select" id="sortSelect" onchange="sortProps()">
-            <option value="propiq" selected>PropIQ™ Score ↓</option>
+          <select class="sort-select" id="sortSelect" onchange="sortProps()" title="PropIQ is a 5–98 bet grade, not a unique slate rank. Ties at the same grade sort by edge, then L10, then confidence.">
+            <option value="propiq" selected>PropIQ™ grade ↓ (edge · L10 · conf)</option>
             <option value="model">Model Score ↓</option>
             <option value="delta">Sharp Delta (Value) ↓</option>
             <option value="edge">Edge ↓</option>
@@ -33598,12 +33598,12 @@ nav.tabs > button,
 
       // Sort
       switch (state.sort) {
-        case 'model': props.sort((a, b) => b.modelScore - a.modelScore); break;
+        case 'model': props.sort(comparePropIQProps); break;
         case 'edge': props.sort((a, b) => b.edge - a.edge); break;
         case 'l10': props.sort((a, b) => b.l10Pct - a.l10Pct); break;
         case 'streak': props.sort((a, b) => b.streak - a.streak); break;
         case 'odds': props.sort((a, b) => b.odds - a.odds); break;
-        case 'propiq': props.sort((a, b) => (Number(b.modelScore) || 0) - (Number(a.modelScore) || 0)); break;
+        case 'propiq': props.sort(comparePropIQProps); break;
         case 'delta': props.sort((a, b) => {
           const deltaA = Math.abs((a.trueProb || 0) - (a.impliedProb || 0)) * (a.modelRating || 50);
           const deltaB = Math.abs((b.trueProb || 0) - (b.impliedProb || 0)) * (b.modelRating || 50);
@@ -33834,9 +33834,8 @@ nav.tabs > button,
             </div>`;
         }
 
-        const _tierMap = { 'ULTIMATE LOCK':'ultimate', 'PRIME PICK':'prime', 'STRONG':'strong', 'PASS':'solid', 'FADE':'fade' };
-        const _cardTier = _tierMap[_bs.action] || 'solid';
-        const _badgeTier = _tierMap[_bs.action] || 'spec';
+        const _badgeTier = betScoreActionBadgeTier(_bs.action);
+        const _cardTier = _badgeTier === 'spec' ? 'solid' : _badgeTier;
 
         return `
           <div class="prop-card ${_cardTier}${isStale ? ' stale' : ''}">
@@ -33911,7 +33910,7 @@ nav.tabs > button,
                 </div>
               </div>
               <div class="prop-scores-wrap">
-                <div class="propiq-container">
+                <div class="propiq-container" title="PropIQ bet grade (5–98 cap). Same number ≠ unique rank — open How to Bet for factor detail.">
                   <div class="propiq-badge-glow tier-${_badgeTier}"></div>
                   <div class="propiq-number-display tier-${_badgeTier}">${_bs.score}</div>
                   <div class="propiq-logo tier-${_badgeTier}">IQ</div>
@@ -37049,7 +37048,7 @@ nav.tabs > button,
           return blob.includes(search);
         });
       }
-      return filtered.slice().sort((a, b) => buildPropAIScore(b) - buildPropAIScore(a));
+      return filtered.slice().sort(comparePropIQProps);
     }
 
     function getPropAIBrowserPicks(question = '', limit = 18) {
@@ -43294,6 +43293,37 @@ Return a single raw JSON object (no code fences) matching the system schema. In 
 
     function propIQValue(p) {
       return propNumber(p.prop_iq_score ?? p.modelScore ?? p.propiq ?? p.PropIQ ?? p.score, 0);
+    }
+
+    function propEdgeSortValue(p) {
+      const edge = Number(p?.edge);
+      if (Number.isFinite(edge)) return edge;
+      const model = p?.trueProb != null ? Math.min(0.88, Math.max(0.12, p.trueProb)) : null;
+      const book = p?.impliedProb != null ? p.impliedProb : null;
+      if (model != null && book != null) return Math.round((model - book) * 100);
+      return 0;
+    }
+
+    function comparePropIQProps(a, b) {
+      const iqDiff = propIQValue(b) - propIQValue(a);
+      if (iqDiff !== 0) return iqDiff;
+      const edgeDiff = propEdgeSortValue(b) - propEdgeSortValue(a);
+      if (edgeDiff !== 0) return edgeDiff;
+      const l10Diff = (Number(b?.l10Pct) || 0) - (Number(a?.l10Pct) || 0);
+      if (l10Diff !== 0) return l10Diff;
+      return normalizeConfidence(b?.confidence) - normalizeConfidence(a?.confidence);
+    }
+
+    function betScoreActionBadgeTier(action) {
+      const map = {
+        'ELITE PLAY': 'ultimate',
+        'ULTIMATE LOCK': 'ultimate',
+        'PRIME PICK': 'prime',
+        'STRONG': 'strong',
+        'PASS': 'solid',
+        'FADE': 'fade'
+      };
+      return map[action] || 'spec';
     }
 
     function propDirectionText(p) {
