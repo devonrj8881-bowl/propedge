@@ -50,7 +50,16 @@ try {
 }
 
 const DEFAULT_MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
-const GEMINI_EV_DETAIL_MODEL = process.env.GEMINI_EV_DETAIL_MODEL || process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const GEMINI_MODEL_FALLBACKS = [
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-3.1-flash-image",
+  "gemini-3-pro-image",
+  "gemini-2.5-flash-image",
+];
+const GEMINI_EV_DETAIL_MODEL = process.env.GEMINI_EV_DETAIL_MODEL || process.env.GEMINI_MODEL || GEMINI_MODEL_FALLBACKS[0];
 const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
 const DEFAULT_TIMEOUT_MS = Number(process.env.CLAUDE_TIMEOUT_MS || 27000);
 const MAX_INPUT_CHARS = Number(process.env.ANALYST_MAX_INPUT_CHARS || 9000);
@@ -190,12 +199,7 @@ async function callGeminiEvDetail(messages, options = {}) {
     .map((m) => m.content)
     .join("\n\n");
 
-  const modelChain = Array.from(new Set([
-    GEMINI_EV_DETAIL_MODEL,
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-  ].filter(Boolean)));
+  const modelChain = Array.from(new Set([GEMINI_EV_DETAIL_MODEL, ...GEMINI_MODEL_FALLBACKS].filter(Boolean)));
 
   const payloadBase = {
     ...(systemMessage ? { systemInstruction: { parts: [{ text: systemMessage }] } } : {}),
