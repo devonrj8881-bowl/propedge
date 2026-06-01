@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.133 — PropIQ grade ties + ELITE PLAY badge fix — 2026-05-31 -->
+<!-- PropEdge v7.135 — PropIQ grading guide panel — 2026-05-31 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.133-propiq-grade-ties">
+  <meta name="app-version" content="v7.136-grading-guide-markets">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -4544,7 +4544,8 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     body.propai-mode .timestamp-bar,
     body.propai-mode .sport-tabs,
     body.propai-mode #filterSection,
-    body.propai-mode #sortBar {
+    body.propai-mode #sortBar,
+    body.propai-mode #propiqGradingGuide {
       display: none !important;
     }
 
@@ -5799,6 +5800,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
     body.markets-mode #filterSection,
     body.markets-mode #sortBar,
+    body.markets-mode #propiqGradingGuide,
     body.markets-mode .live-games {
       display: none !important;
     }
@@ -6496,6 +6498,10 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       width: 100%;
     }
 
+    .propai-market-conviction {
+      margin-top: 6px;
+      text-align: center;
+    }
     .propai-deck-hero-row .propai-market-iq-block {
       flex: 0 0 auto;
     }
@@ -10707,6 +10713,77 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       text-shadow: 0 0 14px rgba(34, 197, 94, 0.35);
     }
 
+    .propiq-grading-guide {
+      margin: 0 16px 10px;
+      padding: 0;
+      border-radius: 12px;
+      border: 1px solid rgba(99, 102, 241, 0.22);
+      background: linear-gradient(180deg, rgba(13, 24, 43, 0.92), rgba(10, 18, 34, 0.96));
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .propiq-grading-guide summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .propiq-grading-guide summary::-webkit-details-marker { display: none; }
+    .propiq-grading-guide summary::after {
+      content: '▾';
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-muted);
+      transition: transform 0.2s ease;
+    }
+    .propiq-grading-guide[open] summary::after { transform: rotate(180deg); }
+    .propiq-grading-body {
+      padding: 0 14px 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .propiq-grading-intro {
+      margin: 12px 0 10px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+    }
+    .propiq-grading-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 720px) {
+      .propiq-grading-grid { grid-template-columns: 1fr; }
+    }
+    .propiq-grading-col h4 {
+      margin: 0 0 8px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #a5b4fc;
+    }
+    .propiq-grading-col ul {
+      margin: 0;
+      padding-left: 18px;
+      line-height: 1.55;
+    }
+    .propiq-grading-col li { margin-bottom: 6px; }
+    .propiq-grading-col li strong { color: var(--text-primary); }
+    .propiq-grading-foot {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .propai-markets-page .propiq-grading-guide {
+      margin: 4px 0 14px;
+    }
+
     @media (max-width: 480px) {
       .sort-bar {
         flex-direction: column;
@@ -11192,6 +11269,68 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       box-shadow: 0 3px 12px rgba(68, 138, 255, 0.25);
     }
 
+    .prop-badge.conviction {
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 10px;
+    }
+    .prop-badge.conviction-lock {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.28), rgba(255, 215, 64, 0.18));
+      color: #fff6bf;
+      border-color: rgba(251, 191, 36, 0.55);
+      box-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+    }
+    .prop-badge.conviction-hammer {
+      background: linear-gradient(135deg, rgba(217, 70, 239, 0.22), rgba(168, 85, 247, 0.16));
+      color: #f5d0ff;
+      border-color: rgba(217, 70, 239, 0.45);
+      box-shadow: 0 0 10px rgba(217, 70, 239, 0.28);
+    }
+    .prop-badge.conviction-go,
+    .prop-badge.conviction-play {
+      background: rgba(0, 230, 118, 0.14);
+      color: var(--accent-green);
+      border-color: rgba(0, 230, 118, 0.42);
+    }
+    .prop-badge.conviction-lean {
+      background: rgba(79, 195, 247, 0.12);
+      color: #81d4fa;
+      border-color: rgba(79, 195, 247, 0.35);
+    }
+    .prop-badge.conviction-watch {
+      background: rgba(255, 193, 7, 0.12);
+      color: #ffd54f;
+      border-color: rgba(255, 193, 7, 0.35);
+    }
+    .prop-badge.conviction-caution {
+      background: rgba(255, 152, 0, 0.14);
+      color: #ffb74d;
+      border-color: rgba(255, 152, 0, 0.4);
+    }
+    .prop-badge.conviction-pass {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border-color: rgba(255, 255, 255, 0.12);
+      opacity: 0.85;
+    }
+    .prop-card.conviction-lock { border-left-width: 4px; border-left-color: var(--accent-gold); }
+    .prop-card.conviction-hammer { border-left-width: 4px; border-left-color: #d946ef; }
+    .prop-conviction-caption {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-top: 4px;
+      line-height: 1.2;
+      color: var(--text-muted);
+    }
+    .prop-conviction-caption.conviction-lock { color: #fff6bf; }
+    .prop-conviction-caption.conviction-hammer { color: #f0abfc; }
+    .prop-conviction-caption.conviction-go,
+    .prop-conviction-caption.conviction-play { color: var(--accent-green); }
+
     .prop-badge.hot {
       background: linear-gradient(135deg, var(--accent-red), rgb(255, 120, 120));
       color: white;
@@ -11331,6 +11470,18 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     .bs-action.score-pass   { color: var(--accent-blue); }
     .bs-action.score-fade   { color: var(--accent-red); }
     .bs-edge-line { font-size: 12px; color: var(--text-muted); }
+    .bs-conviction-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .bs-conviction-detail {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
 
     /* Key stats row */
     .bs-stats {
@@ -18037,6 +18188,43 @@ nav.tabs > button,
         <button id="exportOutcomesBtn" onclick="exportOutcomesCSV()" style="margin-left:6px;padding:8px 12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-secondary);font-size:11px;cursor:pointer;font-weight:600;transition:all 0.2s;white-space:nowrap;" title="Export recorded outcomes as CSV">📥 Export Outcomes</button>
       </div>
 
+      <details class="propiq-grading-guide" id="propiqGradingGuide">
+        <summary>How PropIQ grading works</summary>
+        <div class="propiq-grading-body">
+          <p class="propiq-grading-intro">
+            <strong>PropIQ™</strong> is a <strong>bet grade (5–98)</strong>, not a unique slate rank. Several props can share the same score (especially <strong>98</strong>, the cap).
+            Use the badge under each play — and <strong>How to Bet</strong> — to see why grades differ. When grades tie, the board sorts by <strong>edge → L10 → confidence</strong>.
+          </p>
+          <div class="propiq-grading-grid">
+            <div class="propiq-grading-col">
+              <h4>PropIQ action tiers</h4>
+              <ul>
+                <li><strong>83+</strong> — ELITE PLAY (top grade band)</li>
+                <li><strong>70–82</strong> — PRIME PICK</li>
+                <li><strong>55–69</strong> — STRONG</li>
+                <li><strong>40–54</strong> — PASS / lean away</li>
+                <li><strong>&lt;40</strong> — FADE</li>
+              </ul>
+              <p class="propiq-grading-foot">Filter pills (Ultimate / Prime / Strong) use these score bands. The <strong>⭐ ULTIMATE</strong> card badge also requires strong sheet hit rates — not PropIQ alone.</p>
+            </div>
+            <div class="propiq-grading-col">
+              <h4>Conviction badges (IQ + confidence)</h4>
+              <ul>
+                <li><strong>🔒 LOCK</strong> — IQ ≥ 90 &amp; confidence ≥ 80%</li>
+                <li><strong>🚀 HAMMER</strong> — IQ ≥ 83 &amp; confidence ≥ 75%</li>
+                <li><strong>✅ GO</strong> — elite IQ + solid confidence, or high confidence + strong IQ</li>
+                <li><strong>🎯 PLAY</strong> — IQ ≥ 70 &amp; confidence ≥ 65%</li>
+                <li><strong>👍 LEAN</strong> — confidence-led spot (IQ moderate)</li>
+                <li><strong>⚠️ GRADE↑ / CONF↑</strong> — IQ and confidence disagree; size down</li>
+                <li><strong>👀 WATCH</strong> — track, not max stake</li>
+                <li><strong>⏸ PASS</strong> — weak combined profile</li>
+              </ul>
+              <p class="propiq-grading-foot">Confidence (ring) reflects hit-rate consistency, sample, cushion, and stability. Hover any conviction badge on a card for the exact IQ + confidence pair.</p>
+            </div>
+          </div>
+        </div>
+      </details>
+
       <!-- Props Container -->
       <div class="props-container" id="propsContainer">
         <div class="loading">
@@ -18527,6 +18715,42 @@ nav.tabs > button,
           </div>
         </div>
       </div>
+      <details class="propiq-grading-guide" id="propiqGradingGuideMarkets">
+        <summary>How PropIQ grading works</summary>
+        <div class="propiq-grading-body">
+          <p class="propiq-grading-intro">
+            <strong>PropIQ™</strong> is a <strong>bet grade (5–98)</strong>, not a unique slate rank. Several rows can share the same score (especially <strong>98</strong>, the cap).
+            Each market row shows a <strong>conviction badge</strong> (IQ + confidence). The board sorts by <strong>PropIQ → edge → L10 → confidence</strong> when grades tie.
+          </p>
+          <div class="propiq-grading-grid">
+            <div class="propiq-grading-col">
+              <h4>PropIQ action tiers</h4>
+              <ul>
+                <li><strong>83+</strong> — ELITE PLAY (top grade band)</li>
+                <li><strong>70–82</strong> — PRIME PICK</li>
+                <li><strong>55–69</strong> — STRONG</li>
+                <li><strong>40–54</strong> — PASS / lean away</li>
+                <li><strong>&lt;40</strong> — FADE</li>
+              </ul>
+              <p class="propiq-grading-foot">Purple/gold row styling follows PropIQ tier. Open a prop on the Props tab for full <strong>How to Bet</strong> factor breakdown.</p>
+            </div>
+            <div class="propiq-grading-col">
+              <h4>Conviction badges (IQ + confidence)</h4>
+              <ul>
+                <li><strong>🔒 LOCK</strong> — IQ ≥ 90 &amp; confidence ≥ 80%</li>
+                <li><strong>🚀 HAMMER</strong> — IQ ≥ 83 &amp; confidence ≥ 75%</li>
+                <li><strong>✅ GO</strong> — elite IQ + solid confidence, or high confidence + strong IQ</li>
+                <li><strong>🎯 PLAY</strong> — IQ ≥ 70 &amp; confidence ≥ 65%</li>
+                <li><strong>👍 LEAN</strong> — confidence-led spot (IQ moderate)</li>
+                <li><strong>⚠️ GRADE↑ / CONF↑</strong> — IQ and confidence disagree; size down</li>
+                <li><strong>👀 WATCH</strong> — track, not max stake</li>
+                <li><strong>⏸ PASS</strong> — weak combined profile</li>
+              </ul>
+              <p class="propiq-grading-foot">Confidence reflects hit-rate consistency, sample, cushion, and stability. Hover any conviction badge for the exact IQ + confidence pair.</p>
+            </div>
+          </div>
+        </div>
+      </details>
       <div class="markets-game-board-section">
         <div class="markets-game-board-head">
           <div class="propai-board-meta-label">Filter by Game</div>
@@ -33720,6 +33944,12 @@ nav.tabs > button,
         // ── FIX (May 8): Include real outcomes accuracy
         const realAccuracy = state.propHits[p.id]?.accuracy ?? null;
         const _bs = computeBetScore(p, fdLine, intel, _edge, _modelProb, realAccuracy);
+        const _conviction = getPropConvictionSignal(_bs.score, _confidenceVal);
+        const _convictionBadge = buildConvictionBadgeHTML(_conviction);
+        const _convictionCardCls = _conviction ? ` conviction-${_conviction.key}` : '';
+        const _convictionCaption = _conviction
+          ? `<div class="prop-conviction-caption ${_conviction.cls}" title="${escapeHTML(_conviction.title)}">${escapeHTML(_conviction.short)}</div>`
+          : '';
 
         // ── Alt line note ────────────────────────────────
         const _altLineNote = isAltLine
@@ -33761,6 +33991,7 @@ nav.tabs > button,
                   </div>
                   <div class="bs-action-wrap">
                     <div class="bs-action ${_bs.actionClass}">${_bs.actionIcon} ${_bs.action}</div>
+                    ${_conviction ? `<div class="bs-conviction-line"><span class="prop-badge conviction ${_conviction.cls}" title="${escapeHTML(_conviction.title)}">${_conviction.label}</span><span class="bs-conviction-detail">IQ ${_bs.score} · Conf ${normalizeConfidence(_confidenceVal)}%</span></div>` : ''}
                     <div class="bs-edge-line">Edge ${_edgeDisplay} · Model ${_modelProbPct != null ? _modelProbPct+'%' : '—'} vs Book ${_bookImpDisp}</div>
                   </div>
                 </div>
@@ -33838,7 +34069,7 @@ nav.tabs > button,
         const _cardTier = _badgeTier === 'spec' ? 'solid' : _badgeTier;
 
         return `
-          <div class="prop-card ${_cardTier}${isStale ? ' stale' : ''}">
+          <div class="prop-card ${_cardTier}${_convictionCardCls}${isStale ? ' stale' : ''}">
             <div class="prop-card-clickable" data-pid="${p.id}" onclick="openPlayerDetail(this.dataset.pid).catch(e => console.error('Error opening detail:', e))" style="cursor:pointer;">
             <div class="prop-header">
               ${(() => { const _hs = getPlayerHeadshot(p.player, p.league); const _key = playerHeadshotKey(p.player, p.league); return _hs ? `<div class="prop-headshot-wrap"><img class="prop-headshot ${_cardTier}" src="${_hs}" alt="${escapeHTML(p.player)} headshot" data-player-headshot-key="${escapeHTML(_key)}" data-player="${escapeHTML(p.player || '')}" data-league="${escapeHTML(p.league || '')}" data-kind="prop" data-tier="${escapeHTML(_cardTier)}" onerror="handlePlayerHeadshotError(this)" /></div>` : headshotPlaceholderHTML(p.player, p.league, 'prop', _cardTier); })()}
@@ -33871,6 +34102,7 @@ nav.tabs > button,
                 ` : ''}
                 <div class="prop-badges">
                   ${isLiveGame ? '<span class="prop-badge live-badge">● LIVE</span>' : ''}
+                  ${_convictionBadge}
                   ${p.meetsUltimate ? '<span class="prop-badge ultimate">⭐ ULTIMATE</span>' : ''}
                   ${p.tier === 'prime' && !p.meetsUltimate ? '<span class="prop-badge prime">🎯 PRIME</span>' : ''}
                   ${p.tier === 'strong' ? '<span class="prop-badge strong">✅ STRONG</span>' : ''}
@@ -33918,6 +34150,7 @@ nav.tabs > button,
                 <div class="propai-confidence-ring propai-confidence-ring--compact" style="--ring-pct:${normalizeConfidence(_confidenceVal)}%">
                   <span><strong>${normalizeConfidence(_confidenceVal)}</strong><small>/100</small></span>
                 </div>
+                ${_convictionCaption}
               </div>
             </div>
             ${liveStrip}
@@ -37143,6 +37376,10 @@ nav.tabs > button,
       const iqClass = propIQTierClass(iq);
       const badgeTier = propIQTierToBadgeTier(iqClass);
       const iqDisplay = Number.isFinite(Number(iq)) && Number(iq) > 0 ? Math.round(Number(iq)) : '—';
+      const marketConviction = getPropConvictionSignal(iq, prop.confidence);
+      const marketConvictionBadge = marketConviction
+        ? `<div class="propai-market-conviction">${buildConvictionBadgeHTML(marketConviction)}</div>`
+        : '';
       const leagueBadge = prop.league ? `<span class="propai-market-league">${escapeHTML(prop.league)}</span>` : '';
       const bookFromLive = !!(prop.liveOdds?.fromLive);
       const bookSource = bookFromLive ? 'FanDuel' : (prop.liveOdds?.book || prop.book || 'Board');
@@ -37169,6 +37406,7 @@ nav.tabs > button,
                     <div class="propiq-number-display tier-${badgeTier}">${escapeHTML(String(iqDisplay))}</div>
                     <div class="propiq-logo tier-${badgeTier}">IQ</div>
                   </div>
+                  ${marketConvictionBadge}
                 </div>
                 ${buildPropAIDeckStatChipsHTML(prop)}
               </div>
@@ -38835,6 +39073,7 @@ nav.tabs > button,
       setDisplay('portfolioContainer', view === 'portfolio' ? 'block' : 'none');
       setDisplay('filterSection', showPropsSurface ? 'block' : 'none');
       setDisplay('sortBar', showPropsSurface ? 'flex' : 'none');
+      setDisplay('propiqGradingGuide', showPropsSurface ? 'block' : 'none');
 
       const liveGamesEl = document.querySelector('.live-games');
       if (liveGamesEl) {
@@ -43324,6 +43563,72 @@ Return a single raw JSON object (no code fences) matching the system schema. In 
         'FADE': 'fade'
       };
       return map[action] || 'spec';
+    }
+
+    function getPropConvictionSignal(iq, confidence) {
+      const iqN = Math.round(Number(iq) || 0);
+      const confRaw = parseFloat(confidence);
+      if (!iqN || !Number.isFinite(confRaw) || confRaw <= 0) return null;
+      const confN = normalizeConfidence(confRaw);
+      const base = { iq: iqN, conf: confN };
+
+      if (iqN >= 90 && confN >= 80) {
+        return Object.assign({}, base, {
+          key: 'lock', cls: 'conviction-lock', label: '🔒 LOCK', short: 'Lock',
+          title: `PropIQ ${iqN} + ${confN}% confidence — maximum combined conviction`
+        });
+      }
+      if (iqN >= 83 && confN >= 75) {
+        return Object.assign({}, base, {
+          key: 'hammer', cls: 'conviction-hammer', label: '🚀 HAMMER', short: 'Hammer',
+          title: `PropIQ ${iqN} + ${confN}% confidence — elite grade with strong model trust`
+        });
+      }
+      if ((iqN >= 83 && confN >= 60) || (iqN >= 70 && confN >= 80)) {
+        return Object.assign({}, base, {
+          key: 'go', cls: 'conviction-go', label: '✅ GO', short: 'Go',
+          title: `PropIQ ${iqN} + ${confN}% confidence — strong actionable play`
+        });
+      }
+      if (iqN >= 70 && confN >= 65) {
+        return Object.assign({}, base, {
+          key: 'play', cls: 'conviction-play', label: '🎯 PLAY', short: 'Play',
+          title: `PropIQ ${iqN} + ${confN}% confidence — solid prime-tier spot`
+        });
+      }
+      if (iqN >= 55 && confN >= 70) {
+        return Object.assign({}, base, {
+          key: 'lean', cls: 'conviction-lean', label: '👍 LEAN', short: 'Lean',
+          title: `PropIQ ${iqN} + ${confN}% confidence — confidence-led, moderate grade`
+        });
+      }
+      if (iqN >= 83 && confN < 60) {
+        return Object.assign({}, base, {
+          key: 'caution', cls: 'conviction-caution', label: '⚠️ GRADE↑', short: 'Grade↑',
+          title: `PropIQ ${iqN} high but only ${confN}% confidence — verify L5/L10 before sizing up`
+        });
+      }
+      if (iqN < 70 && confN >= 75) {
+        return Object.assign({}, base, {
+          key: 'caution', cls: 'conviction-caution', label: '⚠️ CONF↑', short: 'Conf↑',
+          title: `Confidence ${confN}% strong but PropIQ ${iqN} — mixed signals, size down`
+        });
+      }
+      if (iqN >= 55 && confN >= 50) {
+        return Object.assign({}, base, {
+          key: 'watch', cls: 'conviction-watch', label: '👀 WATCH', short: 'Watch',
+          title: `PropIQ ${iqN} + ${confN}% confidence — track only, not max stake`
+        });
+      }
+      return Object.assign({}, base, {
+        key: 'pass', cls: 'conviction-pass', label: '⏸ PASS', short: 'Pass',
+        title: `PropIQ ${iqN} + ${confN}% confidence — weak combined profile`
+      });
+    }
+
+    function buildConvictionBadgeHTML(signal) {
+      if (!signal) return '';
+      return `<span class="prop-badge conviction ${signal.cls}" title="${escapeHTML(signal.title)}">${signal.label}</span>`;
     }
 
     function propDirectionText(p) {
