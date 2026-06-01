@@ -6,8 +6,10 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Content-Type": "application/json",
-  "Cache-Control": "public, max-age=600", // cache 10 min
+  "Cache-Control": "public, max-age=300",
 };
+
+const SLATE_TIMEZONE = "America/New_York";
 
 const ESPN_ENDPOINTS = {
   NBA: "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
@@ -16,12 +18,11 @@ const ESPN_ENDPOINTS = {
   NFL: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
 };
 
-// ESPN abbr → PropEdge abbr overrides (ESPN sometimes differs)
 const ABBR_MAP = {
-  WSH: "WAS", // NFL/NBA Washington
-  JAX: "JAC", // NFL Jacksonville
-  NOS: "NO",  // NFL New Orleans
-  KCK: "KC",  // NBA Kansas City (historical)
+  WSH: "WAS",
+  JAX: "JAC",
+  NOS: "NO",
+  KCK: "KC",
 };
 
 function normalizeAbbr(abbr) {
@@ -30,10 +31,28 @@ function normalizeAbbr(abbr) {
   return ABBR_MAP[up] || up;
 }
 
-async function fetchLeague(league, url) {
+function slateDateParts(timeZone = SLATE_TIMEZONE) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const get = (type) => parts.find((p) => p.type === type)?.value || "";
+  const yyyy = get("year");
+  const mm = get("month");
+  const dd = get("day");
+  return {
+    iso: `${yyyy}-${mm}-${dd}`,
+    espn: `${yyyy}${mm}${dd}`,
+    display: `${Number(mm)}/${Number(dd)}/${yyyy}`,
+    timezone: timeZone,
+  };
+}
+
+async function fetchLeague(league, url, espnDate) {
   try {
-    const todayParam = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const scoreboardUrl = `${url}${url.includes("?") ? "&" : "?"}dates=${todayParam}`;
+    const scoreboardUrl = `${url}${url.includes("?") ? "&" : "?"}dates=${espnDate}`;
     const res = await fetch(scoreboardUrl, {
       headers: { "User-Agent": "PropEdge/1.0" },
       signal: AbortSignal.timeout(5000),
@@ -48,7 +67,7 @@ async function fetchLeague(league, url) {
       const comp = event.competitions?.[0];
       if (!comp) continue;
 
-      const status = comp.status?.type?.state || "pre"; // pre, in, post
+      const status = comp.status?.type?.state || "pre";
       const completed = comp.status?.type?.completed === true;
       const gameId = event.id;
       const gameLabel = event.name || event.shortName || "";
@@ -59,7 +78,6 @@ async function fetchLeague(league, url) {
       const homeAbbr = normalizeAbbr(homeTeam?.team?.abbreviation);
       const awayAbbr = normalizeAbbr(awayTeam?.team?.abbreviation);
 
-      // Series info (playoffs)
       const seriesNote = comp.series?.summary || null;
       const isSeries = !!comp.series;
 
@@ -73,7 +91,7 @@ async function fetchLeague(league, url) {
         away: awayAbbr,
         label: gameLabel,
         date: gameDate,
-        status,           // pre | in | post
+        status,
         completed,
         seriesNote,
         isSeries,
@@ -92,16 +110,19 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers: CORS, body: "" };
   }
 
-  const requested = event.queryStringParameters?.leagues;
+  const params = event.queryStringParameters || {};
+  const slate = slateDateParts(params.tz || SLATE_TIMEZONE);
+  const espnDate = String(params.date || slate.espn).replace(/\D/g, "").slice(0, 8);
+
+  const requested = params.leagues;
   const leagues = requested
     ? requested.toUpperCase().split(",").filter((l) => ESPN_ENDPOINTS[l])
     : Object.keys(ESPN_ENDPOINTS);
 
   const results = await Promise.all(
-    leagues.map((league) => fetchLeague(league, ESPN_ENDPOINTS[league]))
+    leagues.map((league) => fetchLeague(league, ESPN_ENDPOINTS[league], espnDate))
   );
 
-  // Build per-league active team sets
   const activeTeams = {};
   const allGames = [];
   const errors = {};
@@ -112,7 +133,6 @@ exports.handler = async (event) => {
     if (r.error) errors[r.league] = r.error;
   }
 
-  // Flat set of ALL active teams across all leagues (for cross-league queries)
   const allActiveTeams = [...new Set(Object.values(activeTeams).flat())];
 
   return {
@@ -120,10 +140,13 @@ exports.handler = async (event) => {
     headers: CORS,
     body: JSON.stringify({
       ok: true,
-      date: new Date().toISOString().slice(0, 10),
-      activeTeams,      // { NBA: ["OKC","MIN",...], MLB: [...], ... }
-      allActiveTeams,   // flat list across all leagues
-      games: allGames,  // full game list with status + series info
+      date: slate.iso,
+      dateDisplay: slate.display,
+      espnDate,
+      timezone: slate.timezone,
+      activeTeams,
+      allActiveTeams,
+      games: allGames,
       errors: Object.keys(errors).length ? errors : undefined,
     }),
   };

@@ -39,24 +39,48 @@ async function fetchProps(): Promise<Record<string, string>[]> {
   });
 }
 
+const SLATE_TIMEZONE = "America/New_York";
+
+function slateDateParts(timeZone = SLATE_TIMEZONE) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const get = (type: string) => parts.find((p) => p.type === type)?.value || "";
+  const yyyy = get("year");
+  const mm = get("month");
+  const dd = get("day");
+  return {
+    iso: `${yyyy}-${mm}-${dd}`,
+    espn: `${yyyy}${mm}${dd}`,
+    display: `${Number(mm)}/${Number(dd)}/${yyyy}`,
+    timezone: timeZone,
+  };
+}
 type ActiveSlate = {
   date: string;
+  dateDisplay: string;
+  timezone: string;
   activeTeams: Record<string, string[]>;
   games: Array<{ league?: string; home?: string; away?: string; label?: string; status?: string }>;
 };
 
 async function fetchActiveSlate(league: string): Promise<ActiveSlate | null> {
   try {
+    const slate = slateDateParts();
     const leagues = league && league !== "ALL" ? league.toUpperCase() : undefined;
-    const url = leagues
-      ? `${GAME_FILTER_URL}?leagues=${encodeURIComponent(leagues)}`
-      : GAME_FILTER_URL;
-    const res = await fetch(url, { next: { revalidate: 300 } });
+    const params = new URLSearchParams({ tz: SLATE_TIMEZONE, date: slate.espn });
+    if (leagues) params.set("leagues", leagues);
+    const res = await fetch(`${GAME_FILTER_URL}?${params.toString()}`, { cache: "no-store" });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data?.ok || !data.activeTeams) return null;
     return {
-      date: data.date || new Date().toISOString().slice(0, 10),
+      date: data.date || slate.iso,
+      dateDisplay: data.dateDisplay || slate.display,
+      timezone: data.timezone || SLATE_TIMEZONE,
       activeTeams: data.activeTeams,
       games: data.games || [],
     };
@@ -72,13 +96,21 @@ function normalizeTeamAbbr(team: string): string {
 function filterRowsToActiveSlate(
   rows: Record<string, string>[],
   slate: ActiveSlate | null,
+  leagueFilter: string,
 ): Record<string, string>[] {
   if (!slate?.activeTeams) return rows;
 
+  const wantedLeague = leagueFilter && leagueFilter !== "ALL" ? leagueFilter.toUpperCase() : null;
+
   return rows.filter((row) => {
     const league = (row["League"] || "").toUpperCase();
+    if (!league) return false;
+    if (wantedLeague && league !== wantedLeague) return false;
+
     const active = slate.activeTeams[league];
-    if (!active?.length) return true;
+    // No games on today's slate for this league → drop all props (eliminated/off-day)
+    if (!active?.length) return false;
+
     const team = normalizeTeamAbbr(row["Team"] || row["team"] || "");
     const opp = normalizeTeamAbbr(row["Opponent"] || row["Opp"] || row["opponent"] || row["Matchup"] || "");
     return active.includes(team) || (opp.length > 0 && active.includes(opp));
@@ -136,16 +168,20 @@ function buildTopProps(
 function formatSlateContext(slate: ActiveSlate | null, league: string): string {
   if (!slate) return "";
   const leagues = league && league !== "ALL" ? [league.toUpperCase()] : Object.keys(slate.activeTeams);
-  const lines: string[] = [`SLATE DATE: ${slate.date}`, "TEAMS PLAYING TODAY (ESPN scoreboard):"];
+  const lines: string[] = [
+    `TODAY'S DATE (US Eastern): ${slate.dateDisplay || slate.date}`,
+    `SLATE TIMEZONE: ${slate.timezone || SLATE_TIMEZONE}`,
+    "TEAMS PLAYING TODAY (ESPN scoreboard):",
+  ];
   for (const lg of leagues) {
     const teams = slate.activeTeams[lg] || [];
-    if (teams.length) lines.push(`${lg}: ${teams.join(", ")}`);
+    lines.push(`${lg}: ${teams.length ? teams.join(", ") : `NO GAMES — exclude all ${lg} props`}`);
     const games = (slate.games || []).filter((g) => g.league === lg);
     for (const g of games.slice(0, 12)) {
       if (g.home && g.away) lines.push(`  ${g.away} @ ${g.home}${g.status ? ` (${g.status})` : ""}`);
     }
   }
-  lines.push("Only analyze props for teams on today's slate. Do NOT recommend eliminated or off-day teams.");
+  lines.push("Use ONLY the date above in titles. Do NOT recommend players from teams not listed.");
   return lines.join("\n");
 }
 
@@ -421,14 +457,14 @@ export async function POST(req: NextRequest) {
       fetchProps(),
       fetchActiveSlate(league),
     ]);
-    const slateRows = filterRowsToActiveSlate(rows, slate);
+    const slateRows = filterRowsToActiveSlate(rows, slate, league);
     const topProps = buildTopProps(slateRows, league, question || "");
 
     if (!topProps.length) {
       return NextResponse.json({
         ok: false,
         error: `No active ${league === "ALL" ? "" : `${league} `}props on today's slate. Teams not playing today (including eliminated playoff teams) are excluded.`,
-        slateDate: slate?.date,
+        slateDate: slate?.dateDisplay || slate?.date,
         filteredOut: rows.length - slateRows.length,
       }, { status: 200 });
     }
@@ -436,6 +472,8 @@ export async function POST(req: NextRequest) {
     const slateContext = formatSlateContext(slate, league);
 
     const systemPrompt = `You are a sharp sports betting analyst writing a premium prop report.
+
+TODAY is ${slate?.dateDisplay || slateDateParts().display} (US Eastern). Use this exact date in article_title — never tomorrow's date.
 
 Use the PropEdge board as foundation, then add Statcast/splits context you know.
 Keep JSON compact: 2-3 sentence paragraphs per pick, max ${MAX_PROPS} picks.
@@ -446,7 +484,8 @@ FORMAT inside matchup_analysis:
 Short paragraph per pick. Blank line between picks.
 
 key_numbers_breakdown: short markdown bullets only.
-Do NOT fabricate players, lines, or odds not in the board payload.`;
+Do NOT fabricate players, lines, or odds not in the board payload.
+Do NOT include eliminated or off-slate teams (e.g. NBA teams with no game today).`;
 
     const userPrompt = `${question || `What are the best ${league} props today?`}
 

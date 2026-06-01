@@ -27158,8 +27158,7 @@ nav.tabs > button,
           const team = (p.team || p.Team || '').toUpperCase().trim();
           const opp = (p.opponent || p.opp || '').toUpperCase().trim();
           const active = data.activeTeams[league];
-          if (!active || !active.length) return true; // no data for league → keep
-          // Keep prop if either the team or opponent is in today's active set
+          if (!active || !active.length) return false; // no games today for league → hide props
           return active.includes(team) || active.includes(opp);
         });
 
