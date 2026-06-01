@@ -18610,6 +18610,7 @@ nav.tabs > button,
                 <button class="propai-market-tab" type="button" data-market="3PM" onclick="setPropAIMarketFilter('3PM')">3PM</button>
                 <button class="propai-market-tab" type="button" data-market="Hits" onclick="setPropAIMarketFilter('Hits')">Hits</button>
                 <button class="propai-market-tab" type="button" data-market="HRR" onclick="setPropAIMarketFilter('HRR')">HRR</button>
+                <button class="propai-market-tab" type="button" data-market="TB" onclick="setPropAIMarketFilter('TB')">Tot. Bases</button>
                 <button class="propai-market-tab" type="button" data-market="Strikeouts" onclick="setPropAIMarketFilter('Strikeouts')">Strikeouts</button>
                 <button class="propai-market-tab" type="button" data-market="Goals" onclick="setPropAIMarketFilter('Goals')">Goals</button>
                 </div>
@@ -18727,6 +18728,7 @@ nav.tabs > button,
           <button class="propai-market-tab" type="button" data-market="3PM" onclick="setPropAIMarketFilter('3PM')">3PM</button>
           <button class="propai-market-tab" type="button" data-market="Hits" onclick="setPropAIMarketFilter('Hits')">Hits</button>
           <button class="propai-market-tab" type="button" data-market="HRR" onclick="setPropAIMarketFilter('HRR')">HRR</button>
+          <button class="propai-market-tab" type="button" data-market="TB" onclick="setPropAIMarketFilter('TB')">Tot. Bases</button>
           <button class="propai-market-tab" type="button" data-market="Strikeouts" onclick="setPropAIMarketFilter('Strikeouts')">Strikeouts</button>
           <button class="propai-market-tab" type="button" data-market="Goals" onclick="setPropAIMarketFilter('Goals')">Goals</button>
           </div>
@@ -21098,15 +21100,55 @@ nav.tabs > button,
         // ── Fix H: League-Specific Logic (MLB Platoon / NBA B2B / NHL SV%) ──────────────────────
         const oppDetails = getValue(cols.h2h) || '';
         if (actualLeague === 'MLB') {
-            // MLB Platoon Logic: LHP vs RHP splits
-            if (oppDetails.includes('vs LHP') || oppDetails.includes('vs RHP')) {
-                const isGoodPlatoon = (oppDetails.includes('vs LHP') && direction === 'OVER');
-                if (isGoodPlatoon) { modelScore += 5; propFactors.push('🥎 Platoon Advantage (vs LHP)'); }
+            const isTBProp = /total bases|\btb\b/i.test(propType);
+            const oppLower  = oppDetails.toLowerCase();
+            const vsLHP     = oppDetails.includes('vs LHP');
+            const vsRHP     = oppDetails.includes('vs RHP');
+
+            // ── Platoon splits (enhanced for Total Bases) ─────────────────────
+            if (vsLHP || vsRHP) {
+              if (isTBProp) {
+                // TB gets a bigger platoon bonus — pull-side power matters more
+                if (vsLHP && direction === 'OVER')  { modelScore += 8; propFactors.push('🥎 TB Platoon Edge (RHB vs LHP — pull power)'); }
+                if (vsLHP && direction === 'UNDER')  { modelScore -= 4; propFactors.push('⚠️ TB vs LHP — market already pricing power'); }
+                if (vsRHP && direction === 'OVER')  { modelScore += 2; propFactors.push('🥎 vs RHP (neutral-slight TB edge)'); }
+              } else {
+                // Non-TB: original logic
+                if (vsLHP && direction === 'OVER') { modelScore += 5; propFactors.push('🥎 Platoon Advantage (vs LHP)'); }
+              }
             }
-            // MLB Ace Penalty: If ERA is mentioned as low
-            if (oppDetails.toLowerCase().includes('era < 3.5')) {
-                modelScore -= 8;
-                propFactors.push('💎 Facing Elite Ace');
+
+            // ── Pitcher ERA context (parsed from h2h / oppDetails) ────────────
+            const eraMatch = oppLower.match(/era\s*[:<]\s*([\d.]+)/);
+            const pitcherERA = eraMatch ? parseFloat(eraMatch[1]) : null;
+            if (pitcherERA !== null) {
+              if (pitcherERA < 3.0) {
+                const pen = isTBProp ? -12 : -8;
+                modelScore += pen;
+                propFactors.push(`🔒 Elite Starter (ERA ${pitcherERA.toFixed(2)}) — suppress TB`);
+              } else if (pitcherERA < 3.75) {
+                const pen = isTBProp ? -7 : -5;
+                modelScore += pen;
+                propFactors.push(`🧊 Strong Starter (ERA ${pitcherERA.toFixed(2)})`);
+              } else if (pitcherERA > 5.0) {
+                const boost = isTBProp ? 10 : 6;
+                modelScore += boost;
+                propFactors.push(`🔥 Weak Starter (ERA ${pitcherERA.toFixed(2)}) — TB upside`);
+              } else if (pitcherERA > 4.25) {
+                const boost = isTBProp ? 6 : 3;
+                modelScore += boost;
+                propFactors.push(`📈 Hittable Pitcher (ERA ${pitcherERA.toFixed(2)})`);
+              }
+            }
+
+            // ── HR rate context for TB (hr/9 or hr/game if present) ──────────
+            if (isTBProp) {
+              const hrPer9Match = oppLower.match(/hr\/9\s*[:<]\s*([\d.]+)/);
+              const hrPer9 = hrPer9Match ? parseFloat(hrPer9Match[1]) : null;
+              if (hrPer9 !== null) {
+                if (hrPer9 >= 1.5 && direction === 'OVER')  { modelScore += 6; propFactors.push(`💣 High HR-Rate Pitcher (${hrPer9.toFixed(1)} HR/9) — TB ceiling`); }
+                if (hrPer9 <= 0.7 && direction === 'OVER')  { modelScore -= 5; propFactors.push(`🧱 Low HR-Rate Pitcher (${hrPer9.toFixed(1)} HR/9)`); }
+              }
             }
         } else if (actualLeague === 'NBA') {
             // NBA B2B / Fatigue Logic
@@ -37151,6 +37193,7 @@ nav.tabs > button,
       if (market.includes('3 pointers') || market.includes('three') || market.includes('3pt')) return '3PM';
       if (market.includes('strikeouts') || market.includes('ks')) return 'Strikeouts';
       if (market.includes('hits runs rbis') || market.includes('hits + runs + rbis') || market.includes('hrr')) return 'HRR';
+      if (market.includes('total bases') || /\btb\b/.test(market)) return 'TB';
       if (market.includes('points')) return 'Points';
       if (market.includes('rebounds')) return 'Rebounds';
       if (market.includes('assists')) return 'Assists';
