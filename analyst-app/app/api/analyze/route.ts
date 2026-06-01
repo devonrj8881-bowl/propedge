@@ -12,9 +12,9 @@ const MODEL_CHAIN = Array.from(
   new Set(
     [
       PRIMARY_MODEL,
+      "gemini-2.5-flash",
       "gemini-2.0-flash",
-      "gemini-1.5-flash-002",
-      "gemini-1.5-flash",
+      "gemini-2.0-flash-lite",
     ].filter(Boolean),
   ),
 );
@@ -155,6 +155,11 @@ function isTransientGeminiError(status: number, body: string): boolean {
   return /UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded|temporarily unavailable/i.test(body);
 }
 
+function isModelUnavailableError(status: number, body: string): boolean {
+  if (status === 404) return true;
+  return /not found for API version|not supported for generateContent|is not found/i.test(body);
+}
+
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -224,6 +229,7 @@ async function callGeminiWithResilience(
         const transient = isTransientGeminiError(status, body);
         const hasRetriesLeft = attempt < MAX_GEMINI_ATTEMPTS - 1;
 
+        if (isModelUnavailableError(status, body)) break;
         if (!transient) throw lastErr;
         if (hasRetriesLeft) {
           await delay(700 * 2 ** attempt + Math.floor(Math.random() * 300));
@@ -390,9 +396,11 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[analyze]", msg);
-    const friendly = /503|UNAVAILABLE|high demand/i.test(msg)
+    const friendly = /503|429|UNAVAILABLE|high demand/i.test(msg)
       ? "Gemini is temporarily busy. Please wait a few seconds and try again."
-      : msg;
-    return NextResponse.json({ ok: false, error: friendly, detail: msg }, { status: 500 });
+      : /404|not found/i.test(msg)
+        ? "Analysis model unavailable — please try again."
+        : msg;
+    return NextResponse.json({ ok: false, error: friendly }, { status: 500 });
   }
 }

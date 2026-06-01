@@ -50,7 +50,7 @@ try {
 }
 
 const DEFAULT_MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
-const GEMINI_EV_DETAIL_MODEL = process.env.GEMINI_EV_DETAIL_MODEL || process.env.GEMINI_MODEL || "gemini-2.5-flash-preview-05-20";
+const GEMINI_EV_DETAIL_MODEL = process.env.GEMINI_EV_DETAIL_MODEL || process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
 const DEFAULT_TIMEOUT_MS = Number(process.env.CLAUDE_TIMEOUT_MS || 27000);
 const MAX_INPUT_CHARS = Number(process.env.ANALYST_MAX_INPUT_CHARS || 9000);
@@ -192,9 +192,9 @@ async function callGeminiEvDetail(messages, options = {}) {
 
   const modelChain = Array.from(new Set([
     GEMINI_EV_DETAIL_MODEL,
+    "gemini-2.5-flash",
     "gemini-2.0-flash",
-    "gemini-1.5-flash-002",
-    "gemini-1.5-flash",
+    "gemini-2.0-flash-lite",
   ].filter(Boolean)));
 
   const payloadBase = {
@@ -229,9 +229,12 @@ async function callGeminiEvDetail(messages, options = {}) {
 
         if (!res.ok) {
           const errBody = await res.text().catch(() => "");
+          const modelUnavailable = res.status === 404
+            || /not found for API version|not supported for generateContent|is not found/i.test(errBody);
           const transient = [429, 500, 502, 503, 504].includes(res.status)
             || /UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded/i.test(errBody);
           lastErr = new Error(`Gemini API HTTP ${res.status}: ${errBody.slice(0, 240)}`);
+          if (modelUnavailable) break;
           if (transient && attempt < 2) {
             await new Promise((r) => setTimeout(r, 700 * 2 ** attempt));
             continue;
