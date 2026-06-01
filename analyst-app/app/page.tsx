@@ -76,7 +76,7 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [league, setLeague] = useState("ALL");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ analysis: Analysis; model: string; propCount: number } | null>(null);
+  const [result, setResult] = useState<{ analysis: Analysis; model: string; propCount: number; fallback?: boolean } | null>(null);
   const [error, setError] = useState("");
 
   async function run(retryCount = 0) {
@@ -152,7 +152,7 @@ export default function Home() {
               borderRadius: 12, padding: "13px 16px", color: "#fff", fontSize: 14, outline: "none"
             }}
           />
-          <button onClick={run} disabled={loading} style={{
+          <button onClick={() => run()} disabled={loading} style={{
             padding: "13px 28px", borderRadius: 12,
             background: loading ? "#1e293b" : "#22c55e",
             color: loading ? "#475569" : "#000",
