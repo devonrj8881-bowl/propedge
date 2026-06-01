@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.131-analysis-data-flow">
+  <meta name="app-version" content="v7.132-outcomes-flow">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -19133,10 +19133,10 @@ nav.tabs > button,
         if (!response.ok) {
           console.warn(`[PropEdge] outcomes.json returned ${response.status}`);
           state.outcomes = {};
-          _lastOutcomesRefreshAt = Date.now();
-          return;
+        } else {
+          state.outcomes = await response.json();
         }
-        state.outcomes = await response.json();
+        mergeTrackedOutcomesIntoState();
         _lastOutcomesRefreshAt = Date.now();
         console.log(`[PropEdge] ✓ Loaded ${Object.keys(state.outcomes).length} outcome records`);
         buildSplitsIndex();
@@ -19144,8 +19144,29 @@ nav.tabs > button,
       } catch (e) {
         console.error('[PropEdge] Error loading outcomes.json:', e.message);
         state.outcomes = {};
+        mergeTrackedOutcomesIntoState();
         _lastOutcomesRefreshAt = Date.now();
       }
+    }
+
+    function mergeTrackedOutcomesIntoState() {
+      if (!state.outcomes) state.outcomes = {};
+      Object.entries(window._outcomeTracking || {}).forEach(([key, status]) => {
+        const statusVal = typeof status === 'string' ? status : status?.status;
+        if (!statusVal) return;
+        const existing = state.outcomes[key] || {};
+        state.outcomes[key] = {
+          ...existing,
+          status: statusVal,
+          timestamp: existing.timestamp || new Date().toISOString(),
+          date: existing.date || new Date().toISOString().split('T')[0]
+        };
+      });
+    }
+
+    function getAllTrackedOutcomeEntries() {
+      mergeTrackedOutcomesIntoState();
+      return { ...(state.outcomes || {}) };
     }
 
     // Build splits index: { player: { propType: { overall: %, l5: %, l10: %, l20: %, season: % } } }
@@ -28395,8 +28416,9 @@ nav.tabs > button,
 
       if (player && propType && state.outcomes) {
         const prefix = `${player}|${propType}|`;
+        const altPrefix = prop?.propType ? `${player}|${prop.propType}|` : null;
         const entries = Object.entries(state.outcomes)
-          .filter(([k]) => k.startsWith(prefix))
+          .filter(([k]) => k.startsWith(prefix) || (altPrefix && k.startsWith(altPrefix)))
           .map(([k, o]) => {
             const parts = k.split('|');
             const line = parts[2];
@@ -28418,6 +28440,22 @@ nav.tabs > button,
           .sort((a, b) => b.date - a.date);
         games.push(...entries);
       }
+
+      // Browser-recorded outcomes (Sync/Export buttons)
+      Object.entries(window._outcomeTracking || {}).forEach(([key, status]) => {
+        const statusVal = typeof status === 'string' ? status : status?.status;
+        if (!statusVal || !prop?.player) return;
+        if (!key.startsWith(`${prop.player}|`)) return;
+        const parts = key.split('|');
+        games.push({
+          date: new Date(),
+          hit: statusVal === 'HIT',
+          result: statusVal,
+          line: parts[2] || prop.line,
+          actual: null,
+          isHome: null
+        });
+      });
 
       try {
         for (let i = 0; i < propEdgeStorage.length; i++) {
@@ -28471,6 +28509,15 @@ nav.tabs > button,
         const homeGames = withVenue.filter(g => g.isHome === true);
         const awayGames = withVenue.filter(g => g.isHome === false);
         return { home: calcStats(homeGames), away: calcStats(awayGames), fromSheet: false };
+      }
+
+      const espnHist = detailGameHistoryCache[propId] || detailGameHistoryCache[prop?.id];
+      if (Array.isArray(espnHist) && espnHist.length) {
+        const homeGames = espnHist.filter(g => g.isHome === true);
+        const awayGames = espnHist.filter(g => g.isHome === false);
+        if (homeGames.length || awayGames.length) {
+          return { home: calcStats(homeGames), away: calcStats(awayGames), fromSheet: false };
+        }
       }
 
       return {
@@ -28796,13 +28843,13 @@ nav.tabs > button,
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div style="background: rgba(167,107,207,0.1); padding: 12px; border-radius: 6px;">
                 <div style="font-size: 11px; color: #8a95ac; margin-bottom: 6px;">HOME</div>
-                <div style="font-size: 20px; font-weight: 800; color: #b366ff;">${splitPct(splits.home)}</div>
-                <div style="font-size: 10px; color: #8a95ac; margin-top: 4px;">${splitHits(splits.home)}</div>
+                <div style="font-size: 20px; font-weight: 800; color: #b366ff;" id="analysisSplitHomePct">${splitPct(splits.home)}</div>
+                <div style="font-size: 10px; color: #8a95ac; margin-top: 4px;" id="analysisSplitHomeHits">${splitHits(splits.home)}</div>
               </div>
               <div style="background: rgba(93,173,226,0.1); padding: 12px; border-radius: 6px;">
                 <div style="font-size: 11px; color: #8a95ac; margin-bottom: 6px;">AWAY</div>
-                <div style="font-size: 20px; font-weight: 800; color: #5dade2;">${splitPct(splits.away)}</div>
-                <div style="font-size: 10px; color: #8a95ac; margin-top: 4px;">${splitHits(splits.away)}</div>
+                <div style="font-size: 20px; font-weight: 800; color: #5dade2;" id="analysisSplitAwayPct">${splitPct(splits.away)}</div>
+                <div style="font-size: 10px; color: #8a95ac; margin-top: 4px;" id="analysisSplitAwayHits">${splitHits(splits.away)}</div>
               </div>
             </div>
           </div>
@@ -28968,10 +29015,22 @@ nav.tabs > button,
       loadDetailStats(prop);
     }
 
-    function refreshAnalysisModalHistory(prop) {
+    function refreshAnalysisModalSections(prop) {
       const modal = document.getElementById('analysisModal');
       if (!modal || modal.style.display === 'none' || modal.dataset.propId !== prop.id) return;
+
       const gameHistory = getGameByGameHistory(prop.id, prop);
+      const splits = getHomeAwaySplits(prop.id, prop, gameHistory);
+      const splitPct = (side) => {
+        if (!side.hasData) return '—';
+        if (side.pct != null) return `${side.pct}%`;
+        return '—';
+      };
+      const splitHits = (side) => {
+        if (!side.hasData || side.total == null) return splits.fromSheet ? 'sheet rate' : 'Insufficient data';
+        return `${side.hits}/${side.total} hits`;
+      };
+
       const histHits = gameHistory.filter(g => g.hit).length;
       const histTotal = gameHistory.length;
       const hitRecord = state.propHits[prop.id] || { hits: 0, total: 0 };
@@ -28980,6 +29039,7 @@ nav.tabs > button,
       const hitAccuracy = displayHitTotal > 0
         ? Math.round((displayHitHits / displayHitTotal) * 100)
         : 'N/A';
+
       const summaryEl = document.getElementById('analysisHistorySummary');
       const barsEl = document.getElementById('analysisHistoryBars');
       const countEl = document.getElementById('analysisHistoryCount');
@@ -28997,6 +29057,15 @@ nav.tabs > button,
           return `<div style="flex: 1; background: ${barColor}; height: ${barHeight}%; border-radius: 2px 2px 0 0; opacity: 0.8; min-width: 0; cursor: pointer;" title="${game.result} on ${dateStr}"></div>`;
         }).join('') || `<div style="color: #8a95ac; text-align: center; width: 100%;">No game history yet</div>`;
       }
+
+      const homePctEl = document.getElementById('analysisSplitHomePct');
+      const awayPctEl = document.getElementById('analysisSplitAwayPct');
+      const homeHitsEl = document.getElementById('analysisSplitHomeHits');
+      const awayHitsEl = document.getElementById('analysisSplitAwayHits');
+      if (homePctEl) homePctEl.textContent = splitPct(splits.home);
+      if (awayPctEl) awayPctEl.textContent = splitPct(splits.away);
+      if (homeHitsEl) homeHitsEl.textContent = splitHits(splits.home);
+      if (awayHitsEl) awayHitsEl.textContent = splitHits(splits.away);
     }
 
     function closeAnalysisModal() {
@@ -29019,6 +29088,7 @@ nav.tabs > button,
       try {
         const stored = propEdgeStorage.getItem('propedge_outcomes');
         if (stored) window._outcomeTracking = JSON.parse(stored);
+        mergeTrackedOutcomesIntoState();
       } catch (e) {
         console.warn('[PropEdge] Error loading outcomes:', e.message);
       }
@@ -29075,6 +29145,14 @@ nav.tabs > button,
 
       window._outcomeTracking[window._currentOutcomeKey] = status;
       saveOutcomeTracking();
+      mergeTrackedOutcomesIntoState();
+
+      const activeProp = state.props.find(p =>
+        window._currentOutcomeKey.startsWith(`${p.player}|`)
+      );
+      if (activeProp) {
+        if (_activeAnalysisPropId === activeProp.id) refreshAnalysisModalSections(activeProp);
+      }
 
       // Refresh UI: find enriched badges and update them
       const badges = document.querySelectorAll('.outcome-badge');
@@ -29093,8 +29171,10 @@ nav.tabs > button,
     }
 
     async function syncOutcomesToServer() {
-      if (!window._outcomeTracking || Object.keys(window._outcomeTracking).length === 0) {
-        alert('No outcomes recorded yet.');
+      mergeTrackedOutcomesIntoState();
+      const entries = Object.entries(getAllTrackedOutcomeEntries());
+      if (!entries.length) {
+        alert('No outcomes recorded yet. Tap a prop factor badge (🧠/⚔️) or use Record Outcome to log HIT/MISS first.');
         return;
       }
 
@@ -29106,52 +29186,76 @@ nav.tabs > button,
       const today = new Date().toISOString().split('T')[0];
       let successCount = 0;
       let failCount = 0;
+      const isLocalDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
-      for (const [key, status] of Object.entries(window._outcomeTracking)) {
-        const [player, prop, line] = key.split('|');
-        try {
-          const res = await fetch('http://localhost:3001/api/outcome', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              date: today,
-              player,
-              prop,
-              line,
-              status,
-              timestamp: new Date().toISOString(),
-            }),
-          });
-          if (res.ok) successCount++;
-          else failCount++;
-        } catch (e) {
-          failCount++;
-          console.error(`[PropEdge] Sync failed for ${player} | ${prop}:`, e.message);
+      if (isLocalDev) {
+        for (const [key, outcome] of entries) {
+          const [player, prop, line] = key.split('|');
+          const status = typeof outcome === 'string' ? outcome : outcome?.status;
+          if (!status) continue;
+          try {
+            const res = await fetch('http://localhost:3001/api/outcome', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                date: outcome?.date || today,
+                player,
+                prop,
+                line,
+                status,
+                timestamp: outcome?.timestamp || new Date().toISOString(),
+              }),
+            });
+            if (res.ok) successCount++;
+            else failCount++;
+          } catch (e) {
+            failCount++;
+            console.error(`[PropEdge] Sync failed for ${player} | ${prop}:`, e.message);
+          }
         }
+      }
+
+      try {
+        propEdgeStorage.setItem('propedge_outcomes_merged', JSON.stringify(state.outcomes));
+      } catch (e) {
+        console.warn('[PropEdge] Could not persist merged outcomes:', e.message);
       }
 
       btn.textContent = origText;
       btn.disabled = false;
 
-      const msg = failCount === 0
-        ? `✓ Synced ${successCount} outcomes to enrichment server`
-        : `⚠️ Synced ${successCount} outcomes, ${failCount} failed`;
-      alert(msg);
-      console.log(`[PropEdge] Outcome sync complete: ${successCount} success, ${failCount} failed`);
+      if (isLocalDev && failCount === 0 && successCount > 0) {
+        alert(`✓ Synced ${successCount} outcomes to local enrichment server (port 3001)`);
+      } else if (isLocalDev && successCount > 0) {
+        alert(`⚠️ Synced ${successCount} outcomes, ${failCount} failed. Merged ${entries.length} saved locally.`);
+      } else {
+        alert(`✓ Saved ${entries.length} outcomes locally.\n\nTo push to Google Sheet: run \`node outcomes-sync.js\` on your Mac (port 3001), or use Export Outcomes and import manually.`);
+      }
+      console.log(`[PropEdge] Outcome sync complete: ${successCount} remote, ${entries.length} local`);
+
+      if (_activeAnalysisPropId) {
+        const prop = state.props.find(p => p.id === _activeAnalysisPropId);
+        if (prop) refreshAnalysisModalSections(prop);
+      }
     }
 
     function exportOutcomesCSV() {
-      if (!window._outcomeTracking || Object.keys(window._outcomeTracking).length === 0) {
-        alert('No outcomes recorded yet.');
+      mergeTrackedOutcomesIntoState();
+      const entries = Object.entries(getAllTrackedOutcomeEntries());
+      if (!entries.length) {
+        alert('No outcomes recorded yet. Tap a prop factor badge (🧠/⚔️) or use Record Outcome to log HIT/MISS first.');
         return;
       }
 
       const today = new Date().toISOString().split('T')[0];
       let csv = 'Date,Player,Prop,Line,Outcome,Timestamp\n';
 
-      for (const [key, outcome] of Object.entries(window._outcomeTracking)) {
+      for (const [key, outcome] of entries) {
         const [player, prop, line] = key.split('|');
-        csv += `"${today}","${player}","${prop}","${line}","${outcome}","${new Date().toISOString()}"\n`;
+        const status = typeof outcome === 'string' ? outcome : outcome?.status;
+        const ts = outcome?.timestamp || new Date().toISOString();
+        const date = outcome?.date || today;
+        csv += `"${date}","${player}","${prop}","${line}","${status}","${ts}"\n`;
       }
 
       const blob = new Blob([csv], { type: 'text/csv' });
@@ -40616,8 +40720,13 @@ nav.tabs > button,
       const normalized = prop.player.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const pid = getPlayerEspnId(prop.player, prop.league);
       if (!pid) {
-        document.getElementById('sznStatsGrid').innerHTML = '<div class="detail-szn-loading" style="color:var(--text-muted)">Stats not available</div>';
-        document.getElementById('gamelogChart').innerHTML = '<div class="detail-gamelog-loading" style="font-size:11px">Game log not available</div>';
+        const sznGrid = document.getElementById('sznStatsGrid');
+        const chart = document.getElementById('gamelogChart');
+        if (sznGrid) sznGrid.innerHTML = '<div class="detail-szn-loading" style="color:var(--text-muted)">Stats not available</div>';
+        if (chart) chart.innerHTML = '<div class="detail-gamelog-loading" style="font-size:11px">Game log not available</div>';
+        if (_activeAnalysisPropId === prop.id) {
+          try { refreshAnalysisModalSections(prop); } catch (_) {}
+        }
         return;
       }
 
@@ -40642,240 +40751,254 @@ nav.tabs > button,
         detailCache[cacheKey] = result;
         renderDetailStats(prop, result);
       } catch (e) {
-        document.getElementById('sznStatsGrid').innerHTML = '<div class="detail-szn-loading" style="color:var(--text-muted)">Could not load stats</div>';
-        document.getElementById('gamelogChart').innerHTML = '<div class="detail-gamelog-loading" style="font-size:11px">Could not load game log</div>';
+        const sznGrid = document.getElementById('sznStatsGrid');
+        const chart = document.getElementById('gamelogChart');
+        if (sznGrid) sznGrid.innerHTML = '<div class="detail-szn-loading" style="color:var(--text-muted)">Could not load stats</div>';
+        if (chart) chart.innerHTML = '<div class="detail-gamelog-loading" style="font-size:11px">Could not load game log</div>';
+        if (_activeAnalysisPropId === prop.id) {
+          try { refreshAnalysisModalSections(prop); } catch (_) {}
+        }
       }
     }
 
+    function collectEspnGamelogGames(logData) {
+      const labels = logData?.labels || [];
+      const eventsMeta = logData?.events || {};
+      const seasonTypes = logData?.seasonTypes || [];
+      let games = [];
+      const regularSeason = seasonTypes.find(st => st.displayName?.toLowerCase().includes('regular'));
+      if (regularSeason) {
+        for (const cat of (regularSeason.categories || [])) {
+          games.push(...(cat.events || []));
+        }
+        games.sort((a, b) => parseInt(b.eventId) - parseInt(a.eventId));
+      }
+      if (!games.length) {
+        for (const st of seasonTypes) {
+          for (const cat of (st.categories || [])) {
+            if ((cat.events || []).length > games.length) games = cat.events || [];
+          }
+        }
+      }
+      return { games, labels, eventsMeta };
+    }
+
     function renderDetailStats(prop, { statsData, logData }) {
-      // ── Season stats ──────────────────────────────────────
       const sznGrid = document.getElementById('sznStatsGrid');
-      if (statsData) {
+      const chart = document.getElementById('gamelogChart');
+
+      // ESPN gamelog → cache first (Full Analysis reads this even when detail panel is closed)
+      let espnGames = [];
+      let espnLabels = [];
+      let espnEventsMeta = {};
+      if (logData) {
         try {
-          const cats = statsData.categories || [];
-          const avgCat = cats.find(c => {
-            const name = (c.displayName || '').toLowerCase();
-            return (name.includes('average') && name.includes('regular'))
-              || name.includes('career batting')
-              || name.includes('regular season');
-          }) || cats.find(c => (c.displayName || '').toLowerCase().includes('expanded batting'));
-          if (avgCat) {
-            const labels = avgCat.labels || [];
-            const stats  = avgCat.statistics || [];
-            // Find current season (highest year)
-            const sorted = [...stats].sort((a, b) => {
-              const ya = a.season?.displayName?.match(/(\d{4})/)?.[1] || '0';
-              const yb = b.season?.displayName?.match(/(\d{4})/)?.[1] || '0';
-              return parseInt(yb) - parseInt(ya);
-            });
-            const current = sorted[0];
-            if (current) {
-              const vals = current.stats || [];
-              // Pick best display stats based on league
-              const wanted = {
-                NBA: ['MIN','PTS','REB','AST','FG%','3P%','STL','BLK','TO'],
-                NHL: ['G','A','PTS','+/-','S','SPCT','PPG','PIM'],
-                MLB: ['AVG','HR','RBI','R','H','BB','K','OBP','SLG'],
-                NFL: ['CMP','ATT','YDS','TD','INT','AVG','REC','LNG'],
-              }[prop.league] || labels.slice(0, 8);
-
-              const cells = wanted.map(stat => {
-                const idx = labels.indexOf(stat);
-                const val = idx >= 0 && vals[idx] ? vals[idx] : '—';
-                // Simplify fractions (e.g. "4.5-9.3" → show as "4.5")
-                const display = val.includes('-') ? val.split('-')[0] : val;
-                return `<div class="detail-szn-cell">
-                  <div class="detail-szn-val">${display}</div>
-                  <div class="detail-szn-label">${stat}</div>
-                </div>`;
-              }).join('');
-
-              sznGrid.innerHTML = cells || '<div class="detail-szn-loading">No data</div>';
-            } else {
-              sznGrid.innerHTML = '<div class="detail-szn-loading">No season data</div>';
-            }
-          } else {
-            sznGrid.innerHTML = '<div class="detail-szn-loading">No avg data</div>';
+          const collected = collectEspnGamelogGames(logData);
+          espnGames = collected.games;
+          espnLabels = collected.labels;
+          espnEventsMeta = collected.eventsMeta;
+          if (espnGames.length) {
+            detailGameHistoryCache[prop.id] = buildGameHistoryFromEspnGames(espnGames, espnEventsMeta, espnLabels, prop);
           }
         } catch (e) {
-          sznGrid.innerHTML = '<div class="detail-szn-loading">Parse error</div>';
+          console.error('[PropEdge] ESPN gamelog cache error:', e);
         }
-      } else {
-        sznGrid.innerHTML = '<div class="detail-szn-loading" style="color:var(--text-muted)">Stats unavailable</div>';
       }
 
-      // ── Game log chart ────────────────────────────────────
-      const chart = document.getElementById('gamelogChart');
-      if (!logData) {
-        chart.innerHTML = '<div class="detail-gamelog-loading" style="font-size:11px">Game log unavailable</div>';
-        return;
-      }
-      try {
-        const labels    = logData.labels || [];
-        const eventsMeta = logData.events || {};
-        const seasonTypes = logData.seasonTypes || [];
+      // ── Season stats (Advanced Analysis panel only) ──
+      if (sznGrid) {
+        if (statsData) {
+          try {
+            const cats = statsData.categories || [];
+            const avgCat = cats.find(c => {
+              const name = (c.displayName || '').toLowerCase();
+              return (name.includes('average') && name.includes('regular'))
+                || name.includes('career batting')
+                || name.includes('regular season');
+            }) || cats.find(c => (c.displayName || '').toLowerCase().includes('expanded batting'));
+            if (avgCat) {
+              const labels = avgCat.labels || [];
+              const stats  = avgCat.statistics || [];
+              const sorted = [...stats].sort((a, b) => {
+                const ya = a.season?.displayName?.match(/(\d{4})/)?.[1] || '0';
+                const yb = b.season?.displayName?.match(/(\d{4})/)?.[1] || '0';
+                return parseInt(yb) - parseInt(ya);
+              });
+              const current = sorted[0];
+              if (current) {
+                const vals = current.stats || [];
+                const wanted = {
+                  NBA: ['MIN','PTS','REB','AST','FG%','3P%','STL','BLK','TO'],
+                  NHL: ['G','A','PTS','+/-','S','SPCT','PPG','PIM'],
+                  MLB: ['AVG','HR','RBI','R','H','BB','K','OBP','SLG'],
+                  NFL: ['CMP','ATT','YDS','TD','INT','AVG','REC','LNG'],
+                }[prop.league] || labels.slice(0, 8);
 
-        // Collect ALL games from the regular season across all monthly categories
-        // ESPN splits gamelog by month — must merge them all then sort newest-first
-        let games = [];
-        const regularSeason = seasonTypes.find(st => st.displayName?.toLowerCase().includes('regular'));
-        if (regularSeason) {
-          for (const cat of (regularSeason.categories || [])) {
-            games.push(...(cat.events || []));
-          }
-          // Sort by eventId descending (higher ID = more recent game)
-          games.sort((a, b) => parseInt(b.eventId) - parseInt(a.eventId));
-        }
-        // Fallback: if no regular season found, use largest single category
-        if (!games.length) {
-          for (const st of seasonTypes) {
-            for (const cat of (st.categories || [])) {
-              if ((cat.events || []).length > games.length) games = cat.events || [];
+                const cells = wanted.map(stat => {
+                  const idx = labels.indexOf(stat);
+                  const val = idx >= 0 && vals[idx] ? vals[idx] : '—';
+                  const display = val.includes('-') ? val.split('-')[0] : val;
+                  return `<div class="detail-szn-cell">
+                    <div class="detail-szn-val">${display}</div>
+                    <div class="detail-szn-label">${stat}</div>
+                  </div>`;
+                }).join('');
+
+                sznGrid.innerHTML = cells || '<div class="detail-szn-loading">No data</div>';
+              } else {
+                sznGrid.innerHTML = '<div class="detail-szn-loading">No season data</div>';
+              }
+            } else {
+              sznGrid.innerHTML = '<div class="detail-szn-loading">No avg data</div>';
             }
+          } catch (e) {
+            sznGrid.innerHTML = '<div class="detail-szn-loading">Parse error</div>';
           }
+        } else {
+          sznGrid.innerHTML = '<div class="detail-szn-loading" style="color:var(--text-muted)">Stats unavailable</div>';
         }
-
-        // ── Combo / stat resolution via extractEspnGameStatValue ──
-        const chartLabel = String(prop.prop || 'Stat');
-
-        // Take last 20 games (newest first in ESPN feed) — matches L20 hit rate display
-        const recent = games.slice(0, 20).reverse();
-
-        if (!recent.length) {
-          chart.innerHTML = '<div class="detail-gamelog-loading" style="font-size:11px">No recent games found</div>';
-          return;
-        }
-
-        detailGameHistoryCache[prop.id] = buildGameHistoryFromEspnGames(games, eventsMeta, labels, prop);
-
-        const parsed = recent.map(ev => {
-          const val = extractEspnGameStatValue(ev.stats || [], labels, prop.league, prop.prop);
-          const rounded = Math.round(val * 10) / 10;
-          const meta = eventsMeta[String(ev.eventId)] || {};
-          const opp  = meta.opponent?.abbreviation || '?';
-          const atVs = meta.atVs || '';
-          const result = meta.gameResult || '';
-          const hit  = propStatHitCheck(rounded, prop.line, prop.direction) ? 'hit' : 'miss';
-          return { val: rounded, opp, atVs, result, hit };
-        });
-
-        const maxVal = Math.max(...parsed.map(g => g.val), prop.line * 1.5, 1);
-
-        const bars = parsed.map(g => {
-          const heightPct = Math.max((g.val / maxVal) * 100, 3);
-          const linePosPct = (prop.line / maxVal) * 100;
-          return `
-            <div class="detail-gamelog-bar-wrap">
-              <div class="detail-gamelog-val">${g.val > 0 ? g.val : '0'}</div>
-              <div class="detail-gamelog-bar-container">
-                <div class="detail-gamelog-bar ${g.hit}"
-                  style="height:${heightPct}%;"
-                  title="${g.atVs} ${g.opp} (${g.result}): ${g.val} ${chartLabel}">
-                </div>
-              </div>
-              <div class="detail-gamelog-opp">${g.atVs}${g.opp}</div>
-            </div>
-          `;
-        }).join('');
-
-        // Prop line overlay — position relative to chart area
-        const linePct = Math.min((prop.line / maxVal) * 100, 95);
-
-        // ── Recalculate L5/L10/L20/Season from ESPN gamelog (newest-first order) ──
-        // Arrow functions avoid function-declaration-in-block issues in strict mode
-        const calcHitPct = (gameList, n) => {
-          const slice = gameList.slice(0, n);
-          if (!slice.length) return null;
-          let hits = 0;
-          for (const ev of slice) {
-            const v = extractEspnGameStatValue(ev.stats || [], labels, prop.league, prop.prop);
-            if (propStatHitCheck(v, prop.line, prop.direction)) hits++;
-          }
-          return Math.round((hits / slice.length) * 100);
-        };
-
-        const calcSeasonPct = (gameList) => {
-          if (!gameList.length) return null;
-          let hits = 0;
-          for (const ev of gameList) {
-            const v = extractEspnGameStatValue(ev.stats || [], labels, prop.league, prop.prop);
-            if (propStatHitCheck(v, prop.line, prop.direction)) hits++;
-          }
-          return Math.round((hits / gameList.length) * 100);
-        };
-
-        const espnL5  = calcHitPct(games, 5);
-        const espnL10 = calcHitPct(games, 10);
-        const espnL20 = calcHitPct(games, 20);
-        const espnL30 = calcHitPct(games, 30);
-        const espnSzn = calcSeasonPct(games);
-
-        // Update the hit rate grid — ESPN when available, else sheet values
-        const hitRateGrid = document.getElementById('hitRateGrid');
-        if (hitRateGrid) {
-          const espnRates = [
-            { label: 'Last 5',  pct: mergeHitPct(espnL5,  prop.l5Pct)   },
-            { label: 'Last 10', pct: mergeHitPct(espnL10, prop.l10Pct)  },
-            { label: 'Last 20', pct: mergeHitPct(espnL20, prop.l20Pct)  },
-            { label: 'Last 30', pct: mergeHitPct(espnL30, prop.l30Pct)  },
-            { label: 'Season',  pct: mergeHitPct(espnSzn, prop.seasonPct) },
-          ];
-          hitRateGrid.innerHTML = espnRates.map(h => `
-            <div class="detail-hitrate-item">
-              <div class="detail-hitrate-top">
-                <span class="detail-hitrate-label">${h.label}</span>
-                <span class="detail-hitrate-pct" style="color:${barColor(h.pct)}">${Number.isFinite(Number(h.pct)) ? Number(h.pct).toFixed(0) + '%' : '—'}</span>
-              </div>
-              <div class="detail-hitrate-bar-bg">
-                <div class="detail-hitrate-bar-fill" style="width:${Number.isFinite(Number(h.pct)) ? Number(h.pct) : 0}%;background:${barColor(h.pct)};"></div>
-              </div>
-            </div>
-          `).join('');
-        }
-
-        // Calculate hit count for summary label
-        const hitCount20 = parsed.filter(g => g.hit === 'hit').length;
-        const hitPct20 = espnL20 ?? Math.round((hitCount20 / parsed.length) * 100);
-        const hitColor20 = hitPct20 >= 70 ? 'var(--accent-green)' : hitPct20 < 50 ? 'var(--accent-red)' : 'var(--accent-gold)';
-
-        chart.style.position = 'relative';
-        chart.innerHTML = `
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <span style="font-size:10px;color:var(--text-muted);">Oldest → Most Recent</span>
-            <span style="font-size:11px;font-weight:700;color:${hitColor20};">${hitCount20}/${parsed.length} hits (${hitPct20}%)</span>
-          </div>
-          <div style="width:100%;display:flex;flex-direction:column;gap:0;">
-            <div style="position:relative;height:90px;display:flex;align-items:flex-end;gap:2px;padding-top:12px;">
-              ${bars.replace(/<div class="detail-gamelog-bar-wrap">/g, '<div class="detail-gamelog-bar-wrap" style="position:relative;flex:1;">')}
-              <!-- Prop line -->
-              <div style="
-                position:absolute;
-                left:0;right:0;
-                bottom:${linePct}%;
-                height:1.5px;
-                background: rgba(255,255,255,0.3);
-                border-top: 1.5px dashed rgba(255,255,255,0.55);
-                pointer-events:none;
-                z-index:2;
-              ">
-                <span style="
-                  position:absolute;right:0;top:-10px;
-                  font-size:7px;
-                  font-family:'JetBrains Mono',monospace;
-                  color:rgba(255,255,255,0.5);
-                  background:var(--bg-card);
-                  padding:1px 3px;border-radius:2px;
-                ">${prop.line}</span>
-              </div>
-            </div>
-          </div>
-        `;
-      } catch (e) {
-        chart.innerHTML = `<div class="detail-gamelog-loading" style="font-size:11px;color:var(--accent-red)">${e.message}</div>`;
-        console.error('Gamelog chart error:', e);
       }
+
+      // ── Game log chart (Advanced Analysis panel only) ──
+      if (chart) {
+        if (!logData || !espnGames.length) {
+          chart.innerHTML = '<div class="detail-gamelog-loading" style="font-size:11px">Game log unavailable</div>';
+        } else {
+          try {
+            const labels = espnLabels;
+            const eventsMeta = espnEventsMeta;
+            const games = espnGames;
+            const chartLabel = String(prop.prop || 'Stat');
+            const recent = games.slice(0, 20).reverse();
+
+            if (!recent.length) {
+              chart.innerHTML = '<div class="detail-gamelog-loading" style="font-size:11px">No recent games found</div>';
+            } else {
+              const parsed = recent.map(ev => {
+                const val = extractEspnGameStatValue(ev.stats || [], labels, prop.league, prop.prop);
+                const rounded = Math.round(val * 10) / 10;
+                const meta = eventsMeta[String(ev.eventId)] || {};
+                const opp  = meta.opponent?.abbreviation || '?';
+                const atVs = meta.atVs || '';
+                const result = meta.gameResult || '';
+                const hit  = propStatHitCheck(rounded, prop.line, prop.direction) ? 'hit' : 'miss';
+                return { val: rounded, opp, atVs, result, hit };
+              });
+
+              const maxVal = Math.max(...parsed.map(g => g.val), prop.line * 1.5, 1);
+
+              const bars = parsed.map(g => {
+                const heightPct = Math.max((g.val / maxVal) * 100, 3);
+                return `
+                  <div class="detail-gamelog-bar-wrap">
+                    <div class="detail-gamelog-val">${g.val > 0 ? g.val : '0'}</div>
+                    <div class="detail-gamelog-bar-container">
+                      <div class="detail-gamelog-bar ${g.hit}"
+                        style="height:${heightPct}%;"
+                        title="${g.atVs} ${g.opp} (${g.result}): ${g.val} ${chartLabel}">
+                      </div>
+                    </div>
+                    <div class="detail-gamelog-opp">${g.atVs}${g.opp}</div>
+                  </div>
+                `;
+              }).join('');
+
+              const linePct = Math.min((prop.line / maxVal) * 100, 95);
+
+              const calcHitPct = (gameList, n) => {
+                const slice = gameList.slice(0, n);
+                if (!slice.length) return null;
+                let hits = 0;
+                for (const ev of slice) {
+                  const v = extractEspnGameStatValue(ev.stats || [], labels, prop.league, prop.prop);
+                  if (propStatHitCheck(v, prop.line, prop.direction)) hits++;
+                }
+                return Math.round((hits / slice.length) * 100);
+              };
+
+              const calcSeasonPct = (gameList) => {
+                if (!gameList.length) return null;
+                let hits = 0;
+                for (const ev of gameList) {
+                  const v = extractEspnGameStatValue(ev.stats || [], labels, prop.league, prop.prop);
+                  if (propStatHitCheck(v, prop.line, prop.direction)) hits++;
+                }
+                return Math.round((hits / gameList.length) * 100);
+              };
+
+              const espnL5  = calcHitPct(games, 5);
+              const espnL10 = calcHitPct(games, 10);
+              const espnL20 = calcHitPct(games, 20);
+              const espnL30 = calcHitPct(games, 30);
+              const espnSzn = calcSeasonPct(games);
+
+              const hitRateGrid = document.getElementById('hitRateGrid');
+              if (hitRateGrid) {
+                const espnRates = [
+                  { label: 'Last 5',  pct: mergeHitPct(espnL5,  prop.l5Pct)   },
+                  { label: 'Last 10', pct: mergeHitPct(espnL10, prop.l10Pct)  },
+                  { label: 'Last 20', pct: mergeHitPct(espnL20, prop.l20Pct)  },
+                  { label: 'Last 30', pct: mergeHitPct(espnL30, prop.l30Pct)  },
+                  { label: 'Season',  pct: mergeHitPct(espnSzn, prop.seasonPct) },
+                ];
+                hitRateGrid.innerHTML = espnRates.map(h => `
+                  <div class="detail-hitrate-item">
+                    <div class="detail-hitrate-top">
+                      <span class="detail-hitrate-label">${h.label}</span>
+                      <span class="detail-hitrate-pct" style="color:${barColor(h.pct)}">${Number.isFinite(Number(h.pct)) ? Number(h.pct).toFixed(0) + '%' : '—'}</span>
+                    </div>
+                    <div class="detail-hitrate-bar-bg">
+                      <div class="detail-hitrate-bar-fill" style="width:${Number.isFinite(Number(h.pct)) ? Number(h.pct) : 0}%;background:${barColor(h.pct)};"></div>
+                    </div>
+                  </div>
+                `).join('');
+              }
+
+              const hitCount20 = parsed.filter(g => g.hit === 'hit').length;
+              const hitPct20 = espnL20 ?? Math.round((hitCount20 / parsed.length) * 100);
+              const hitColor20 = hitPct20 >= 70 ? 'var(--accent-green)' : hitPct20 < 50 ? 'var(--accent-red)' : 'var(--accent-gold)';
+
+              chart.style.position = 'relative';
+              chart.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                  <span style="font-size:10px;color:var(--text-muted);">Oldest → Most Recent</span>
+                  <span style="font-size:11px;font-weight:700;color:${hitColor20};">${hitCount20}/${parsed.length} hits (${hitPct20}%)</span>
+                </div>
+                <div style="width:100%;display:flex;flex-direction:column;gap:0;">
+                  <div style="position:relative;height:90px;display:flex;align-items:flex-end;gap:2px;padding-top:12px;">
+                    ${bars.replace(/<div class="detail-gamelog-bar-wrap">/g, '<div class="detail-gamelog-bar-wrap" style="position:relative;flex:1;">')}
+                    <div style="
+                      position:absolute;
+                      left:0;right:0;
+                      bottom:${linePct}%;
+                      height:1.5px;
+                      background: rgba(255,255,255,0.3);
+                      border-top: 1.5px dashed rgba(255,255,255,0.55);
+                      pointer-events:none;
+                      z-index:2;
+                    ">
+                      <span style="
+                        position:absolute;right:0;top:-10px;
+                        font-size:7px;
+                        font-family:'JetBrains Mono',monospace;
+                        color:rgba(255,255,255,0.5);
+                        background:var(--bg-card);
+                        padding:1px 3px;border-radius:2px;
+                      ">${prop.line}</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+          } catch (e) {
+            chart.innerHTML = `<div class="detail-gamelog-loading" style="font-size:11px;color:var(--accent-red)">${e.message}</div>`;
+            console.error('Gamelog chart error:', e);
+          }
+        }
+      }
+
       if (_activeAnalysisPropId === prop.id) {
-        try { refreshAnalysisModalHistory(prop); } catch (_) {}
+        try { refreshAnalysisModalSections(prop); } catch (_) {}
       }
     }
 
