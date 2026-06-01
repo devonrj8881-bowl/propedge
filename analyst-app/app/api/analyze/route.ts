@@ -546,7 +546,7 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       model: modelUsed,
       propCount: topProps.length,
       fallback: usedFallback,
-      slateDate: slate?.date,
+      slateDate: slate?.dateDisplay || slate?.date,
       filteredOut: rows.length - slateRows.length,
     });
   } catch (err) {
