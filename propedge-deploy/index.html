@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.129-process-layers">
+  <meta name="app-version" content="v7.130-confidence-recalc">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -20474,6 +20474,64 @@ nav.tabs > button,
       return sampleProps;
     }
 
+    // Confidence % — recalibrated from hit rates, sample size, cushion, and stability.
+    // Replaces legacy scraper formula that capped most props at ~52%.
+    function parseHitRateMeta(str) {
+      if (!str) return { pct: 0, samples: 0 };
+      const fracMatch = String(str).match(/\((\d+)\/(\d+)\)/);
+      if (fracMatch) {
+        const hits = parseInt(fracMatch[1], 10);
+        const total = parseInt(fracMatch[2], 10);
+        return { pct: total ? (hits / total) * 100 : 0, samples: total };
+      }
+      const pctMatch = String(str).match(/([\d.]+)%?/);
+      return { pct: pctMatch ? parseFloat(pctMatch[1]) : 0, samples: 0 };
+    }
+
+    function calculatePropConfidence(input) {
+      const {
+        l5Pct = 0, l10Pct = 0, l20Pct = 0,
+        l5Samples = 0, l10Samples = 0, l20Samples = 0,
+        l5Avg = 0, l10Avg = 0, line = 0,
+        direction = 'OVER', propType = ''
+      } = input || {};
+
+      const pcts = [l5Pct, l10Pct, l20Pct].filter(v => v > 0);
+      let hitScore = 50;
+      if (pcts.length) {
+        const avgHit = pcts.reduce((a, b) => a + b, 0) / pcts.length;
+        const spread = pcts.length > 1 ? Math.max(...pcts) - Math.min(...pcts) : 0;
+        const baseHit = spread > 25 ? Math.min(...pcts) : avgHit;
+        const consistency = Math.max(0, 1 - spread / 40);
+        hitScore = baseHit * 0.7 + consistency * 30;
+      }
+
+      const samples = Math.max(l5Samples, l10Samples, l20Samples);
+      let sampleScore = 28;
+      if (samples >= 20) sampleScore = 78;
+      else if (samples >= 10) sampleScore = 62;
+      else if (samples >= 5) sampleScore = 48;
+
+      let cushionScore = 50;
+      if (line > 0 && l5Avg > 0) {
+        const cushion = direction === 'OVER'
+          ? (l5Avg - line) / line
+          : (line - l5Avg) / line;
+        cushionScore = 50 + Math.max(-25, Math.min(25, cushion * 100));
+      }
+
+      let stabilityScore = 50;
+      if (l10Avg > 0 && l5Avg > 0) {
+        const drift = Math.abs(l5Avg - l10Avg) / Math.max(l10Avg, 0.1);
+        stabilityScore = Math.max(20, 80 - drift * 60);
+      }
+      const ptLower = (propType || '').toLowerCase();
+      if (/stl|blk|hr|td|goal|double|triple/.test(ptLower)) stabilityScore -= 10;
+
+      const raw = hitScore * 0.40 + sampleScore * 0.30 + cushionScore * 0.20 + stabilityScore * 0.10;
+      return Math.max(15, Math.min(88, Math.round(raw)));
+    }
+
     function parseCSV(csv, league) {
       const lines = csv.split('\n');
       if (lines.length < 2) return [];
@@ -20579,17 +20637,14 @@ nav.tabs > button,
         const sznMatchup = parseInt(getValue(cols.sznMatchup)) || 15;
 
         // Parse hit rates
-        const parseHitRate = (str) => {
-          if (!str) return 0;
-          const fracMatch = str.match(/\((\d+)\/(\d+)\)/);
-          if (fracMatch) return (parseInt(fracMatch[1]) / parseInt(fracMatch[2])) * 100;
-          const pctMatch = str.match(/([\d.]+)%?/);
-          return pctMatch ? parseFloat(pctMatch[1]) : 0;
-        };
+        const parseHitRate = (str) => parseHitRateMeta(str).pct;
 
-        const l5Pct = parseHitRate(getValue(cols.l5));
-        const l10Pct = parseHitRate(getValue(cols.l10));
-        const l20Pct = parseHitRate(getValue(cols.l20));
+        const l5Meta = parseHitRateMeta(getValue(cols.l5));
+        const l10Meta = parseHitRateMeta(getValue(cols.l10));
+        const l20Meta = parseHitRateMeta(getValue(cols.l20));
+        const l5Pct = l5Meta.pct;
+        const l10Pct = l10Meta.pct;
+        const l20Pct = l20Meta.pct;
         const l30Pct = parseHitRate(getValue(cols.l30));
         const seasonPct = parseHitRate(getValue(cols.season));
 
@@ -20597,7 +20652,11 @@ nav.tabs > button,
         const perMinAvg = parseFloat(getValue(cols.per_min_avg)) || 0;
         const perMinL5 = parseFloat(getValue(cols.per_min_l5)) || 0;
         const perMinL10 = parseFloat(getValue(cols.per_min_l10)) || 0;
-        const confidenceScore = parseFloat(getValue(cols.confidence_pct)) || 50;
+        const confidenceScore = calculatePropConfidence({
+          l5Pct, l10Pct, l20Pct,
+          l5Samples: l5Meta.samples, l10Samples: l10Meta.samples, l20Samples: l20Meta.samples,
+          l5Avg, l10Avg, line, direction, propType
+        });
         const matchupRank = parseInt(getValue(cols.matchup_rank)) || 15;
         const matchupScalar = parseFloat(getValue(cols.matchup_scalar)) || 0.5;
         const expectedMinutes = parseInt(getValue(cols.expected_minutes)) || 28;
@@ -33702,7 +33761,7 @@ nav.tabs > button,
                     const syncTitle = hitData.syncStatus === 'synced' ? 'Data synced to sheet' : hitData.syncStatus === 'pending' ? 'Pending sync' : 'Local only';
                     return `<span class="prop-badge accuracy ${accClass} ${confidenceClass}" title="${hitData.hits}/${hitData.total} correct, ${syncTitle}">${hitData.accuracy}% (${hitData.total}) ${syncIcon}</span>`;
                   })()}
-                  ${Number.isFinite(_confidenceVal) && _confidenceVal > 0 ? `<span class="prop-badge" style="background:rgba(150,100,255,0.15);color:#c4a0ff;border-color:rgba(150,100,255,0.4);" title="Enrichment confidence from scraper">🧠 ${_confidenceVal.toFixed(0)}%</span>` : ''}
+                  ${Number.isFinite(_confidenceVal) && _confidenceVal > 0 ? `<span class="prop-badge" style="background:rgba(150,100,255,0.15);color:#c4a0ff;border-color:rgba(150,100,255,0.4);" title="Confidence from hit-rate consistency, sample size, line cushion, and stability">🧠 ${_confidenceVal.toFixed(0)}%</span>` : ''}
                   ${Number.isFinite(_matchupScalarVal) && _matchupScalarVal > 0 ? `<span class="prop-badge" style="background:rgba(255,140,0,0.15);color:#ffa844;border-color:rgba(255,140,0,0.4);" title="Matchup scalar multiplier">⚔️ ${(_matchupScalarVal * 100).toFixed(0)}%</span>` : ''}
                 </div>
               </div>
