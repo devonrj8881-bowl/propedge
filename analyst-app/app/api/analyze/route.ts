@@ -6,6 +6,9 @@ const PROP_FEED_URL =
 const ASK_ANALYST_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/ask-analyst";
 
+const GAME_FILTER_URL =
+  "https://propedgemasters.netlify.app/.netlify/functions/game-filter";
+
 const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
 const GEMINI_MODEL_FALLBACKS = [
   "gemini-3.5-flash",
@@ -23,7 +26,7 @@ const MAX_PROPS = 4;
 const MAX_GEMINI_ATTEMPTS = 3;
 
 async function fetchProps(): Promise<Record<string, string>[]> {
-  const res = await fetch(PROP_FEED_URL, { next: { revalidate: 300 } });
+  const res = await fetch(PROP_FEED_URL, { cache: "no-store" });
   const csv = await res.text();
   if (!csv.includes("Player") && !csv.includes("PF Rating")) {
     throw new Error("Invalid prop feed response");
@@ -36,14 +39,114 @@ async function fetchProps(): Promise<Record<string, string>[]> {
   });
 }
 
-function buildTopProps(rows: Record<string, string>[], league: string, limit = MAX_PROPS) {
-  const filtered = league === "ALL"
+type ActiveSlate = {
+  date: string;
+  activeTeams: Record<string, string[]>;
+  games: Array<{ league?: string; home?: string; away?: string; label?: string; status?: string }>;
+};
+
+async function fetchActiveSlate(league: string): Promise<ActiveSlate | null> {
+  try {
+    const leagues = league && league !== "ALL" ? league.toUpperCase() : undefined;
+    const url = leagues
+      ? `${GAME_FILTER_URL}?leagues=${encodeURIComponent(leagues)}`
+      : GAME_FILTER_URL;
+    const res = await fetch(url, { next: { revalidate: 300 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data?.ok || !data.activeTeams) return null;
+    return {
+      date: data.date || new Date().toISOString().slice(0, 10),
+      activeTeams: data.activeTeams,
+      games: data.games || [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+function normalizeTeamAbbr(team: string): string {
+  return String(team || "").toUpperCase().trim();
+}
+
+function filterRowsToActiveSlate(
+  rows: Record<string, string>[],
+  slate: ActiveSlate | null,
+): Record<string, string>[] {
+  if (!slate?.activeTeams) return rows;
+
+  return rows.filter((row) => {
+    const league = (row["League"] || "").toUpperCase();
+    const active = slate.activeTeams[league];
+    if (!active?.length) return true;
+    const team = normalizeTeamAbbr(row["Team"] || row["team"] || "");
+    const opp = normalizeTeamAbbr(row["Opponent"] || row["Opp"] || row["opponent"] || row["Matchup"] || "");
+    return active.includes(team) || (opp.length > 0 && active.includes(opp));
+  });
+}
+
+function propsMatchingQuestion(rows: Record<string, string>[], question: string): Record<string, string>[] {
+  const q = String(question || "").toLowerCase();
+  if (q.length < 3) return [];
+  return rows.filter((row) => {
+    const player = String(row["Player"] || "").toLowerCase();
+    const team = String(row["Team"] || "").toLowerCase();
+    if (player && q.includes(player)) return true;
+    if (player) {
+      const parts = player.split(/\s+/).filter((p) => p.length > 2);
+      if (parts.some((p) => q.includes(p))) return true;
+    }
+    if (team && q.includes(team)) return true;
+    return false;
+  });
+}
+
+function buildTopProps(
+  rows: Record<string, string>[],
+  league: string,
+  question = "",
+  limit = MAX_PROPS,
+) {
+  let filtered = league === "ALL"
     ? rows
     : rows.filter((r) => (r["League"] || "").toUpperCase() === league.toUpperCase());
-  return filtered
-    .filter((r) => r["Player"] && r["PF Rating"])
-    .sort((a, b) => parseFloat(b["PF Rating"] || "0") - parseFloat(a["PF Rating"] || "0"))
-    .slice(0, Math.max(1, Math.min(limit, MAX_PROPS)));
+
+  filtered = filtered.filter((r) => r["Player"] && r["PF Rating"]);
+
+  const matched = propsMatchingQuestion(filtered, question)
+    .sort((a, b) => parseFloat(b["PF Rating"] || "0") - parseFloat(a["PF Rating"] || "0"));
+
+  const ranked = [...filtered].sort(
+    (a, b) => parseFloat(b["PF Rating"] || "0") - parseFloat(a["PF Rating"] || "0"),
+  );
+
+  const merged: Record<string, string>[] = [];
+  const seen = new Set<string>();
+  for (const row of [...matched, ...ranked]) {
+    const key = `${row["Player"]}|${row["Prop"] || row["Market"]}|${row["Line"]}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(row);
+    if (merged.length >= Math.max(1, Math.min(limit, MAX_PROPS))) break;
+  }
+
+  return merged;
+}
+
+function formatSlateContext(slate: ActiveSlate | null, league: string): string {
+  if (!slate) return "";
+  const leagues = league && league !== "ALL" ? [league.toUpperCase()] : Object.keys(slate.activeTeams);
+  const lines: string[] = [`SLATE DATE: ${slate.date}`, "TEAMS PLAYING TODAY (ESPN scoreboard):"];
+  for (const lg of leagues) {
+    const teams = slate.activeTeams[lg] || [];
+    if (teams.length) lines.push(`${lg}: ${teams.join(", ")}`);
+    const games = (slate.games || []).filter((g) => g.league === lg);
+    for (const g of games.slice(0, 12)) {
+      if (g.home && g.away) lines.push(`  ${g.away} @ ${g.home}${g.status ? ` (${g.status})` : ""}`);
+    }
+  }
+  lines.push("Only analyze props for teams on today's slate. Do NOT recommend eliminated or off-day teams.");
+  return lines.join("\n");
 }
 
 function stripJsonFence(raw: string): string {
@@ -314,12 +417,23 @@ export async function POST(req: NextRequest) {
 
     if (!GEMINI_API_KEY) throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not set");
 
-    const rows = await fetchProps();
-    const topProps = buildTopProps(rows, league);
+    const [rows, slate] = await Promise.all([
+      fetchProps(),
+      fetchActiveSlate(league),
+    ]);
+    const slateRows = filterRowsToActiveSlate(rows, slate);
+    const topProps = buildTopProps(slateRows, league, question || "");
 
     if (!topProps.length) {
-      return NextResponse.json({ error: "No props available right now." }, { status: 200 });
+      return NextResponse.json({
+        ok: false,
+        error: `No active ${league === "ALL" ? "" : `${league} `}props on today's slate. Teams not playing today (including eliminated playoff teams) are excluded.`,
+        slateDate: slate?.date,
+        filteredOut: rows.length - slateRows.length,
+      }, { status: 200 });
     }
+
+    const slateContext = formatSlateContext(slate, league);
 
     const systemPrompt = `You are a sharp sports betting analyst writing a premium prop report.
 
@@ -337,8 +451,8 @@ Do NOT fabricate players, lines, or odds not in the board payload.`;
     const userPrompt = `${question || `What are the best ${league} props today?`}
 
 LEAGUE: ${league}
-
-PROPEDGE BOARD:
+${slateContext ? `\n${slateContext}\n` : ""}
+PROPEDGE BOARD (today's active slate only):
 ${JSON.stringify(topProps, null, 2)}
 
 Return valid JSON only. Keep prose concise so the full JSON completes.`;
@@ -376,7 +490,7 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       parsed = parseGeminiJson(raw);
     } catch (firstErr) {
       if (finishReason === "MAX_TOKENS") {
-        const retryProps = buildTopProps(rows, league, 3);
+        const retryProps = buildTopProps(slateRows, league, question || "", 3);
         const retryPrompt = `${userPrompt}\n\nIMPORTANT: Cover only the top ${retryProps.length} picks with shorter paragraphs.`;
         const retry = await callGeminiWithResilience(systemPrompt, retryPrompt, 8192);
         parsed = parseGeminiJson(retry.raw);
@@ -393,6 +507,8 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       model: modelUsed,
       propCount: topProps.length,
       fallback: usedFallback,
+      slateDate: slate?.date,
+      filteredOut: rows.length - slateRows.length,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

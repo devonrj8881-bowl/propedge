@@ -32,7 +32,9 @@ function normalizeAbbr(abbr) {
 
 async function fetchLeague(league, url) {
   try {
-    const res = await fetch(url, {
+    const todayParam = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const scoreboardUrl = `${url}${url.includes("?") ? "&" : "?"}dates=${todayParam}`;
+    const res = await fetch(scoreboardUrl, {
       headers: { "User-Agent": "PropEdge/1.0" },
       signal: AbortSignal.timeout(5000),
     });

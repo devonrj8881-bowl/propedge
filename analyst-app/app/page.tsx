@@ -76,7 +76,7 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [league, setLeague] = useState("ALL");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ analysis: Analysis; model: string; propCount: number; fallback?: boolean } | null>(null);
+  const [result, setResult] = useState<{ analysis: Analysis; model: string; propCount: number; fallback?: boolean; slateDate?: string; filteredOut?: number } | null>(null);
   const [error, setError] = useState("");
 
   async function run(retryCount = 0) {
@@ -187,6 +187,8 @@ export default function Home() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ color: "#475569", fontSize: 12 }}>
                 {result?.fallback ? "PropEdge backup" : "Gemini"} · {result?.model} · {result?.propCount} props analyzed
+                {result?.slateDate ? ` · slate ${result.slateDate}` : ""}
+                {typeof result?.filteredOut === "number" && result.filteredOut > 0 ? ` · ${result.filteredOut} stale removed` : ""}
               </span>
               <span style={{
                 padding: "4px 12px", borderRadius: 999,
