@@ -13,13 +13,13 @@ const CORS_HEADERS = {
 
 const SHEET_ID = "1e53GcCS9alxJhzDQPqkH55mpllEjVUShPKyP63R-BeY";
 const DEFAULT_SHEET = "propedge-main";
-const ALLOWED_SHEETS = new Set(["propedge-main", "Prop_Hits"]);
+const ALLOWED_SHEETS = new Set(["propedge-main", "Prop_Hits", "_meta"]);
 
 function isPropFeedCsvBody(text) {
   const csv = String(text || "").trim();
-  if (csv.length < 100 || /^\s*</.test(csv)) return false;
+  if (csv.length < 10 || /^\s*</.test(csv)) return false;
   const head = csv.split("\n")[0] || "";
-  return /PF Rating|Player/i.test(head);
+  return /PF Rating|Player|key/i.test(head);
 }
 
 exports.handler = async (event) => {

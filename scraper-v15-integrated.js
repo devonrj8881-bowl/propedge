@@ -1635,6 +1635,21 @@ async function main() {
     log('Consolidating all leagues into propedge-main sheet...', 1);
     await consolidateLeaguesToUnified(sheets);
 
+    // Write scrape metadata so the app can show data age
+    try {
+      const totalRows = await (async () => {
+        const res = await sheets.spreadsheets.values.get({ spreadsheetId: CONFIG.spreadsheetId, range: 'propedge-main!A:A' });
+        return Math.max(0, (res.data.values || []).length - 1); // subtract header
+      })();
+      await writeToSheet(sheets, '_meta', ['key', 'value'], [
+        ['last_scraped', new Date().toISOString()],
+        ['row_count', String(totalRows)],
+      ]);
+      logSuccess('Metadata tab updated', 1);
+    } catch (e) {
+      logWarning(`Metadata write failed (non-fatal): ${e.message}`, 1);
+    }
+
     console.log('\n' + '═'.repeat(60));
     logSuccess('Sync complete!');
     console.log('═'.repeat(60) + '\n');
