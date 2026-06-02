@@ -34698,6 +34698,13 @@ nav.tabs > button,
         window.scrollTo(0, _savedScrollY);
       }
 
+      // On mobile home dashboard: fill deferred below-fold sections after first paint
+      if (!isDesktopHome && state.view === 'props') {
+        setTimeout(() => {
+          if (typeof _renderMobileHomeDeferredSections === 'function') _renderMobileHomeDeferredSections();
+        }, 80);
+      }
+
       // Keep the active navigation view intact. renderProps() is also called by
       // background injury/lineup refreshes, so it must not pull users out of
       // Injuries, Parlay, or live-game views.
@@ -38113,7 +38120,7 @@ nav.tabs > button,
       return 'http://localhost:3000';
     }
 
-    function initGenerativeAnalystFrame() {
+    function initGenerativeAnalystFrame(force) {
       const frame = document.getElementById('propedgeGenerativeAnalystFrame');
       const setup = document.getElementById('propedgeGenerativeSetup');
       if (!frame) return;
@@ -38121,6 +38128,26 @@ nav.tabs > button,
       const league = state.league || 'ALL';
       const url = base + '/?league=' + encodeURIComponent(league);
       if (frame.dataset.srcLoaded === url) return;
+
+      const isMobile = window.innerWidth < 1024;
+      if (isMobile && !force) {
+        const placeholder = document.getElementById('propedgeGenerativeLaunchPlaceholder');
+        if (!placeholder) {
+          const div = document.createElement('div');
+          div.id = 'propedgeGenerativeLaunchPlaceholder';
+          div.style.cssText = 'padding:32px 16px;text-align:center;';
+          div.innerHTML = `
+            <div style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;">Generative UI runs a full AI app.<br>Tap to load when ready.</div>
+            <button type="button" onclick="initGenerativeAnalystFrame(true)" style="padding:10px 24px;background:var(--accent-green);color:#000;font-weight:700;border:none;border-radius:20px;font-size:14px;cursor:pointer;">Launch Generative UI</button>
+          `;
+          frame.parentNode.insertBefore(div, frame);
+        }
+        return;
+      }
+
+      const placeholder = document.getElementById('propedgeGenerativeLaunchPlaceholder');
+      if (placeholder) placeholder.remove();
+
       frame.dataset.srcLoaded = url;
       frame.src = url;
       frame.onerror = function() {
@@ -38673,14 +38700,14 @@ nav.tabs > button,
         if (!state.apiSportsBundle) await loadApiSportsBundle(false);
         const html = await getServerlessAnalystHTML(q, ranked, ranked.length, league);
         if (html) {
-          feed.innerHTML = html;
+          requestAnimationFrame(() => { feed.innerHTML = html; });
           return;
         }
       } catch (err) {
         console.warn('[PropAI] narration prefetch failed:', err?.message || err);
       }
       const fallback = buildNarratedSlateHTML(q, ranked, ranked.length, league);
-      if (fallback) feed.innerHTML = fallback;
+      if (fallback) requestAnimationFrame(() => { feed.innerHTML = fallback; });
     }
 
     function renderPropAIAnalystConversation(question = '', picks = []) {
@@ -39452,44 +39479,55 @@ nav.tabs > button,
             <div class="propai-featured-pick">${buildHomeFeaturedHTML(best)}</div>
           </section>
 
-          <section class="panel propai-panel propai-story-stage">
-            <div class="propai-panel-header">
-              <div class="propai-panel-title">Matchup Analysis</div>
-              <div class="propai-panel-subtitle">Featured player, opponent context, and play / avoid calls</div>
-            </div>
-            ${buildHomeStoryHTML(best)}
-          </section>
+          <div id="mobileDashboardDeferredSections"></div>
 
-          <section class="panel propai-panel propai-market-stage">
-            <div class="propai-panel-header">
-              <div class="propai-panel-title">Market Ladder</div>
-            </div>
-            <div class="propai-ladder-box">${buildHomeLadderHTML(best)}</div>
-          </section>
-
-          <section class="panel propai-panel propai-upcoming-stage">
-            <div class="propai-panel-header">
-              <div class="propai-panel-title">Upcoming Slate</div>
-              <div class="propai-panel-subtitle">${escapeHTML(`${getPropAISlateGames(state.league).length} games · ${picks.length} players`)}</div>
-            </div>
-            <div class="propai-slate-list">${buildHomeSlateHTML(picks)}</div>
-          </section>
-
-          ${buildHomeRailHTML(best, picks, { includeStory: false })}
-
-          <section class="panel propai-panel">
-            <div class="propai-panel-header">
-              <div>
-                <div class="propai-panel-title">Top Markets</div>
-                <div class="propai-panel-subtitle">Highest PropIQ on tonight's board</div>
-              </div>
-              <button class="propai-cta" type="button" onclick="openMarketsView()">Full Board</button>
-            </div>
-            <div class="propai-market-list">${buildHomeMarketRowsHTML(picks, 3)}</div>
-          </section>
-
-          <button type="button" class="propai-cta" style="width:100%;" onclick="triggerShellView('recommendations')">Open PropAI Analyst</button>
+          <button type="button" class="propai-cta" style="width:100%;margin-top:8px;" onclick="triggerShellView('recommendations')">Open PropAI Analyst</button>
         </div>
+      `;
+    }
+
+    function _renderMobileHomeDeferredSections() {
+      const el = document.getElementById('mobileDashboardDeferredSections');
+      if (!el) return;
+      const props = state.props || [];
+      const picks = getHomeDashboardPicks(props);
+      const best = getHomeFeaturedProp(props);
+      el.innerHTML = `
+        <section class="panel propai-panel propai-story-stage">
+          <div class="propai-panel-header">
+            <div class="propai-panel-title">Matchup Analysis</div>
+            <div class="propai-panel-subtitle">Featured player, opponent context, and play / avoid calls</div>
+          </div>
+          ${buildHomeStoryHTML(best)}
+        </section>
+
+        <section class="panel propai-panel propai-market-stage">
+          <div class="propai-panel-header">
+            <div class="propai-panel-title">Market Ladder</div>
+          </div>
+          <div class="propai-ladder-box">${buildHomeLadderHTML(best)}</div>
+        </section>
+
+        <section class="panel propai-panel propai-upcoming-stage">
+          <div class="propai-panel-header">
+            <div class="propai-panel-title">Upcoming Slate</div>
+            <div class="propai-panel-subtitle">${escapeHTML(`${getPropAISlateGames(state.league).length} games · ${picks.length} players`)}</div>
+          </div>
+          <div class="propai-slate-list">${buildHomeSlateHTML(picks)}</div>
+        </section>
+
+        ${buildHomeRailHTML(best, picks, { includeStory: false })}
+
+        <section class="panel propai-panel">
+          <div class="propai-panel-header">
+            <div>
+              <div class="propai-panel-title">Top Markets</div>
+              <div class="propai-panel-subtitle">Highest PropIQ on tonight's board</div>
+            </div>
+            <button class="propai-cta" type="button" onclick="openMarketsView()">Full Board</button>
+          </div>
+          <div class="propai-market-list">${buildHomeMarketRowsHTML(picks, 3)}</div>
+        </section>
       `;
     }
 
