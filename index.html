@@ -17003,25 +17003,45 @@ nav.tabs > button,
         border-radius: 22px;
       }
 
+      /* 1024–1399px (iPad mini/Air landscape with sidebar): keep confidence BELOW
+         art+copy so it doesn't visually cramp into the stats column */
       .site-home-dashboard .site-home-featured-full .propai-feature-hero {
-        grid-template-columns: minmax(240px, 340px) minmax(0, 1.6fr) minmax(180px, 260px);
+        grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+        grid-template-areas:
+          "art copy"
+          "confidence confidence";
+        align-items: start;
+      }
+
+      .site-home-dashboard .site-home-featured-full .propai-feature-confidence.propai-feature-score-duo {
+        flex-direction: row;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 32px;
+        padding: 16px 0 4px;
+      }
+
+      .site-home-dashboard .site-home-featured-full .propai-feature-art {
+        min-height: clamp(220px, 26vw, 300px);
+      }
+    }
+
+    @media (min-width: 1400px) {
+      /* Wide desktop: restore the 3-column art | copy | confidence layout */
+      .site-home-dashboard .site-home-featured-full .propai-feature-hero {
+        grid-template-columns: minmax(280px, 380px) minmax(0, 2fr) minmax(200px, 280px);
         grid-template-areas: "art copy confidence";
         align-items: stretch;
       }
 
       .site-home-dashboard .site-home-featured-full .propai-feature-confidence.propai-feature-score-duo {
         grid-template-columns: 1fr;
+        flex-direction: column;
         align-self: stretch;
         justify-items: center;
         align-content: center;
       }
 
-      .site-home-dashboard .site-home-featured-full .propai-feature-art {
-        min-height: clamp(220px, 28vw, 320px);
-      }
-    }
-
-    @media (min-width: 1400px) {
       .site-home-dashboard .site-home-featured-full .propai-feature-hero {
         grid-template-columns: minmax(280px, 380px) minmax(0, 2fr) minmax(200px, 280px);
       }
