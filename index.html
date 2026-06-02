@@ -38225,10 +38225,14 @@ nav.tabs > button,
       renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
     }
 
+    let _marketSearchDebounceTimer;
     function updatePropAIMarketSearch(value) {
       state.propAIMarketSearch = value || '';
-      renderMarketsView();
-      renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
+      clearTimeout(_marketSearchDebounceTimer);
+      _marketSearchDebounceTimer = setTimeout(() => {
+        renderMarketsView();
+        renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
+      }, 220);
     }
 
     function propAISlatePlayerForGame(game, picks) {
