@@ -21387,6 +21387,155 @@ nav.tabs > button,
         }
         // ────────────────────────────────────────────────────────────────────
 
+        // ══════════════════════════════════════════════════════════════════════
+        // ── DIRECTIONAL STEERING SIGNALS (Over vs Under) ─────────────────────
+        // These signals go beyond historical hit rate and explicitly steer the
+        // model toward the correct direction based on converging context.
+        // ══════════════════════════════════════════════════════════════════════
+
+        // ── Signal 1: Trend Momentum Direction ───────────────────────────────
+        // L5 vs L10 delta reveals whether player is heating toward OR away from line.
+        // A meaningful delta (>15pp) is a directional signal, not just a form check.
+        {
+          const trendDelta = l5Pct - l10Pct;
+          const isVolumeProp = /pts|points|reb|rebounds|hits|bases|assists|shots|goals|runs|strikeout/i.test(propType);
+          if (isVolumeProp) {
+            if (trendDelta >= 20) {
+              if (direction === 'OVER') { modelScore += 6; propFactors.push('🔺 Strong Upward Trend (L5 >> L10) — favors OVER'); }
+              if (direction === 'UNDER') { modelScore -= 5; propFactors.push('⚠️ Upward Trend Conflicts with UNDER'); }
+            } else if (trendDelta >= 12) {
+              if (direction === 'OVER') { modelScore += 3; propFactors.push('📈 Upward Trend — OVER aligned'); }
+            } else if (trendDelta <= -20) {
+              if (direction === 'UNDER') { modelScore += 6; propFactors.push('🔻 Strong Downward Trend (L5 << L10) — favors UNDER'); }
+              if (direction === 'OVER') { modelScore -= 5; propFactors.push('⚠️ Downward Trend Conflicts with OVER'); }
+            } else if (trendDelta <= -12) {
+              if (direction === 'UNDER') { modelScore += 3; propFactors.push('📉 Downward Trend — UNDER aligned'); }
+            }
+          }
+        }
+
+        // ── Signal 2: Extended Weather Routing (MLB/NFL all prop types) ───────
+        // Extends the existing MLB bases-only weather check to all volume props.
+        if (weather && (actualLeague === 'MLB' || actualLeague === 'NFL')) {
+          const temp = parseFloat(weather.temperature || weather.temp) || 72;
+          const windSpd = parseFloat(weather.windSpeed || weather.wind) || 0;
+          const windDir = (weather.windDirection || '').toLowerCase();
+          const cond = (weather.conditions || weather.description || '').toLowerCase();
+          const isDome = cond.includes('dome') || cond.includes('indoor') || cond.includes('retractable');
+          const windBlowingOut = windDir.includes('out') || windDir.includes('left') || windDir.includes('right');
+          const windBlowingIn  = windDir.includes('in') || windDir.includes('center');
+          const isVolumeProp2 = /pts|points|hits|bases|runs|yards|receiving|td|goals/i.test(propType);
+
+          if (!isDome && isVolumeProp2) {
+            // Cold weather suppresses scoring in all outdoor sports
+            if (temp < 35 && direction === 'OVER') { modelScore -= 6; propFactors.push(`🥶 Cold Game (${temp}°F) — suppresses scoring`); }
+            if (temp < 35 && direction === 'UNDER') { modelScore += 4; propFactors.push(`🥶 Cold Game (${temp}°F) — favors UNDER`); }
+            if (temp >= 85 && direction === 'OVER' && actualLeague === 'MLB') { modelScore += 3; propFactors.push(`☀️ Hot Game (${temp}°F) — ball carries`); }
+
+            // Wind: out = OVER boost for power props; in = UNDER push
+            if (windSpd >= 12) {
+              if (windBlowingOut && direction === 'OVER')  { modelScore += 5; propFactors.push(`💨 Wind Blowing Out (${windSpd}mph) — OVER boost`); }
+              if (windBlowingOut && direction === 'UNDER') { modelScore -= 4; propFactors.push(`💨 Wind Blowing Out — fights UNDER`); }
+              if (windBlowingIn  && direction === 'UNDER') { modelScore += 4; propFactors.push(`🌬️ Wind Blowing In (${windSpd}mph) — suppresses scoring`); }
+              if (windBlowingIn  && direction === 'OVER')  { modelScore -= 4; propFactors.push(`🌬️ Wind Blowing In — fights OVER`); }
+              if (!windBlowingOut && !windBlowingIn && windSpd >= 18) {
+                // Heavy crosswind = variance, slight under lean
+                if (direction === 'OVER') { modelScore -= 2; propFactors.push(`🌪️ Heavy Crosswind (${windSpd}mph) — unpredictable`); }
+              }
+            }
+          }
+
+          // Dome = neutral weather, remove any existing weather penalties
+          // (handled implicitly by skipping above — no extra boost needed)
+        }
+
+        // ── Signal 3: News Sentiment (player-level mention scan) ──────────────
+        // Scan today's leagueNews articles for player name + tone keywords.
+        // Positive tone (expanded role, hot, targeting) → OVER lean.
+        // Negative tone (limited, questionable, reduced) → UNDER lean.
+        {
+          const playerLower = (getValue(cols.player) || '').toLowerCase().split(' ').pop(); // last name
+          if (playerLower.length >= 3) {
+            const articles = (state.leagueNews?.articles || []).filter(a =>
+              (a.league || '').toUpperCase() === actualLeague &&
+              (a.summary || a.title || '').toLowerCase().includes(playerLower)
+            );
+            if (articles.length > 0) {
+              const text = articles.map(a => (a.summary || '') + ' ' + (a.title || '')).join(' ').toLowerCase();
+              const posWords = /expanded role|increased usage|targeting|hot streak|breakout|cleared|fully healthy|starting|extra innings|pace setter/;
+              const negWords = /limited|questionable|rest|reduced|benched|held out|missed practice|minute restriction|load management|day-to-day|uncertain/;
+              const posHits = (text.match(posWords) || []).length;
+              const negHits = (text.match(negWords) || []).length;
+              if (posHits > negHits) {
+                if (direction === 'OVER')  { modelScore += 5; propFactors.push('📰 Positive News Signal — OVER lean'); }
+                if (direction === 'UNDER') { modelScore -= 3; propFactors.push('📰 Positive News Conflicts with UNDER'); }
+              } else if (negHits > posHits) {
+                if (direction === 'UNDER') { modelScore += 5; propFactors.push('📰 Negative News Signal — UNDER lean'); }
+                if (direction === 'OVER')  { modelScore -= 4; propFactors.push('📰 Negative News Conflicts with OVER'); }
+              }
+            }
+          }
+        }
+
+        // ── Signal 4: Home/Away Direction Split ───────────────────────────────
+        // Home players get crowd energy + routine → volume props lean OVER.
+        // Road players in hostile venues, especially in key spots → UNDER lean.
+        // This builds on the existing +3 home advantage with direction specificity.
+        if (homeAway) {
+          const isVolumeOrScoring = /pts|points|reb|rebounds|ast|assists|hits|bases|runs|strikeout|goals/i.test(propType);
+          if (isVolumeOrScoring) {
+            if (homeAway === 'home' && direction === 'UNDER') {
+              // Home player UNDER on a volume stat is fighting home court/field advantage
+              modelScore -= 3;
+              propFactors.push('🏠 Home Field Fights UNDER (volume prop)');
+            }
+            if (homeAway === 'away' && direction === 'OVER') {
+              // Road player OVER on volume — slight friction (travel, crowd, unfamiliar)
+              if (actualLeague === 'NBA' || actualLeague === 'NFL') {
+                modelScore -= 2;
+                propFactors.push('✈️ Road Trip — slight OVER friction');
+              }
+            }
+            if (homeAway === 'away' && direction === 'UNDER') {
+              // Road UNDER: player fighting hostile crowd — slight lean valid
+              modelScore += 2;
+              propFactors.push('✈️ Road Game — slight UNDER lean');
+            }
+          }
+        }
+
+        // ── Signal 5: Opponent Recent Form vs This Stat (last 5 games) ────────
+        // Season matchup rank tells you the full season; last 5 games shows current form.
+        // A "hot defense recently" matters more than a historically porous one.
+        // We approximate using the game log index if available.
+        if (oppAbbr && actualLeague !== 'MLB') {
+          try {
+            const oppLogs = (window._gameLogIndex && window._gameLogIndex[actualLeague]
+              ? window._gameLogIndex[actualLeague][normalizeTeam(oppAbbr)]
+              : null) || [];
+            if (oppLogs.length >= 5) {
+              const recent5 = oppLogs.slice(0, 5);
+              // Count how many of last 5 games the opponent gave up above-average for this stat
+              const statKey = ptLower.includes('pts') || ptLower.includes('points') ? 'pts'
+                : ptLower.includes('reb') ? 'reb'
+                : ptLower.includes('ast') ? 'ast'
+                : ptLower.includes('3pm') || ptLower.includes('three') ? '3pm'
+                : null;
+              if (statKey) {
+                const avgAllowed = recent5.reduce((s, g) => s + (parseFloat(g[statKey + 'Allowed']) || 0), 0) / recent5.length;
+                const leagueAvgStat = { pts: 110, reb: 44, ast: 26, '3pm': 13 }[statKey] || 0;
+                if (leagueAvgStat > 0) {
+                  const recentDefZ = (avgAllowed - leagueAvgStat) / (leagueAvgStat * 0.12);
+                  if (recentDefZ >= 1.2 && direction === 'OVER') { modelScore += 5; propFactors.push(`📊 Opp Recently Soft on ${statKey.toUpperCase()} (L5)`); }
+                  if (recentDefZ <= -1.2 && direction === 'OVER') { modelScore -= 4; propFactors.push(`📊 Opp Locking Down ${statKey.toUpperCase()} Recently (L5)`); }
+                  if (recentDefZ <= -1.2 && direction === 'UNDER') { modelScore += 4; propFactors.push(`📊 Opp Elite vs ${statKey.toUpperCase()} (L5) — UNDER confirmed`); }
+                  if (recentDefZ >= 1.2 && direction === 'UNDER') { modelScore -= 3; propFactors.push(`📊 Opp Leaking ${statKey.toUpperCase()} — fights UNDER`); }
+                }
+              }
+            }
+          } catch (_) { /* game log index not populated — skip */ }
+        }
+
         // ── Fix J: Freshness Guard & Prop Validation ──────────────────────────────────────────
         const sheetDateStr = getValue(cols.date); // Expected format: MM/DD
         const lastUpdateStr = getValue(cols.lastUpdate) || '';
