@@ -9211,6 +9211,10 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       border: 0;
       border-radius: 12px;
       background: var(--bg-primary, #1a1d2e);
+      touch-action: pan-y;
+    }
+    body.is-scrolling .propai-generative-frame {
+      pointer-events: none;
     }
 
     .propai-generative-setup {
@@ -18037,6 +18041,26 @@ nav.tabs > button,
           "confidence";
       }
     }
+  /* ── Mobile performance: reduce motion, improve paint containment ── */
+  @media (max-width: 767px) {
+    .prop-card {
+      contain: layout style;
+    }
+    .propai-market-player {
+      contain: layout style;
+    }
+    .propai-generative-panel,
+    .propai-analyst-conversation-panel {
+      contain: layout style;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
   </style>
 </head>
 <body>
@@ -20355,6 +20379,16 @@ nav.tabs > button,
         }
         lastY = e.touches[0].clientY;
       }, { passive: false });
+
+      // Mark body as scrolling so iframes yield pointer events during scroll
+      (function() {
+        let _scrollTimer;
+        window.addEventListener('scroll', () => {
+          document.body.classList.add('is-scrolling');
+          clearTimeout(_scrollTimer);
+          _scrollTimer = setTimeout(() => document.body.classList.remove('is-scrolling'), 150);
+        }, { passive: true });
+      })();
 
       initTabs();
       initFilters();
@@ -38759,16 +38793,25 @@ nav.tabs > button,
         introSubtitle.textContent = `Today's Slate · ${slateGames.length} games · ${state.league || 'ALL'} · News ${newsStamp}${state.gameFilter ? ` · Focus ${state.gameFilter.awayTeam} @ ${state.gameFilter.homeTeam}` : ''}`;
       }
       const ranked = (Array.isArray(picks) && picks.length ? picks : getPropAIDashboardPicks(question)).slice(0, 8);
-      if (String(question || '').trim()) {
-        renderPropAIAnalystConversation(question, ranked);
-      }
+
+      // Phase 1: render featured pick immediately (above fold, user sees it first)
       renderPropAIAnalystShell(question, ranked);
-      renderPropAISlatePanel(question, ranked);
-      renderPropAIMarketBrowserPanel(question);
-      renderPropAIRiskRail(question, ranked, opts);
-      updatePropAISlateDateBadge();
       applyPropAISectionVisibility();
-      if (state.view === 'markets') renderMarketsView();
+
+      // Phase 2: defer remaining panels so browser can paint phase 1 first
+      const _q = question, _r = ranked, _o = opts;
+      setTimeout(() => {
+        if (String(_q || '').trim()) renderPropAIAnalystConversation(_q, _r);
+        renderPropAISlatePanel(_q, _r);
+        updatePropAISlateDateBadge();
+      }, 0);
+
+      // Phase 3: heaviest panels last — risk rail + market browser
+      setTimeout(() => {
+        renderPropAIRiskRail(_q, _r, _o);
+        renderPropAIMarketBrowserPanel(_q);
+        if (state.view === 'markets') renderMarketsView();
+      }, 50);
     }
 
     function renderPropAIDecisionSummary(question = '', picks = [], opts = {}) {
