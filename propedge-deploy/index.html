@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.135 — PropIQ grading guide panel — 2026-05-31 -->
+<!-- PropEdge v7.136 — Data freshness indicator + 2h cache TTL — 2026-06-02 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -18159,7 +18159,10 @@ nav.tabs > button,
       </div>
       <div class="header-actions" style="display:flex;align-items:center;gap:6px;">
         <button id="emailPillBtn" onclick="showEmailModal()" style="padding:3px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:20px;color:var(--text-secondary);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;transition:all 0.2s;">Sign In</button>
-        <div class="live-indicator"><span class="live-dot"></span><span id="statusText">LIVE</span></div>
+        <div class="live-indicator" style="flex-direction:column;align-items:center;gap:1px;padding:4px 10px;">
+          <div style="display:flex;align-items:center;gap:5px;"><span class="live-dot"></span><span id="statusText">LIVE</span></div>
+          <span id="dataFreshnessLabel" style="font-size:9px;font-weight:500;opacity:0.7;letter-spacing:0.02em;line-height:1;"></span>
+        </div>
         <button id="getAlertsBtn" onclick="requestPushAlerts()" style="width:28px;height:28px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:50%;color:var(--text-secondary);font-size:14px;cursor:pointer;padding:0;line-height:26px;text-align:center;">🔔</button>
       </div>
     </div>
@@ -20644,7 +20647,7 @@ nav.tabs > button,
     // DATA LOADING
     // ==========================================
     const PROP_FEED_CACHE_KEY = 'propedge_propedge_main_csv_cache_v1';
-    const PROP_FEED_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+    const PROP_FEED_CACHE_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 
     function readPropFeedCache() {
       try {
@@ -20712,6 +20715,7 @@ nav.tabs > button,
         state.props = cachedProps;
         syncUnifiedScores();
         state.lastUpdated = new Date(Number(cached.savedAt));
+        state.dataFromCache = true;
         updateStatus();
         updateStats();
         schedulePropsRender('cached-props', 150);
@@ -20767,6 +20771,7 @@ nav.tabs > button,
         allProps.forEach(p => { delete p._cachedScore; });
         syncUnifiedScores(); // v5: align prop.modelScore + prop.tier with computeBetScore() engine
         state.lastUpdated = new Date();
+        state.dataFromCache = false;
         updateStatus();
         updateStats();
         schedulePropsRender('load-data', 200);
@@ -39881,9 +39886,13 @@ nav.tabs > button,
       }
       
       const updatedEl = document.getElementById('lastUpdated');
-      if (updatedEl) {
-        const updatedText = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        updatedEl.textContent = updatedText;
+      const freshnessEl = document.getElementById('dataFreshnessLabel');
+      if (updatedEl || freshnessEl) {
+        const dataTime = state.lastUpdated || now;
+        const timeText = dataTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const updatedText = state.dataFromCache ? `${timeText} (cached)` : timeText;
+        if (updatedEl) updatedEl.textContent = updatedText;
+        if (freshnessEl) freshnessEl.textContent = state.dataFromCache ? `${timeText} cached` : timeText;
         const shellUpdated = document.getElementById('shellLastUpdated');
         if (shellUpdated) shellUpdated.textContent = updatedText;
       }
