@@ -10505,6 +10505,21 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     }
 
     /* Tablets (768px - 1023px) */
+    /* Small tablet — iPad mini portrait (700–767px) */
+    @media (min-width: 700px) and (max-width: 767px) {
+      body { font-size: 15px; line-height: 1.6; }
+      .header {
+        padding: 16px 24px 12px;
+        padding-top: max(24px, calc(18px + env(safe-area-inset-top)));
+      }
+      .header-actions { max-width: 44vw; }
+      #emailPillBtn { max-width: 96px !important; font-size: 11px !important; padding: 4px 10px !important; }
+      #getAlertsBtn { width: 28px !important; height: 28px !important; line-height: 26px !important; }
+      .logo-text { font-size: 20px; }
+      .props-container { padding: 14px 20px; }
+      .prop-card { padding: 15px; }
+    }
+
     @media (min-width: 768px) and (max-width: 1023px) {
       body { font-size: 15px; line-height: 1.6; }
       button, .button { min-height: 44px; padding: 11px 16px; font-size: 14px; }
@@ -10621,6 +10636,21 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       .props-container .prop-score-label {
         font-size: 10px;
       }
+    }
+
+    /* Prop card scroll performance — content-visibility defers off-screen paint */
+    .prop-card {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 280px;
+      contain: layout style;
+    }
+
+    /* iOS/Safari: disable content-visibility — WebKit has scroll position bugs with it */
+    body.no-content-visibility .prop-card,
+    body.no-content-visibility .propai-market-row--deck {
+      content-visibility: visible !important;
+      contain-intrinsic-size: none !important;
+      contain: layout !important;
     }
 
     /* Mobile-specific safe area adjustments */
@@ -13238,6 +13268,31 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       scroll-behavior: smooth;
     }
 
+    /* Mobile/tablet parlay: override grid layout to single full-width column */
+    @media (max-width: 1023px) {
+      body.parlay-sidebar-open .app-layout,
+      body.parlay-sidebar-collapsed .app-layout {
+        display: block !important;
+        grid-template-columns: none !important;
+        grid-template-areas: none !important;
+      }
+
+      body.parlay-sidebar-open #parlayContainer:not(.view-force-hidden) {
+        position: static !important;
+        width: 100% !important;
+        max-height: none !important;
+        max-width: 100% !important;
+        grid-area: auto !important;
+      }
+
+      body.parlay-sidebar-open .main-content {
+        padding-right: 0 !important;
+      }
+
+      /* Hide the collapse toggle on mobile full-page parlay view */
+      body.parlay-sidebar-open .parlay-rail-toggle { display: none; }
+    }
+
     /* Desktop: parlay rail — expanded grid column or collapsed tab (default collapsed on Home) */
     @media (min-width: 1400px) {
       :root {
@@ -13368,7 +13423,6 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       overflow-x: hidden;
       overflow-y: visible;
       transform: translateZ(0);
-      will-change: display;
       box-sizing: border-box;
     }
 
@@ -18996,6 +19050,9 @@ nav.tabs > button,
     <button type="button" class="site-mobile-more-chip" data-target-view="games" onclick="triggerShellView('games'); toggleMobileMoreMenu(false);">Games</button>
     <button type="button" class="site-mobile-more-chip" data-target-view="news" onclick="triggerShellView('news'); toggleMobileMoreMenu(false);">News</button>
     <button type="button" class="site-mobile-more-chip" data-target-view="injuries" onclick="triggerShellView('injuries'); toggleMobileMoreMenu(false);">Injuries</button>
+    <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); showEmailModal();">Sign In</button>
+    <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); showEmailModal();">Settings</button>
+    <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); requestPushAlerts();">Alerts</button>
   </div>
 
   <nav class="site-mobile-bottom-nav" id="siteMobileBottomNav" aria-label="Main navigation">
@@ -39165,6 +39222,10 @@ nav.tabs > button,
     function syncMobileShellLayout() {
       const isMobile = window.innerWidth < 1024;
       document.body.classList.toggle('site-mobile-active', isMobile);
+      // Detect iOS/Safari: disable content-visibility to prevent scroll position jumps
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      document.body.classList.toggle('no-content-visibility', isIOS || isSafari);
       if (!isMobile) toggleMobileMoreMenu(false);
       syncMobileStickyHeaderOffset();
     }
