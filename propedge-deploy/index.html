@@ -6474,7 +6474,8 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       align-items: stretch;
       overflow: hidden;
       content-visibility: auto;
-      contain-intrinsic-size: auto 168px;
+      contain-intrinsic-size: auto 220px;
+      contain: layout style;
     }
 
     .propai-top-pick-card--deck {
@@ -18810,6 +18811,7 @@ nav.tabs > button,
       <div id="marketsBrowserList" class="propai-market-list">
         <div class="ai-context-empty">All available markets will appear here once props are loaded.</div>
       </div>
+      <div id="marketsLoadMoreSentinel" style="display:none;text-align:center;padding:14px;font-size:12px;color:rgba(226,232,240,0.5);"></div>
     </section>
   </div>
 
@@ -20678,6 +20680,8 @@ nav.tabs > button,
         console.log(`[PropEdge] Data load complete: ${allProps.length} total props loaded`);
 
         state.props = allProps;
+        // Invalidate memoized scores so cachedPropScore recomputes on next render
+        allProps.forEach(p => { delete p._cachedScore; });
         syncUnifiedScores(); // v5: align prop.modelScore + prop.tier with computeBetScore() engine
         state.lastUpdated = new Date();
         updateStatus();
@@ -37542,7 +37546,52 @@ nav.tabs > button,
     }
 
     function getMarketsBoardRenderCap() {
-      return window.matchMedia('(max-width: 1023px)').matches ? 72 : 160;
+      return window.matchMedia('(max-width: 1023px)').matches ? 35 : 120;
+    }
+
+    // ── Performance helpers ───────────────────────────────────────────────────
+    // Score memoization: cache buildPropAIScore on each prop object so the
+    // sort on 2000+ props doesn't recompute 3 fields per comparison each time.
+    function cachedPropScore(prop) {
+      if (prop._cachedScore === undefined) {
+        prop._cachedScore = buildPropAIScore(prop);
+      }
+      return prop._cachedScore;
+    }
+
+    // Debounced renderMarketsView — prevents rapid re-renders when toggling
+    // multiple filters quickly (e.g. league + direction in quick succession).
+    let _marketsRenderTimer = null;
+    function debouncedRenderMarketsView(opts) {
+      clearTimeout(_marketsRenderTimer);
+      _marketsRenderTimer = setTimeout(() => renderMarketsView(opts), 60);
+    }
+
+    // Batch headshot lookups: schedule first N immediately, rest after idle.
+    function batchHeadshotLookups(props, immediateCount = 15) {
+      props.slice(0, immediateCount).forEach(p => schedulePlayerHeadshotLookup(p.player, p.league));
+      if (props.length > immediateCount) {
+        const rest = props.slice(immediateCount);
+        const run = typeof requestIdleCallback === 'function' ? requestIdleCallback : (cb) => setTimeout(cb, 200);
+        run(() => rest.forEach(p => schedulePlayerHeadshotLookup(p.player, p.league)));
+      }
+    }
+
+    // Load-more intersection observer for the markets board.
+    let _marketsLoadMoreObserver = null;
+    let _marketsDisplayCap = 35;
+    function setupMarketsLoadMore(totalCount) {
+      if (_marketsLoadMoreObserver) { _marketsLoadMoreObserver.disconnect(); _marketsLoadMoreObserver = null; }
+      const sentinel = document.getElementById('marketsLoadMoreSentinel');
+      if (!sentinel || totalCount <= _marketsDisplayCap) { if (sentinel) sentinel.style.display = 'none'; return; }
+      sentinel.style.display = '';
+      sentinel.textContent = `Showing ${_marketsDisplayCap} of ${totalCount} — scroll to load more`;
+      _marketsLoadMoreObserver = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        _marketsDisplayCap = Math.min(_marketsDisplayCap + 30, totalCount);
+        renderMarketsBoard('marketsBrowserList');
+      }, { rootMargin: '200px' });
+      _marketsLoadMoreObserver.observe(sentinel);
     }
 
     function isMarketsTabActive() {
@@ -37568,10 +37617,16 @@ nav.tabs > button,
       const listEl = document.getElementById(listElId);
       if (!listEl) return;
       const isFullBoard = listElId === 'marketsBrowserList';
-      const MARKETS_RENDER_CAP = isFullBoard ? getMarketsBoardRenderCap() : Math.max(1, Number(limit) || 18);
-      const allRanked = isFullBoard ? getMarketsBoardFiltered() : getPropAIBrowserFiltered('');
+      const baseCap = isFullBoard ? getMarketsBoardRenderCap() : Math.max(1, Number(limit) || 18);
+      // Use the load-more cap for the full board (grows as user scrolls)
+      if (isFullBoard) _marketsDisplayCap = Math.max(_marketsDisplayCap, baseCap);
+      const MARKETS_RENDER_CAP = isFullBoard ? _marketsDisplayCap : baseCap;
+      // Use memoized scores for sort to avoid recomputing on every render
+      const allRanked = isFullBoard
+        ? getMarketsBoardFiltered().sort((a, b) => cachedPropScore(b) - cachedPropScore(a))
+        : getPropAIBrowserFiltered('');
       const totalCount = allRanked.length;
-      const maxRows = isFullBoard ? MARKETS_RENDER_CAP : Math.max(1, Number(limit) || 18);
+      const maxRows = Math.max(1, MARKETS_RENDER_CAP);
       const ranked = allRanked.slice(0, maxRows);
       if (isFullBoard) {
         const meta = document.getElementById('marketsCountMeta');
@@ -37595,12 +37650,17 @@ nav.tabs > button,
             ? `No props match ${state.marketsGameFilter.awayTeam} @ ${state.marketsGameFilter.homeTeam} with the current search or market filter.`
             : 'No props match this league, search, or market filter.';
         listEl.innerHTML = `<div class="ai-context-empty">${emptyMsg}</div>`;
+        if (isFullBoard) setupMarketsLoadMore(0);
         return;
       }
       const header = isFullBoard ? buildMarketsBoardHeaderHTML() : '';
-      listEl.innerHTML = header + ranked.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
-      // Schedule headshot lookups for all rendered rows
-      ranked.forEach(p => schedulePlayerHeadshotLookup(p.player, p.league));
+      // Defer DOM write to next animation frame to keep filter toggles responsive
+      requestAnimationFrame(() => {
+        listEl.innerHTML = header + ranked.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
+        if (isFullBoard) setupMarketsLoadMore(totalCount);
+        // Batch headshot lookups: first 15 immediately, rest during idle time
+        batchHeadshotLookups(ranked);
+      });
     }
 
     function setMarketsLeagueFilter(league) {
@@ -37744,21 +37804,24 @@ nav.tabs > button,
 
     function toggleMarketsLeague(league) {
       state.marketsLeagues = _toggleMultiFilter(state.marketsLeagues, league);
+      _marketsDisplayCap = getMarketsBoardRenderCap(); // reset to base cap on filter change
       syncMarketsFilterUI();
-      renderMarketsView();
+      debouncedRenderMarketsView();
     }
 
     function toggleMarketsMarket(market) {
       state.marketsMarketTypes = _toggleMultiFilter(state.marketsMarketTypes, market);
+      _marketsDisplayCap = getMarketsBoardRenderCap();
       syncMarketsFilterUI();
-      renderMarketsView();
+      debouncedRenderMarketsView();
       renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
     }
 
     function toggleMarketsDirection(dir) {
       state.marketsDirections = _toggleMultiFilter(state.marketsDirections, dir);
+      _marketsDisplayCap = getMarketsBoardRenderCap();
       syncMarketsFilterUI();
-      renderMarketsView();
+      debouncedRenderMarketsView();
       renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
     }
 
