@@ -34845,6 +34845,51 @@ nav.tabs > button,
       }
     }
 
+    // ── Parlay docking: move parlayContainer after the featured pick on Parlay tab ──
+    let _parlayOriginalParent = null;
+    let _parlayNextSibling   = null;
+
+    function dockParlayToFeaturedPick() {
+      // Only dock on non-wide-desktop (wide desktop uses the sidebar rail instead)
+      if (window.innerWidth >= 1400) return;
+      const parlay = document.getElementById('parlayContainer');
+      if (!parlay) return;
+
+      // Find the featured pick panel in the home dashboard
+      const anchor = document.querySelector('.site-home-dashboard .site-home-featured-full');
+      if (!anchor || anchor.nextElementSibling === parlay) return; // already docked
+
+      // Save original position so we can restore it later
+      if (!_parlayOriginalParent) {
+        _parlayOriginalParent = parlay.parentElement;
+        _parlayNextSibling   = parlay.nextElementSibling;
+      }
+
+      // Move parlayContainer immediately after the featured pick
+      anchor.insertAdjacentElement('afterend', parlay);
+
+      // Ensure it's visible and full-width in this new context
+      parlay.style.display = 'block';
+      parlay.style.width   = '100%';
+      parlay.style.marginBottom = '20px';
+    }
+
+    function undockParlay() {
+      if (!_parlayOriginalParent) return;
+      const parlay = document.getElementById('parlayContainer');
+      if (!parlay) return;
+      // Restore to original DOM position
+      if (_parlayNextSibling && _parlayNextSibling.parentElement === _parlayOriginalParent) {
+        _parlayOriginalParent.insertBefore(parlay, _parlayNextSibling);
+      } else {
+        _parlayOriginalParent.appendChild(parlay);
+      }
+      parlay.style.width = '';
+      parlay.style.marginBottom = '';
+      _parlayOriginalParent = null;
+      _parlayNextSibling   = null;
+    }
+
     function renderParlay() {
       const legsContainer = document.getElementById('parlayLegs');
       const summary = document.getElementById('parlaySummary');
@@ -39501,21 +39546,23 @@ nav.tabs > button,
 
           runAfterPaint(() => {
             const view = state.view;
-            if (view === 'props') { queueUserPropsRender('view-switch', 80); resumeTicker(); }
-            if (view === 'games') { renderGames(); resumeTicker(); }
+            if (view === 'props') { undockParlay(); queueUserPropsRender('view-switch', 80); resumeTicker(); }
+            if (view === 'games') { undockParlay(); renderGames(); resumeTicker(); }
             if (view === 'news') { refreshLeagueNews(false); resumeTicker(); }
             if (view === 'injuries') { fetchAllInjuries(); resumeTicker(); }
             if (view === 'parlay') {
               renderParlay();
               generateSuggestedParlays();
               if (window.innerWidth >= 1024) queueUserPropsRender('parlay-view', 80);
+              // Dock parlay after the featured pick so it's visible immediately
+              requestAnimationFrame(dockParlayToFeaturedPick);
               resumeTicker();
             }
-            if (view === 'strategy') { renderStrategy(); resumeTicker(); }
-            if (view === 'pace') { loadPaceTrends(); displayPaceData(); resumeTicker(); }
-            if (view === 'recommendations') { pauseTicker(); renderAIFastModeToggle(); applyPropAISectionVisibility(); renderRecommendations(); initPropAICommandCenter().catch(() => renderPropAILiveContext()); }
-            if (view === 'markets') { renderMarketsView(); resumeTicker(); }
-            if (view === 'portfolio') { renderPortfolio(); resumeTicker(); }
+            if (view === 'strategy') { undockParlay(); renderStrategy(); resumeTicker(); }
+            if (view === 'pace') { undockParlay(); loadPaceTrends(); displayPaceData(); resumeTicker(); }
+            if (view === 'recommendations') { undockParlay(); pauseTicker(); renderAIFastModeToggle(); applyPropAISectionVisibility(); renderRecommendations(); initPropAICommandCenter().catch(() => renderPropAILiveContext()); }
+            if (view === 'markets') { undockParlay(); renderMarketsView(); resumeTicker(); }
+            if (view === 'portfolio') { undockParlay(); renderPortfolio(); resumeTicker(); }
           });
       }
 
