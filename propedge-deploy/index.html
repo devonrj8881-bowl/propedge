@@ -2101,6 +2101,34 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       }
     }
 
+    /* iPad (701px–1024px): keep ticket+scores side-by-side, evidence below */
+    @media (min-width: 701px) and (max-width: 1024px) {
+      .propai-analyst-hero-grid {
+        grid-template-columns: minmax(0, 1.2fr) minmax(130px, 180px);
+        grid-template-areas:
+          "ticket scores"
+          "evidence evidence";
+      }
+
+      .propai-score-rail {
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        width: auto;
+        min-width: 130px;
+      }
+
+      .propai-score-rail .propiq-container {
+        width: 80px;
+        height: 80px;
+      }
+
+      .propai-score-rail .propai-confidence-ring {
+        width: 84px;
+        height: 84px;
+      }
+    }
+
     @media (max-width: 700px) {
       .propai-analyst-hero-grid {
         grid-template-columns: 1fr;
@@ -18583,11 +18611,11 @@ nav.tabs > button,
               <div class="propai-board-meta">
                 <div class="propai-board-meta-label">League</div>
                 <div class="propai-league-tabs">
-                  <button class="propai-league-tab active" type="button" data-league="ALL" onclick="setMarketsLeagueFilter('ALL')">All</button>
-                  <button class="propai-league-tab" type="button" data-league="NBA" onclick="setMarketsLeagueFilter('NBA')">🏀 NBA</button>
-                  <button class="propai-league-tab" type="button" data-league="NHL" onclick="setMarketsLeagueFilter('NHL')">🏒 NHL</button>
-                  <button class="propai-league-tab" type="button" data-league="MLB" onclick="setMarketsLeagueFilter('MLB')">⚾ MLB</button>
-                  <button class="propai-league-tab" type="button" data-league="NFL" onclick="setMarketsLeagueFilter('NFL')">🏈 NFL</button>
+                  <button class="propai-league-tab active" type="button" data-league="ALL" onclick="toggleMarketsLeague('ALL')">All</button>
+                  <button class="propai-league-tab" type="button" data-league="NBA" onclick="toggleMarketsLeague('NBA')">🏀 NBA</button>
+                  <button class="propai-league-tab" type="button" data-league="NHL" onclick="toggleMarketsLeague('NHL')">🏒 NHL</button>
+                  <button class="propai-league-tab" type="button" data-league="MLB" onclick="toggleMarketsLeague('MLB')">⚾ MLB</button>
+                  <button class="propai-league-tab" type="button" data-league="NFL" onclick="toggleMarketsLeague('NFL')">🏈 NFL</button>
                 </div>
               </div>
               <div class="propai-browser-search">
@@ -18700,11 +18728,11 @@ nav.tabs > button,
         <div class="propai-board-meta">
           <div class="propai-board-meta-label">League</div>
           <div class="propai-league-tabs">
-            <button class="propai-league-tab active" type="button" data-league="ALL" onclick="setMarketsLeagueFilter('ALL')">All</button>
-            <button class="propai-league-tab" type="button" data-league="NBA" onclick="setMarketsLeagueFilter('NBA')">🏀 NBA</button>
-            <button class="propai-league-tab" type="button" data-league="NHL" onclick="setMarketsLeagueFilter('NHL')">🏒 NHL</button>
-            <button class="propai-league-tab" type="button" data-league="MLB" onclick="setMarketsLeagueFilter('MLB')">⚾ MLB</button>
-            <button class="propai-league-tab" type="button" data-league="NFL" onclick="setMarketsLeagueFilter('NFL')">🏈 NFL</button>
+            <button class="propai-league-tab active" type="button" data-league="ALL" onclick="toggleMarketsLeague('ALL')">All</button>
+            <button class="propai-league-tab" type="button" data-league="NBA" onclick="toggleMarketsLeague('NBA')">🏀 NBA</button>
+            <button class="propai-league-tab" type="button" data-league="NHL" onclick="toggleMarketsLeague('NHL')">🏒 NHL</button>
+            <button class="propai-league-tab" type="button" data-league="MLB" onclick="toggleMarketsLeague('MLB')">⚾ MLB</button>
+            <button class="propai-league-tab" type="button" data-league="NFL" onclick="toggleMarketsLeague('NFL')">🏈 NFL</button>
           </div>
         </div>
         <div class="propai-browser-search">
@@ -19296,7 +19324,10 @@ nav.tabs > button,
       prevGameStatuses: {}, // Track previous game statuses to detect final transitions (gameId -> status)
       outcomes: {}, // { "Player|PropType|Line": { status: "HIT"|"MISS", date, timestamp } }
       splitsIndex: {}, // { player: { propType: { overall: %, l5: %, season: % } } } for fast lookups
-      propAIDirectionFilter: 'ALL' // 'ALL' | 'OVER' | 'UNDER'
+      propAIDirectionFilter: 'ALL', // 'ALL' | 'OVER' | 'UNDER'
+      marketsLeagues:     [],  // [] = All leagues; otherwise e.g. ['NBA','MLB']
+      marketsMarketTypes: [],  // [] = All types;   otherwise e.g. ['Hits','TB']
+      marketsDirections:  []   // [] = All directions; otherwise e.g. ['OVER']
     };
 
     let _propsRenderTimer = null;
@@ -37204,14 +37235,22 @@ nav.tabs > button,
 
     function getMarketsBoardFiltered() {
       let filtered = Array.isArray(state.props) ? state.props.slice() : [];
-      const league = state.league;
-      if (league && league !== 'ALL') filtered = filtered.filter(p => p.league === league);
+      // League: use markets-specific multi-select, fall back to global league
+      if (state.marketsLeagues.length) {
+        filtered = filtered.filter(p => state.marketsLeagues.includes(p.league));
+      } else if (state.league && state.league !== 'ALL') {
+        filtered = filtered.filter(p => p.league === state.league);
+      }
       if (state.marketsGameFilter) filtered = getPropsForGame(state.marketsGameFilter, filtered);
       const search = normalizeLiveOddsText(state.propAIMarketSearch || '');
-      const marketFilter = state.propAIMarketFilter || 'ALL';
-      if (marketFilter !== 'ALL') filtered = filtered.filter(p => propAIMarketCategory(p) === marketFilter);
-      const dirFilter = state.propAIDirectionFilter || 'ALL';
-      if (dirFilter !== 'ALL') filtered = filtered.filter(p => (p.direction || 'OVER') === dirFilter);
+      // Market type: multi-select
+      if (state.marketsMarketTypes.length) {
+        filtered = filtered.filter(p => state.marketsMarketTypes.includes(propAIMarketCategory(p)));
+      }
+      // Direction: multi-select
+      if (state.marketsDirections.length) {
+        filtered = filtered.filter(p => state.marketsDirections.includes(p.direction || 'OVER'));
+      }
       if (search) {
         filtered = filtered.filter(p => {
           const blob = [
@@ -37582,15 +37621,23 @@ nav.tabs > button,
     }
 
     function syncMarketsFilterUI() {
-      const activeLeague = state.league || 'ALL';
+      // League tabs — multi-select aware
       document.querySelectorAll('.propai-league-tab').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.league === activeLeague);
+        const l = btn.dataset.league;
+        const active = l === 'ALL' ? state.marketsLeagues.length === 0 : state.marketsLeagues.includes(l);
+        btn.classList.toggle('active', active);
       });
+      // Market type tabs — multi-select aware
       document.querySelectorAll('.propai-market-tab:not(.propai-dir-tab)').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.market === (state.propAIMarketFilter || 'ALL'));
+        const m = btn.dataset.market;
+        const active = m === 'ALL' ? state.marketsMarketTypes.length === 0 : state.marketsMarketTypes.includes(m);
+        btn.classList.toggle('active', active);
       });
+      // Direction tabs — multi-select aware
       document.querySelectorAll('.propai-dir-tab').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.dir === (state.propAIDirectionFilter || 'ALL'));
+        const d = btn.dataset.dir;
+        const active = d === 'ALL' ? state.marketsDirections.length === 0 : state.marketsDirections.includes(d);
+        btn.classList.toggle('active', active);
       });
       const search = state.propAIMarketSearch || '';
       ['propAIMarketSearch', 'marketsSearchInput'].forEach((id) => {
@@ -37673,16 +37720,38 @@ nav.tabs > button,
     }
 
     function setPropAIMarketFilter(filter) {
-      state.propAIMarketFilter = filter || 'ALL';
+      // Legacy single-select kept for external callers; now delegates to toggle
+      toggleMarketsMarket(filter || 'ALL');
+    }
+
+    function setPropAIDirectionFilter(dir) {
+      // Legacy single-select kept for external callers; now delegates to toggle
+      toggleMarketsDirection(dir || 'ALL');
+    }
+
+    function _toggleMultiFilter(arr, value) {
+      if (value === 'ALL') return [];
+      const idx = arr.indexOf(value);
+      const next = idx >= 0 ? arr.filter((_, i) => i !== idx) : [...arr, value];
+      return next;
+    }
+
+    function toggleMarketsLeague(league) {
+      state.marketsLeagues = _toggleMultiFilter(state.marketsLeagues, league);
+      syncMarketsFilterUI();
+      renderMarketsView();
+    }
+
+    function toggleMarketsMarket(market) {
+      state.marketsMarketTypes = _toggleMultiFilter(state.marketsMarketTypes, market);
+      syncMarketsFilterUI();
       renderMarketsView();
       renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
     }
 
-    function setPropAIDirectionFilter(dir) {
-      state.propAIDirectionFilter = dir || 'ALL';
-      document.querySelectorAll('.propai-dir-tab').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.dir === state.propAIDirectionFilter);
-      });
+    function toggleMarketsDirection(dir) {
+      state.marketsDirections = _toggleMultiFilter(state.marketsDirections, dir);
+      syncMarketsFilterUI();
       renderMarketsView();
       renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
     }
