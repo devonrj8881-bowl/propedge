@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.136-grading-guide-markets">
+  <meta name="app-version" content="v7.137-platform-fixes">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -35090,26 +35090,14 @@ nav.tabs > button,
     function renderGames() {
       const container = document.getElementById('gamesContainer');
 
-      // Get today's date (start and end of day)
-      const today = new Date();
-      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
-      const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-
-      // Filter games for today only — handle any date format (Safari-safe)
+      // ESPN API already fetches with ?dates=TODAY — all games in state are today's.
+      // No date re-filter needed (it was causing timezone edge-case drops).
       const todayGames = [
         ...(state.games.NBA || []),
         ...(state.games.NHL || []),
         ...(state.games.MLB || []),
         ...(state.games.NFL || [])
-      ].filter(game => {
-        const raw = game.gameTime || game.date || game.startTime || 0;
-        // Normalize: replace space separator with 'T' for Safari ISO compliance
-        const normalized = typeof raw === 'string' ? raw.replace(' ', 'T') : raw;
-        const gameTime = new Date(normalized);
-        // Include games with unparseable times (better to show than hide)
-        if (!Number.isFinite(gameTime.getTime())) return true;
-        return gameTime >= startOfToday && gameTime <= endOfToday;
-      });
+      ];
 
       if (todayGames.length === 0) {
         container.innerHTML = '<div class="site-parlay-empty"><strong>No games today</strong>Today&apos;s slate will appear here once game data is loaded.</div>';
@@ -37358,16 +37346,9 @@ nav.tabs > button,
       const leagues = state.marketsLeagues.length
         ? state.marketsLeagues
         : (state.league && state.league !== 'ALL' ? [state.league] : ['NBA', 'NHL', 'MLB', 'NFL']);
-      const { start, end } = getTodayDateBounds();
-      const allGames = leagues.flatMap(l => state.games[l.toUpperCase()] || []);
+      // ESPN API already fetches ?dates=TODAY — no date re-filter needed
+      const allGames = leagues.flatMap(l => (state.games[l.toUpperCase()] || []).filter(Boolean));
       return allGames
-        .filter(game => {
-          if (!game) return false;
-          const gameTime = new Date(game.gameTime || game.date || game.startTime || 0);
-          if (!Number.isFinite(gameTime.getTime())) return true;
-          // Include games with no parseable time, and today's games regardless of status
-          return gameTime >= start && gameTime <= end;
-        })
         .slice()
         .sort((a, b) => {
           const aTime = new Date(a?.gameTime || a?.date || a?.startTime || 0).getTime() || 0;
