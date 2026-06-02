@@ -37268,16 +37268,18 @@ nav.tabs > button,
     }
 
     function getMarketsSlateGames() {
-      const scopedLeague = String(state.league || 'ALL').toUpperCase();
+      // Use marketsLeagues multi-select; fall back to global state.league
+      const leagues = state.marketsLeagues.length
+        ? state.marketsLeagues
+        : (state.league && state.league !== 'ALL' ? [state.league] : ['NBA', 'NHL', 'MLB', 'NFL']);
       const { start, end } = getTodayDateBounds();
-      const allGames = scopedLeague === 'ALL'
-        ? [...(state.games.NBA || []), ...(state.games.NHL || []), ...(state.games.MLB || []), ...(state.games.NFL || [])]
-        : [...(state.games[scopedLeague] || [])];
+      const allGames = leagues.flatMap(l => state.games[l.toUpperCase()] || []);
       return allGames
         .filter(game => {
           if (!game) return false;
           const gameTime = new Date(game.gameTime || game.date || game.startTime || 0);
           if (!Number.isFinite(gameTime.getTime())) return true;
+          // Include games with no parseable time, and today's games regardless of status
           return gameTime >= start && gameTime <= end;
         })
         .slice()
@@ -37574,13 +37576,15 @@ nav.tabs > button,
       if (isFullBoard) {
         const meta = document.getElementById('marketsCountMeta');
         if (meta) {
-          const leagueLabel = state.league && state.league !== 'ALL' ? state.league : 'All Leagues';
-          const marketLabel = state.propAIMarketFilter && state.propAIMarketFilter !== 'ALL' ? state.propAIMarketFilter : 'All Markets';
-          const gameLabel = state.marketsGameFilter
+          const leagueLabel = state.marketsLeagues.length ? state.marketsLeagues.join('+') : 'All Leagues';
+          const marketLabel = state.marketsMarketTypes.length ? state.marketsMarketTypes.join('+') : 'All Markets';
+          const dirLabel    = state.marketsDirections.length ? state.marketsDirections.join('+') : '';
+          const gameLabel   = state.marketsGameFilter
             ? `${state.marketsGameFilter.awayTeam} @ ${state.marketsGameFilter.homeTeam}`
             : '';
           const capNote = totalCount > maxRows ? ` (showing ${maxRows.toLocaleString()})` : '';
-          meta.textContent = `${totalCount.toLocaleString()} props · ${leagueLabel} · ${marketLabel}${gameLabel ? ` · ${gameLabel}` : ''}${capNote}`;
+          const parts = [leagueLabel, marketLabel, dirLabel, gameLabel].filter(Boolean);
+          meta.textContent = `${totalCount.toLocaleString()} props · ${parts.join(' · ')}${capNote}`;
         }
       }
       const propsLoaded = Array.isArray(state.props) && state.props.length > 0;
@@ -37595,6 +37599,8 @@ nav.tabs > button,
       }
       const header = isFullBoard ? buildMarketsBoardHeaderHTML() : '';
       listEl.innerHTML = header + ranked.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
+      // Schedule headshot lookups for all rendered rows
+      ranked.forEach(p => schedulePlayerHeadshotLookup(p.player, p.league));
     }
 
     function setMarketsLeagueFilter(league) {
