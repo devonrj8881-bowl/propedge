@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.137 — Scraper metadata + data age label + failure notifications — 2026-06-02 -->
+<!-- PropEdge v7.138 — Fix mobile scroll jump on prop re-render — 2026-06-02 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -2683,6 +2683,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
       .props-container {
         padding: 0 0 120px;
+        overflow-anchor: none;
       }
 
       .props-grid {
@@ -34639,6 +34640,7 @@ nav.tabs > button,
       }
 
       const isDesktopHome = window.matchMedia('(min-width: 1024px)').matches;
+      const _savedScrollY = window.scrollY;
       if (state.view === 'props') {
         container.innerHTML = isDesktopHome
           ? buildDesktopHomeDashboardHTML(props)
@@ -34656,6 +34658,10 @@ nav.tabs > button,
             </div>
           ` : ''}
         `;
+      }
+      // Restore scroll synchronously so iOS doesn't jump after DOM rebuild
+      if (_savedScrollY > 0 && Math.abs(window.scrollY - _savedScrollY) > 4) {
+        window.scrollTo(0, _savedScrollY);
       }
 
       // Keep the active navigation view intact. renderProps() is also called by
