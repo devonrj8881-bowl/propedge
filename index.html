@@ -10116,6 +10116,9 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     .ai-message.assistant .msg-content {
       max-width: min(100%, 920px);
       width: 100%;
+      /* Isolate layout/style recalc to this element so iOS doesn't reflow the whole page */
+      contain: layout style;
+      overflow: hidden;
     }
 
     .msg-content {
@@ -42754,6 +42757,26 @@ JSON: {"recommendations":[{"player":"EXACT_NAME","prop":"EXACT_STAT","line":0,"o
       contentDiv.className = 'msg-content';
 
       if (contentHTML) {
+        // For large analyst HTML: insert skeleton first so the browser can
+        // respond to touch/scroll, then inject real content in idle time.
+        const isLarge = contentHTML.length > 3000;
+        if (isLarge) {
+          contentDiv.innerHTML = '<div class="ai-typing-state"><div class="spinner"></div><span>Rendering analysis…</span></div>';
+          messageDiv.appendChild(contentDiv);
+          messagesDiv.appendChild(messageDiv);
+          messageDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+          // Defer the heavy innerHTML to idle time so iOS stays interactive
+          const inject = () => {
+            contentDiv.innerHTML = contentHTML;
+            messageDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+          };
+          if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(inject, { timeout: 1500 });
+          } else {
+            setTimeout(inject, 100);
+          }
+          return;
+        }
         contentDiv.innerHTML = contentHTML;
       } else {
         contentDiv.textContent = text;
