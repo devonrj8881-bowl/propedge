@@ -2101,10 +2101,11 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       }
     }
 
-    /* iPad (701px–1024px): keep ticket+scores side-by-side, evidence below */
-    @media (min-width: 701px) and (max-width: 1024px) {
+    /* Tablet/small desktop (701px–1280px): keep ticket+scores side-by-side, evidence below.
+       Covers iPad mini landscape (1133px) + iPad Air landscape (1180px) with sidebar active. */
+    @media (min-width: 701px) and (max-width: 1280px) {
       .propai-analyst-hero-grid {
-        grid-template-columns: minmax(0, 1.2fr) minmax(130px, 180px);
+        grid-template-columns: minmax(0, 1.3fr) minmax(150px, 200px);
         grid-template-areas:
           "ticket scores"
           "evidence evidence";
@@ -2115,17 +2116,17 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         justify-content: flex-start;
         align-items: center;
         width: auto;
-        min-width: 130px;
+        min-width: 150px;
       }
 
       .propai-score-rail .propiq-container {
-        width: 80px;
-        height: 80px;
+        width: 88px;
+        height: 88px;
       }
 
       .propai-score-rail .propai-confidence-ring {
-        width: 84px;
-        height: 84px;
+        width: 92px;
+        height: 92px;
       }
     }
 
@@ -35094,14 +35095,19 @@ nav.tabs > button,
       const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
       const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
-      // Filter games for today only
+      // Filter games for today only — handle any date format (Safari-safe)
       const todayGames = [
         ...(state.games.NBA || []),
         ...(state.games.NHL || []),
         ...(state.games.MLB || []),
         ...(state.games.NFL || [])
       ].filter(game => {
-        const gameTime = new Date(game.gameTime);
+        const raw = game.gameTime || game.date || game.startTime || 0;
+        // Normalize: replace space separator with 'T' for Safari ISO compliance
+        const normalized = typeof raw === 'string' ? raw.replace(' ', 'T') : raw;
+        const gameTime = new Date(normalized);
+        // Include games with unparseable times (better to show than hide)
+        if (!Number.isFinite(gameTime.getTime())) return true;
         return gameTime >= startOfToday && gameTime <= endOfToday;
       });
 
@@ -36504,16 +36510,35 @@ nav.tabs > button,
       if (gameCount) gameCount.textContent = `${(news.games || []).length}`;
       if (articleCount) articleCount.textContent = `${(news.articles || []).length}`;
 
-      gamesOut.innerHTML = (news.games || []).length
-        ? news.games.slice(0, 16).map(game => `
+      // Fall back to state.games if the news function returned no game context
+      const newsGames = (news.games || []).length ? news.games : null;
+      const filterLeague = (state.leagueNewsFilter || 'ALL').toUpperCase();
+      const stateGames = newsGames ? null : [
+        ...(state.games.NBA || []), ...(state.games.NHL || []),
+        ...(state.games.MLB || []), ...(state.games.NFL || [])
+      ].filter(g => filterLeague === 'ALL' || (g.league || '').toUpperCase() === filterLeague)
+       .slice(0, 16);
+
+      if (newsGames) {
+        gamesOut.innerHTML = newsGames.slice(0, 16).map(game => `
           <a class="league-game-card" href="${escapeHTML(game.url || '#')}" target="_blank" rel="noopener">
             <span class="league-news-source">${escapeHTML(game.league || '')} · ${escapeHTML(game.source || 'ESPN')}</span>
             <div class="league-game-matchup">${escapeHTML(game.matchup || 'Game context')}</div>
             <div class="league-game-status">${escapeHTML([game.score, game.status, game.venue].filter(Boolean).join(' · '))}</div>
             ${(game.headlines || []).slice(0, 2).map(h => `<div class="league-game-status">• ${escapeHTML(h)}</div>`).join('')}
           </a>
-        `).join('')
-        : '<div class="league-news-empty">No games returned for this league right now.</div>';
+        `).join('');
+      } else if (stateGames && stateGames.length) {
+        gamesOut.innerHTML = stateGames.map(game => `
+          <div class="league-game-card">
+            <span class="league-news-source">${escapeHTML(game.league || '')} · PropEdge Live</span>
+            <div class="league-game-matchup">${escapeHTML((game.awayTeam || game.awayName || 'Away') + ' @ ' + (game.homeTeam || game.homeName || 'Home'))}</div>
+            <div class="league-game-status">${escapeHTML([game.statusDisplay || game.status, game.displayClock, game.venue].filter(Boolean).join(' · '))}</div>
+          </div>
+        `).join('');
+      } else {
+        gamesOut.innerHTML = '<div class="league-news-empty">No games returned for this league right now.</div>';
+      }
 
       articlesOut.innerHTML = (news.articles || []).length
         ? news.articles.slice(0, 24).map(article => `
