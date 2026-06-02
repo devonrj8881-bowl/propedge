@@ -1651,4 +1651,4 @@ async function main() {
   }
 }
 
-main().catch(e => { logError(e.message); process.exit(1); });
+main().then(() => process.exit(0)).catch(e => { logError(e.message); process.exit(1); });
