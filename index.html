@@ -4544,9 +4544,10 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
     .propai-ladder-head {
       display: grid;
-      grid-template-columns: minmax(72px, 1fr) repeat(4, minmax(72px, 1fr));
-      gap: 12px;
-      min-width: min(100%, 520px);
+      grid-template-columns: minmax(60px, 1fr) repeat(4, minmax(60px, 1fr));
+      gap: 8px;
+      width: 100%;
+      min-width: 340px;
       color: var(--text-muted);
       font-size: 10px;
       text-transform: uppercase;
@@ -4554,8 +4555,9 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       padding: 0 4px;
     }
     .propai-ladder-row {
-      grid-template-columns: minmax(72px, 1fr) repeat(4, minmax(72px, 1fr));
-      min-width: min(100%, 520px);
+      grid-template-columns: minmax(60px, 1fr) repeat(4, minmax(60px, 1fr));
+      width: 100%;
+      min-width: 340px;
       font-size: 12px;
       color: var(--text-primary);
     }
@@ -10651,7 +10653,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     body.no-content-visibility .propai-market-row--deck {
       content-visibility: visible !important;
       contain-intrinsic-size: none !important;
-      contain: layout !important;
+      contain: none !important;
     }
 
     /* Mobile-specific safe area adjustments */
@@ -34865,13 +34867,19 @@ nav.tabs > button,
         _parlayNextSibling   = parlay.nextElementSibling;
       }
 
-      // Move parlayContainer immediately after the featured pick
-      anchor.insertAdjacentElement('afterend', parlay);
+      // Defer the DOM move to idle time so it never blocks interaction
+      const doMove = () => {
+        anchor.insertAdjacentElement('afterend', parlay);
+        parlay.style.display = 'block';
+        parlay.style.width   = '100%';
+        parlay.style.marginBottom = '20px';
+      };
 
-      // Ensure it's visible and full-width in this new context
-      parlay.style.display = 'block';
-      parlay.style.width   = '100%';
-      parlay.style.marginBottom = '20px';
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(doMove, { timeout: 500 });
+      } else {
+        setTimeout(doMove, 100);
+      }
     }
 
     function undockParlay() {
@@ -39553,9 +39561,9 @@ nav.tabs > button,
             if (view === 'parlay') {
               renderParlay();
               generateSuggestedParlays();
-              if (window.innerWidth >= 1024) queueUserPropsRender('parlay-view', 80);
-              // Dock parlay after the featured pick so it's visible immediately
-              requestAnimationFrame(dockParlayToFeaturedPick);
+              // Defer heavy work so the tab switch stays responsive
+              if (window.innerWidth >= 1024) queueUserPropsRender('parlay-view', 200);
+              dockParlayToFeaturedPick(); // deferred internally via requestIdleCallback
               resumeTicker();
             }
             if (view === 'strategy') { undockParlay(); renderStrategy(); resumeTicker(); }
