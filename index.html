@@ -37989,9 +37989,14 @@ nav.tabs > button,
       }
       const header = isFullBoard ? buildMarketsBoardHeaderHTML() : '';
       // Defer DOM write to next animation frame to keep filter toggles responsive
+      const _scrollBeforeRender = window.scrollY;
       requestAnimationFrame(() => {
         listEl.innerHTML = header + ranked.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
         if (isFullBoard) setupMarketsLoadMore(totalCount);
+        // Restore scroll so iOS doesn't jump after DOM rebuild
+        if (_scrollBeforeRender > 0 && Math.abs(window.scrollY - _scrollBeforeRender) > 4) {
+          window.scrollTo(0, _scrollBeforeRender);
+        }
         // Batch headshot lookups: first 15 immediately, rest during idle time
         batchHeadshotLookups(ranked);
       });
