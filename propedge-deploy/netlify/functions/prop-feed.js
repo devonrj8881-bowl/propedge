@@ -18,10 +18,10 @@ const CORS_HEADERS = {
 
 const SHEET_ID = "1e53GcCS9alxJhzDQPqkH55mpllEjVUShPKyP63R-BeY";
 const DEFAULT_SHEET = "propedge-main";
-const ALLOWED_SHEETS = new Set(["propedge-main", "Prop_Hits", "_meta"]);
+const ALLOWED_SHEETS = new Set(["propedge-main", "Prop_Hits", "meta"]);
 
 // Sheets that we fetch via the API (guaranteed fresh, bypasses Google CDN cache)
-const API_SHEETS = new Set(["propedge-main", "_meta"]);
+const API_SHEETS = new Set(["propedge-main"]);
 
 // One-time auth init per cold start
 let _sheetsClient = null;

@@ -1640,7 +1640,7 @@ async function main() {
         const res = await sheets.spreadsheets.values.get({ spreadsheetId: CONFIG.spreadsheetId, range: 'propedge-main!A:A' });
         return Math.max(0, (res.data.values || []).length - 1); // subtract header
       })();
-      await writeToSheet(sheets, '_meta', ['key', 'value'], [
+      await writeToSheet(sheets, 'meta', ['key', 'value'], [
         ['last_scraped', new Date().toISOString()],
         ['row_count', String(totalRows)],
       ]);

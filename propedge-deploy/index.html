@@ -20831,7 +20831,7 @@ nav.tabs > button,
 
     async function fetchScrapeMeta() {
       try {
-        const url = `/.netlify/functions/prop-feed?sheet=_meta`;
+        const url = `/.netlify/functions/prop-feed?sheet=meta`;
         const res = await fetch(url, { cache: 'no-store' });
         if (!res.ok) return null;
         const text = await res.text();
