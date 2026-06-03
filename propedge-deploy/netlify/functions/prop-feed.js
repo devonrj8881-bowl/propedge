@@ -27,11 +27,24 @@ const API_SHEETS = new Set(["propedge-main", "_meta"]);
 let _sheetsClient = null;
 async function getSheetsClient() {
   if (_sheetsClient) return _sheetsClient;
-  const keyFile = path.join(__dirname, "..", "..", "credentials.json");
-  const auth = new google.auth.GoogleAuth({
-    keyFile,
-    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-  });
+
+  let auth;
+  if (process.env.GOOGLE_CREDENTIALS_JSON) {
+    // Production: credentials stored as Netlify environment variable
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+    auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    });
+  } else {
+    // Local dev: read from credentials.json file
+    const keyFile = path.join(__dirname, "..", "..", "credentials.json");
+    auth = new google.auth.GoogleAuth({
+      keyFile,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    });
+  }
+
   const client = await auth.getClient();
   _sheetsClient = google.sheets({ version: "v4", auth: client });
   return _sheetsClient;
