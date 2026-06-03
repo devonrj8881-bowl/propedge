@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.142 — Debounce Markets search to fix typing delay — 2026-06-02 -->
+<!-- PropEdge v7.143 — Full mobile perf audit: remove backdrop-filters, fix passive listeners, kill debug timers — 2026-06-02 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -2942,8 +2942,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       contain: layout style;
       will-change: none;
       border-bottom: 1px solid rgba(0, 230, 118, 0.08);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(26, 29, 46, 0.98);
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     }
 
@@ -3081,6 +3080,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       background: var(--accent-green);
       border-radius: 50%;
       animation: pulse 2s infinite;
+      will-change: opacity, transform;
     }
 
     @keyframes pulse {
@@ -3337,19 +3337,11 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     .live-games-scroll::-webkit-scrollbar-thumb {
       background: var(--accent-green);
       border-radius: 4px;
-      animation: rotateScrollbar 2s linear infinite;
-      box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+      opacity: 0.9;
     }
 
     .live-games-scroll::-webkit-scrollbar-thumb:hover {
-      animation: rotateScrollbar 1s linear infinite;
-      box-shadow: 0 0 12px rgba(0, 255, 136, 0.6);
-    }
-
-    @keyframes rotateScrollbar {
-      0% { opacity: 0.8; }
-      50% { opacity: 1; box-shadow: 0 0 12px rgba(0, 255, 136, 0.5); }
-      100% { opacity: 0.8; }
+      opacity: 1;
     }
 
     .live-games-scroll-wrap {
@@ -3527,7 +3519,6 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.5px;
-      backdrop-filter: blur(4px);
       border: 1px solid rgba(255,255,255,0.1);
       min-width: 70px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
@@ -6017,8 +6008,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       position: sticky;
       top: 0;
       z-index: 2;
-      background: linear-gradient(180deg, rgba(26, 29, 46, 0.98) 70%, rgba(26, 29, 46, 0));
-      backdrop-filter: blur(6px);
+      background: rgba(26, 29, 46, 0.98);
     }
 
     .propai-market-header-cell {
@@ -11038,8 +11028,6 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       -webkit-backface-visibility: hidden;
       height: fit-content;
       position: relative;
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
       box-shadow: var(--shadow-sm);
       /* Prevent card from triggering scroll jumps when height changes */
       overflow-anchor: none;
@@ -11703,8 +11691,8 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       cursor: default;
     }
     @keyframes opptyPulse {
-      0%,100% { box-shadow: 0 0 0 0 rgba(255,165,0,0); }
-      50%      { box-shadow: 0 0 8px 3px rgba(255,165,0,0.28); }
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.7; }
     }
 
     /* Feature 2 — Lineup Lock / Projected */
@@ -20377,14 +20365,8 @@ nav.tabs > button,
         // Allow #main and sidebar to scroll natively
         if (mainEl && mainEl.contains(e.target)) return;
         if (e.target.closest('.site-sidebar-shell, .site-shell-main, .site-shell-content')) return;
-        const st = window.scrollY;
-        const sh = document.body.scrollHeight - window.innerHeight;
-        // At top and scrolling up, or at bottom and scrolling down: stop only if not in #main
-        if ((st <= 0 && e.touches[0].clientY > lastY) || (st >= sh && e.touches[0].clientY < lastY)) {
-          e.preventDefault();
-        }
         lastY = e.touches[0].clientY;
-      }, { passive: false });
+      }, { passive: true });
 
       // Mark body as scrolling so iframes yield pointer events during scroll
       (function() {
@@ -28456,9 +28438,9 @@ nav.tabs > button,
     function _startLiveTickerPoll() {
       if (_liveTickerTimer) return;
       _liveTickerTimer = setInterval(() => {
-        // Autonomous background sync — no dependencies on user actions
+        if (document.hidden) return;
         _autonomousGameClockSync();
-      }, 4000); // Every 4 seconds (smooth ticker updates with minimal buffering)
+      }, 10000); // Every 10s — live score updates are still near-real-time
     }
 
     function _stopLiveTickerPoll() {
@@ -28661,11 +28643,9 @@ nav.tabs > button,
         displayGames = deduped.filter(g => g.status !== 'final');
       }
 
-      console.log('[PropEdge] Ticker will display', displayGames.length, 'games after filtering');
 
       if (displayGames.length === 0) {
         ticker.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:10px;">No games scheduled</div>';
-        console.warn('[PropEdge] No games to display in ticker');
         return;
       }
 
@@ -28731,7 +28711,7 @@ nav.tabs > button,
 
       // Update arrow visibility after ticker renders
       requestAnimationFrame(_updateTickerArrows);
-      ticker.onscroll = _updateTickerArrows;
+      ticker.addEventListener('scroll', () => requestAnimationFrame(_updateTickerArrows), { passive: true });
 
       // Kick off live countdown refresh if any upcoming games are present
       _startCountdownRefresh();
@@ -42183,19 +42163,6 @@ nav.tabs > button,
         gamesTicker.addEventListener('mouseenter', () => { isHovering = true; });
         gamesTicker.addEventListener('mouseleave', () => { isHovering = false; });
 
-        // Debug: log scroll state every 1.5 seconds
-        setInterval(() => {
-          const cardCount = gamesTicker.querySelectorAll('.live-game-card').length;
-          const hasOverflow = gamesTicker.scrollWidth > gamesTicker.clientWidth;
-          const maxScroll = gamesTicker.scrollWidth - gamesTicker.clientWidth;
-          console.log('[PropEdge] Ticker:', {
-            scrollLeft: gamesTicker.scrollLeft,
-            maxScroll,
-            hasOverflow,
-            cardCount,
-            isAutoScrolling: autoScrollActive && !isHovering
-          });
-        }, 1500);
       }
     });
 
