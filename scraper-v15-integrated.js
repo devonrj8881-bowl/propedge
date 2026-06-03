@@ -1364,8 +1364,7 @@ async function processLeague(page, sheets, league) {
     // Add game-level columns (game_date, opponent_est) for H2H calculation
     const { headers: finalHeaders, data: finalData } = addGameLevelColumns(enrichedHeaders, enrichedData);
     logSuccess(`Added game-level columns for H2H tracking`, 2);
-    // Archive old data before writing new data
-    await archiveOldData(sheets, league);
+    // Archive disabled — sheet hit 10M-cell limit and archive data is unused by the app
     await writeToSheet(sheets, league, finalHeaders, finalData);
   } else {
     logWarning(`No rows passed filters for ${league}`, 1);
