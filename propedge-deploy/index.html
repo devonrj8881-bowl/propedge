@@ -20937,8 +20937,10 @@ nav.tabs > button,
             const age = formatDataAge(meta.last_scraped);
             if (age) el.textContent = age;
           }
-          // Show stale data banner if data is > 6 hours old
-          if (meta && meta.last_scraped) {
+          // Show stale data banner if data is > 6 hours old or scraper has never run
+          if (!meta || !meta.last_scraped) {
+            showStaleBanner(null);
+          } else {
             const ageMs = Date.now() - new Date(meta.last_scraped).getTime();
             const ageHrs = ageMs / 3600000;
             if (ageHrs > 6) {
@@ -20947,7 +20949,7 @@ nav.tabs > button,
               hideStaleBanner();
             }
           }
-        }).catch(() => {});
+        }).catch(() => { showStaleBanner(null); });
         // Async ESPN game-filter: fires after render, never blocks prop display
         applyEspnGameFilter().catch(e => console.warn('[game-filter] ESPN filter failed silently:', e.message));
         // Also apply local game-status filter (uses state.games, works offline/instantly)
@@ -40249,7 +40251,9 @@ nav.tabs > button,
       const banner = document.getElementById('staleBanner');
       const text = document.getElementById('staleBannerText');
       if (!banner) return;
-      if (text) text.textContent = `Props data is ${ageHours}h old — scraper may not have run. Refresh to try again.`;
+      if (text) text.textContent = ageHours
+        ? `Props data is ${ageHours}h old — scraper may not have run. Refresh to try again.`
+        : `Scraper hasn't run yet — props data may be missing or outdated.`;
       banner.style.display = 'flex';
     }
 
