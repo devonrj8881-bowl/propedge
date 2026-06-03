@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.147 — Filter completed-game props from Markets board — 2026-06-03 -->
+<!-- PropEdge v7.148 — applyLocalGameStatusFilter: remove completed-game props in real time — 2026-06-03 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -20853,6 +20853,8 @@ nav.tabs > button,
         }).catch(() => {});
         // Async ESPN game-filter: fires after render, never blocks prop display
         applyEspnGameFilter().catch(e => console.warn('[game-filter] ESPN filter failed silently:', e.message));
+        // Also apply local game-status filter (uses state.games, works offline/instantly)
+        applyLocalGameStatusFilter();
         if (typeof renderMarketsView === 'function') renderMarketsView();
         window.clearTimeout(window.__propLoadWatchdog);
         window.__propLoadRetryCount = 0;
@@ -27774,6 +27776,52 @@ nav.tabs > button,
     // prop.tier, and prop.propFactors for ALL downstream consumers
     // (card display, sort/filter, parlay AI, sharp money rescore baseline).
     // ESPN game-filter: fetches today's active teams and hides props for teams not playing
+    // Filter state.props using local state.games — removes props for concluded games.
+    // Called after fetchGames and after each live sync so the board stays current.
+    function applyLocalGameStatusFilter() {
+      const allGames = [
+        ...(state.games.NBA || []), ...(state.games.NHL || []),
+        ...(state.games.MLB || []), ...(state.games.NFL || [])
+      ];
+      if (!allGames.length || !Array.isArray(state.props) || !state.props.length) return;
+
+      const normalizeT = t => String(t || '').toUpperCase().trim();
+
+      // Build set of teams with active (non-final) games
+      const activeTeams = {}; // { LEAGUE: Set<team> }
+      const hasAnyGameForLeague = {}; // track which leagues have any ESPN data today
+      allGames.forEach(g => {
+        const league = String(g.league || '').toUpperCase();
+        if (!hasAnyGameForLeague[league]) hasAnyGameForLeague[league] = true;
+        const isFinal = g.isCompleted || g.status === 'final' ||
+          /final|completed|ended|post/i.test(g.statusText || g.statusDisplay || g.status || '');
+        if (!isFinal) {
+          if (!activeTeams[league]) activeTeams[league] = new Set();
+          activeTeams[league].add(normalizeT(g.homeTeam));
+          activeTeams[league].add(normalizeT(g.awayTeam));
+        }
+      });
+
+      const before = state.props.length;
+      state.props = state.props.filter(p => {
+        const league = String(p.league || '').toUpperCase();
+        // If ESPN has no data for this league today, keep all props for it
+        if (!hasAnyGameForLeague[league]) return true;
+        const team = normalizeT(p.team);
+        const active = activeTeams[league];
+        // If all games for this league are final, active will be empty set
+        return active && active.has(team);
+      });
+
+      const removed = before - state.props.length;
+      if (removed > 0) {
+        console.log(`[game-status-filter] Removed ${removed} props for completed games`);
+        updateStats();
+        schedulePropsRender('game-status-filter', 200);
+        if (typeof renderMarketsView === 'function') renderMarketsView();
+      }
+    }
+
     async function applyEspnGameFilter() {
       try {
         const res = await propEdgeNativeFetch('/.netlify/functions/game-filter');
@@ -27904,8 +27952,9 @@ nav.tabs > button,
 
       // ── ALWAYS render ticker with all games (live + upcoming)
       // Background clock sync will update live game scores in-place via _startLiveTickerPoll()
-      console.log('[PropEdge] Rendering ticker with all games');
       renderTicker(allGames);
+      // Filter out props for completed games now that state.games is fresh
+      if (typeof applyLocalGameStatusFilter === 'function') applyLocalGameStatusFilter();
 
       // ── AUTO-DETECT PROP HITS: Trigger when game transitions to final (NEW)
       for (const game of allGames) {
@@ -28407,6 +28456,9 @@ nav.tabs > button,
           if (clockChip && displayClock) clockChip.textContent = `⏱ ${displayClock}`;
         });
       });
+
+      // After each live sync, drop props for any games that just went final
+      if (typeof applyLocalGameStatusFilter === 'function') applyLocalGameStatusFilter();
     }
 
     // ── Ticker arrow scroll
