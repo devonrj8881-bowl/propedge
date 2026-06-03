@@ -8,7 +8,8 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/devonjohnson/Documents/Claude/Projects/PropEdge/scraper-launcher.sh</string>
+        <string>-lc</string>
+        <string>cd /Users/devonjohnson/Documents/Claude/Projects/PropEdge &amp;&amp; exec bash scraper-launcher.sh</string>
     </array>
 
     <key>StartInterval</key>
@@ -22,8 +23,6 @@
 
     <key>EnvironmentVariables</key>
     <dict>
-        <key>PATH</key>
-        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
         <key>HOME</key>
         <string>/Users/devonjohnson</string>
     </dict>

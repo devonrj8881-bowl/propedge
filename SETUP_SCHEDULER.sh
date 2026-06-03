@@ -35,9 +35,11 @@ mkdir -p "$HOME/Library/LaunchAgents"
 echo "✅ Directory ready"
 echo ""
 
-echo "Step 2: Unloading any existing job..."
+echo "Step 2: Removing any conflicting plist files..."
 launchctl bootout "gui/$(id -u)" "$PLIST_DEST" 2>/dev/null || true
-echo "✅ Previous job removed (if any)"
+launchctl bootout "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.propedge.scraper.REAL_MAC.plist" 2>/dev/null || true
+rm -f "$HOME/Library/LaunchAgents/com.propedge.scraper.REAL_MAC.plist"
+echo "✅ Conflicts cleared"
 echo ""
 
 echo "Step 3: Copying plist file..."
