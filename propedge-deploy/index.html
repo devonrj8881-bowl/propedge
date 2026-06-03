@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.145 — Fix ESPN date using local time not UTC — 2026-06-03 -->
+<!-- PropEdge v7.146 — Fix fast-swipe freeze: momentum guard on renders and scroll restore — 2026-06-03 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -19478,7 +19478,8 @@ nav.tabs > button,
       const typing = active && /INPUT|TEXTAREA|SELECT/.test(active.tagName || '');
       const openHitMenu = Array.from(document.querySelectorAll('.hit-menu')).some(el => el.style.display && el.style.display !== 'none');
       const detailOpen = document.getElementById('detailOverlay')?.classList.contains('open');
-      return typing || openHitMenu || detailOpen;
+      const scrolling = typeof window._isScrollMomentumActive === 'function' && window._isScrollMomentumActive();
+      return typing || openHitMenu || detailOpen || scrolling;
     }
 
     function schedulePropsRender(reason = 'background', delayMs = 350) {
@@ -20367,6 +20368,23 @@ nav.tabs > button,
         if (e.target.closest('.site-sidebar-shell, .site-shell-main, .site-shell-content')) return;
         lastY = e.touches[0].clientY;
       }, { passive: true });
+
+      // Track touch activity + momentum window so renders don't interrupt fast swipes
+      window._lastTouchEndAt = 0;
+      window._isTouching = false;
+      document.addEventListener('touchstart', () => { window._isTouching = true; }, { passive: true });
+      document.addEventListener('touchend', () => {
+        window._isTouching = false;
+        window._lastTouchEndAt = Date.now();
+      }, { passive: true });
+      document.addEventListener('touchcancel', () => {
+        window._isTouching = false;
+        window._lastTouchEndAt = Date.now();
+      }, { passive: true });
+      // Returns true if finger is down OR momentum scroll is likely still running (600ms window)
+      window._isScrollMomentumActive = function() {
+        return window._isTouching || (Date.now() - window._lastTouchEndAt < 600);
+      };
 
       // Mark body as scrolling so iframes yield pointer events during scroll
       (function() {
@@ -34681,9 +34699,12 @@ nav.tabs > button,
           ` : ''}
         `;
       }
-      // Restore scroll synchronously so iOS doesn't jump after DOM rebuild
+      // Restore scroll — but skip entirely if user is mid-swipe or in momentum
+      // (calling scrollTo during momentum interrupts the animation and causes the jump-to-middle bug)
       if (_savedScrollY > 0 && Math.abs(window.scrollY - _savedScrollY) > 4) {
-        window.scrollTo(0, _savedScrollY);
+        if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
+          window.scrollTo(0, _savedScrollY);
+        }
       }
 
       // On mobile home dashboard: fill deferred below-fold sections after first paint
@@ -38022,9 +38043,11 @@ nav.tabs > button,
       requestAnimationFrame(() => {
         listEl.innerHTML = header + ranked.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
         if (isFullBoard) setupMarketsLoadMore(totalCount);
-        // Restore scroll so iOS doesn't jump after DOM rebuild
+        // Restore scroll — skip if user is mid-swipe or in momentum
         if (_scrollBeforeRender > 0 && Math.abs(window.scrollY - _scrollBeforeRender) > 4) {
-          window.scrollTo(0, _scrollBeforeRender);
+          if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
+            window.scrollTo(0, _scrollBeforeRender);
+          }
         }
         // Batch headshot lookups: first 15 immediately, rest during idle time
         batchHeadshotLookups(ranked);
