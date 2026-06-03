@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.150 — Smart 5-min meta poll: site updates within 5 min of every scraper run — 2026-06-03 -->
+<!-- PropEdge v7.151 — Desktop home: two-column layout, sticky left, full slate right — 2026-06-03 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7281,6 +7281,43 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       gap: 20px;
       width: 100%;
       max-width: 100%;
+    }
+
+    /* Two-column desktop layout: left = sticky analysis, right = full slate */
+    .site-home-dashboard--two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .site-home-left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: sticky;
+      top: 16px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    .site-home-left-col::-webkit-scrollbar { display: none; }
+
+    .site-home-right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    @media (max-width: 1023px) {
+      .site-home-dashboard--two-col {
+        grid-template-columns: 1fr;
+      }
+      .site-home-left-col {
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+      }
     }
 
     .site-home-dashboard .ai-context-empty {
@@ -39510,64 +39547,70 @@ nav.tabs > button,
       const edgeHighlight = featuredPickEdgeHighlightHTML(best);
       const boardCount = picks.length || props.length || 0;
       const activeLeague = state.league && state.league !== 'ALL' ? state.league : 'Tonight';
+      const slateGames = getPropAISlateGames(state.league);
+      const action = best ? linemakerAction(best) : null;
+      const riskRows = [];
+      if (!best) riskRows.push('No reliable analyst read yet');
+      if (best && normalizeConfidence(best.confidence) < 58) riskRows.push('Confidence below preferred threshold');
+      if (best && Math.abs((action?.edge || 0) * 100) > 6) riskRows.push('Large edge needs live price check');
+      if (best && (best.injury_status || best.status)) riskRows.push(`${best.player} injury/watch flag active`);
+      if (!riskRows.length) riskRows.push('All conditions clear');
+
       return `
-        <div class="site-home-dashboard">
-          <div class="site-home-query-hint">
-            <div><strong>PropAI Linemaker is live.</strong> Use the command bar above for matchup questions, or browse the best current markets below.</div>
-            <button type="button" onclick="triggerShellView('recommendations')">Open Full Analyst</button>
-          </div>
+        <div class="site-home-dashboard site-home-dashboard--two-col">
 
-          <section class="panel propai-panel propai-ticket-stage site-home-featured-full">
-            <div class="propai-panel-header">
-              <div>
-                <div class="propai-panel-title">Featured Pick Ticket</div>
-                <div class="propai-panel-subtitle">${escapeHTML(featuredPickPanelSubtitle(best, activeLeague))}</div>
+          <!-- LEFT COLUMN: sticky analysis panels -->
+          <div class="site-home-left-col">
+            <section class="panel propai-panel propai-ticket-stage site-home-featured-full">
+              <div class="propai-panel-header">
+                <div>
+                  <div class="propai-panel-title">Featured Pick</div>
+                  <div class="propai-panel-subtitle">${escapeHTML(featuredPickPanelSubtitle(best, activeLeague))}</div>
+                </div>
+                <div class="${escapeHTML(edgeHighlight.highlightCls)}">Edge ${edgeHighlight.html}</div>
               </div>
-              <div class="${escapeHTML(edgeHighlight.highlightCls)}">Edge ${edgeHighlight.html}</div>
-            </div>
-            <div class="propai-featured-pick">${buildHomeFeaturedHTML(best)}</div>
-          </section>
+              <div class="propai-featured-pick">${buildHomeFeaturedHTML(best)}</div>
+            </section>
 
-          <div class="site-home-mid-grid">
             <section class="panel propai-panel propai-market-stage">
               <div class="propai-panel-header">
                 <div>
                   <div class="propai-panel-title">Market Ladder</div>
-                  <div class="propai-panel-subtitle">Compare alternate lines, fair odds, and edge</div>
+                  <div class="propai-panel-subtitle">Alternate lines, fair odds, edge</div>
                 </div>
               </div>
               <div class="propai-ladder-box">${buildHomeLadderHTML(best)}</div>
             </section>
 
+            <section class="panel propai-panel">
+              <div class="propai-panel-header"><div class="propai-panel-title">Risk Discipline</div></div>
+              <div class="propai-risk-box"><div class="propai-risk-title">No-Bet Triggers</div>${riskRows.map(r => `<div class="propai-risk-row">${escapeHTML(r)}</div>`).join('')}</div>
+            </section>
+
+            <section class="panel propai-panel">
+              <div class="propai-panel-header"><div class="propai-panel-title">Top Markets</div></div>
+              <div class="propai-market-list">${buildHomeMarketRowsHTML(picks, 4)}</div>
+              <div style="padding:10px 16px 4px;">
+                <button class="propai-secondary-cta" type="button" style="width:100%;" onclick="openMarketsView()">Open Full Board →</button>
+              </div>
+            </section>
+
+            <button type="button" class="propai-cta" style="width:100%;" onclick="triggerShellView('recommendations')">Open PropAI Analyst</button>
+          </div>
+
+          <!-- RIGHT COLUMN: full game slate, scrolls independently -->
+          <div class="site-home-right-col">
             <section class="panel propai-panel propai-upcoming-stage">
               <div class="propai-panel-header">
                 <div>
-                  <div class="propai-panel-title">Upcoming Slate</div>
-                  <div class="propai-panel-subtitle">${escapeHTML(`${getPropAISlateGames(state.league).length} Games • ${picks.length} Players monitored`)}</div>
+                  <div class="propai-panel-title">Today's Slate</div>
+                  <div class="propai-panel-subtitle">${escapeHTML(`${slateGames.length} games · ${picks.length} players monitored`)}</div>
                 </div>
               </div>
               <div class="propai-slate-list">${buildHomeSlateHTML(picks)}</div>
             </section>
           </div>
 
-          ${buildHomeRailHTML(best, picks, { includeStory: true })}
-
-          <section class="panel propai-panel">
-            <div class="propai-panel-header">
-              <div>
-                <div class="propai-panel-title">Prop Markets Board</div>
-                <div class="propai-panel-subtitle">${escapeHTML(`${boardCount} ranked props on this board · ${(state.props || []).length} total loaded`)}</div>
-              </div>
-              <button class="propai-cta" type="button" onclick="openMarketsView()">Open Full Board</button>
-            </div>
-            <div class="propai-home-markets-cta">
-              <div>
-                <strong>Browse by market type</strong>
-                <div class="propai-panel-subtitle">Filter Points, Rebounds, Assists, Hits, and more. Every row includes PropIQ, edge, and confidence.</div>
-              </div>
-            </div>
-            <div class="propai-market-list">${buildHomeMarketRowsHTML(picks)}</div>
-          </section>
         </div>
       `;
     }
