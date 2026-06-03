@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.149 — Scraper watchdog + stale data banner — 2026-06-03 -->
+<!-- PropEdge v7.150 — Smart 5-min meta poll: site updates within 5 min of every scraper run — 2026-06-03 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -20544,12 +20544,20 @@ nav.tabs > button,
         // Mark initial load time so resume handler doesn't re-fetch immediately
         _lastRefreshAt = Date.now();
 
-        // Start automatic props refresh every 60 minutes from Google Sheets (where scraper-v13 writes)
+        // Smart refresh: poll _meta every 5 min; reload props only if scraper ran since last fetch
         if (!state.propRefreshInterval) {
           state.propRefreshInterval = setInterval(() => {
-            console.log('[PropEdge] Auto-refreshing props from Google Sheets (60min interval)');
-            loadData().catch(err => console.error('[PropEdge] Auto-refresh failed:', err));
-          }, 60 * 60 * 1000); // 60 minutes in milliseconds
+            if (document.hidden) return; // skip when tab is backgrounded
+            fetchScrapeMeta().then(meta => {
+              if (!meta || !meta.last_scraped) return;
+              const scraperRanAt = new Date(meta.last_scraped).getTime();
+              const lastFetch = state.lastUpdated ? state.lastUpdated.getTime() : 0;
+              if (scraperRanAt > lastFetch) {
+                console.log('[PropEdge] Scraper ran since last fetch — refreshing props');
+                loadData().catch(err => console.error('[PropEdge] Smart refresh failed:', err));
+              }
+            }).catch(() => {});
+          }, 5 * 60 * 1000); // Check every 5 minutes
         }
       }).catch(err => console.warn('[PropEdge] Initial prop load failed:', err));
     }
