@@ -17054,7 +17054,11 @@ nav.tabs > button,
 
     @media (min-width: 600px) {
       .site-home-dashboard .site-home-featured-full .propai-feature-confidence.propai-feature-score-duo {
-        grid-template-columns: repeat(2, 1fr);
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: center;
+        gap: 32px;
       }
     }
 
