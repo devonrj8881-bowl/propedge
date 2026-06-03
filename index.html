@@ -18210,6 +18210,13 @@ nav.tabs > button,
     </div>
   </div>
 
+  <!-- Stale data warning banner -->
+  <div id="staleBanner" style="display:none;background:rgba(255,165,0,0.12);border:1px solid rgba(255,165,0,0.35);border-radius:10px;margin:0 16px 8px;padding:8px 14px;display:none;align-items:center;gap:10px;font-size:12px;color:var(--accent-orange,#f5a623);">
+    <span>⚠️</span>
+    <span id="staleBannerText">Props data is stale — scraper may not have run recently.</span>
+    <button onclick="hideStaleBanner()" style="margin-left:auto;background:none;border:none;color:inherit;font-size:16px;cursor:pointer;padding:0 2px;line-height:1;">✕</button>
+  </div>
+
   <!-- Game Board -->
   <div class="live-games">
     <div class="live-games-header">
@@ -20842,6 +20849,10 @@ nav.tabs > button,
           if (el && meta && meta.last_scraped) {
             const age = formatDataAge(meta.last_scraped);
             if (age) el.textContent = age;
+          }
+          if (meta && meta.last_scraped) {
+            const ageHrs = (Date.now() - new Date(meta.last_scraped).getTime()) / 3600000;
+            if (ageHrs > 6) { showStaleBanner(Math.round(ageHrs)); } else { hideStaleBanner(); }
           }
         }).catch(() => {});
         // Async ESPN game-filter: fires after render, never blocks prop display
@@ -40114,6 +40125,19 @@ nav.tabs > button,
       if (shellStatGames) shellStatGames.textContent = String(uniqueGames.size);
       if (shellStatPrime) shellStatPrime.textContent = String(state.props.filter(p => p.tier === 'prime' || p.tier === 'ultimate').length);
       if (shellStatValue) shellStatValue.textContent = String(state.props.filter(p => p.isValue).length);
+    }
+
+    function showStaleBanner(ageHours) {
+      const banner = document.getElementById('staleBanner');
+      const text = document.getElementById('staleBannerText');
+      if (!banner) return;
+      if (text) text.textContent = `Props data is ${ageHours}h old — scraper may not have run. Refresh to try again.`;
+      banner.style.display = 'flex';
+    }
+
+    function hideStaleBanner() {
+      const banner = document.getElementById('staleBanner');
+      if (banner) banner.style.display = 'none';
     }
 
     function showLoading() {
