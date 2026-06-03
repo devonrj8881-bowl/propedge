@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.146 — Fix fast-swipe freeze: momentum guard on renders and scroll restore — 2026-06-03 -->
+<!-- PropEdge v7.147 — Filter completed-game props from Markets board — 2026-06-03 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -37630,6 +37630,27 @@ nav.tabs > button,
 
     function getMarketsBoardFiltered() {
       let filtered = Array.isArray(state.props) ? state.props.slice() : [];
+
+      // Remove props for teams whose game is already final/completed
+      const allGames = [
+        ...(state.games.NBA || []), ...(state.games.NHL || []),
+        ...(state.games.MLB || []), ...(state.games.NFL || [])
+      ];
+      if (allGames.length) {
+        const normalizeT = t => String(t || '').toUpperCase().trim();
+        filtered = filtered.filter(p => {
+          const team = normalizeT(p.team);
+          const league = String(p.league || '').toUpperCase();
+          const game = allGames.find(g =>
+            g.league === league &&
+            (normalizeT(g.homeTeam) === team || normalizeT(g.awayTeam) === team)
+          );
+          if (!game) return true; // no ESPN game found — keep (scraper may have data ESPN doesn't)
+          return !(game.isCompleted || game.status === 'final' ||
+            /final|completed|ended/i.test(game.statusText || game.statusDisplay || ''));
+        });
+      }
+
       // League: use markets-specific multi-select, fall back to global league
       if (state.marketsLeagues.length) {
         filtered = filtered.filter(p => state.marketsLeagues.includes(p.league));
