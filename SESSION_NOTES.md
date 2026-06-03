@@ -4,6 +4,37 @@
 
 ---
 
+### 4. Scraper Scheduler — launchd TCC Fix (Permanent)
+
+**Problem:** Scraper never ran automatically via launchd — always required manual execution.
+
+**Root cause:** macOS TCC (Privacy & Security) blocks launchd-spawned processes from accessing `~/Documents/`. The project lives in `~/Documents/Claude/Projects/PropEdge/`, so launchd silently failed with exit code 78 (EX_CONFIG) before bash could read a single line of the script. The `StandardOutPath` was also inside `~/Documents/logs/` which launchd couldn't open either.
+
+**Secondary bug:** The old plist used `-lc` (login shell) + `exec bash scraper-launcher.sh` which caused additional failures in launchd's restricted environment.
+
+**Fix applied:**
+
+| Change | Before | After |
+|--------|--------|-------|
+| `ProgramArguments` | `/bin/bash -lc "cd ... && exec bash scraper-launcher.sh"` | `/bin/bash /absolute/path/scraper-launcher.sh` |
+| `WorkingDirectory` | missing | `/Users/devonjohnson/Documents/Claude/Projects/PropEdge` |
+| `StandardOutPath` | `~/Documents/.../logs/scraper-daemon.log` | `~/Library/Logs/PropEdge/scraper-out.log` |
+| `StandardErrorPath` | `~/Documents/.../logs/scraper-daemon-error.log` | `~/Library/Logs/PropEdge/scraper-error.log` |
+| `PATH` env var | missing | `/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin` |
+
+**Manual step required (one-time):**
+System Settings → Privacy & Security → Full Disk Access → `+` → `/bin/bash`
+This grants launchd-spawned bash processes access to `~/Documents/`.
+
+**Verified:** `last exit code = 0`, `state = not running` (completed cleanly). First ever successful launchd run.
+
+**Log locations:**
+- Run-level logs: `~/Documents/Claude/Projects/PropEdge/logs/scraper-launcher-TIMESTAMP.log`
+- launchd stdout: `~/Library/Logs/PropEdge/scraper-out.log`
+- launchd stderr: `~/Library/Logs/PropEdge/scraper-error.log`
+
+---
+
 ### 1. iPad Mini Layout Fix
 **Problem:** PropRI and Confidence score circles stacking vertically on iPad mini.
 **Fix:** Added `@media (min-width: 600px)` forcing `display: flex; flex-direction: row; flex-wrap: nowrap`.
