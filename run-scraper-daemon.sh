@@ -66,11 +66,11 @@ mkdir -p "$LOG_DIR"
   echo ""
 
   # Run scraper
-  echo "Starting scraper: scraper-v13.js"
+  echo "Starting scraper: scraper-v15-integrated.js"
   echo "────────────────────────────────────────────────"
   echo ""
 
-  node "$PROJECT_DIR/scraper-v13.js" 2>&1
+  node "$PROJECT_DIR/scraper-v15-integrated.js" 2>&1
 
   EXIT_CODE=$?
   echo ""
