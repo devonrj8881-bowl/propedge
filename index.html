@@ -27834,7 +27834,9 @@ nav.tabs > button,
       let allGames = [];
 
       // Force today-only by passing dates=YYYYMMDD to ESPN
-      const todayParam = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      // Use local date (not UTC) — after 8 PM Eastern, toISOString() rolls to tomorrow
+      const _now = new Date();
+      const todayParam = `${_now.getFullYear()}${String(_now.getMonth()+1).padStart(2,'0')}${String(_now.getDate()).padStart(2,'0')}`;
 
       const leagueResults = await Promise.allSettled(leagues.map(async (league) => {
         state.games[league] = [];
