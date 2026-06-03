@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.152 — Fix two-col home layout overflow on iPad — 2026-06-03 -->
+<!-- PropEdge v7.153 — Desktop home: widen left col to min 420px — 2026-06-03 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7286,7 +7286,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     /* Two-column desktop layout: left = sticky analysis, right = full slate */
     .site-home-dashboard--two-col {
       display: grid;
-      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      grid-template-columns: minmax(420px, 1fr) minmax(0, 1fr);
       gap: 20px;
       align-items: start;
     }
