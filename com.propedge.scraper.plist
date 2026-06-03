@@ -4,13 +4,13 @@
 <dict>
     <key>Label</key>
     <string>com.propedge.scraper</string>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/devonjohnson/Documents/Claude/Projects/PropEdge/run-scraper-daemon.sh</string>
+        <string>/Users/devonjohnson/Documents/Claude/Projects/PropEdge/scraper-launcher.sh</string>
     </array>
-    
+
     <key>StartCalendarInterval</key>
     <array>
         <dict>
@@ -26,22 +26,22 @@
             <integer>0</integer>
         </dict>
     </array>
-    
+
     <key>StandardOutPath</key>
     <string>/Users/devonjohnson/Documents/Claude/Projects/PropEdge/logs/scraper-daemon.log</string>
 
     <key>StandardErrorPath</key>
     <string>/Users/devonjohnson/Documents/Claude/Projects/PropEdge/logs/scraper-daemon-error.log</string>
-    
+
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
         <key>HOME</key>
         <string>/Users/devonjohnson</string>
     </dict>
-    
+
     <key>RunAtLoad</key>
-    <true/>
+    <false/>
 </dict>
 </plist>

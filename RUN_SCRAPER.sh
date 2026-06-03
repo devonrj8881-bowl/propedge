@@ -2,21 +2,21 @@
 
 # PropEdge Scraper Runner
 # ======================
-# Run this script from Terminal to test the scraper:
+# Run this script from Terminal to manually run the scraper:
 #
-#   cd /Users/devonjohnson/Documents/Claude/Projects/PropEdge/propedge-deploy
+#   cd /Users/devonjohnson/Documents/Claude/Projects/PropEdge
 #   bash RUN_SCRAPER.sh
 
 cd "$(dirname "$0")"
 
 echo "================================"
-echo "PropEdge Scraper v13"
+echo "PropEdge Scraper v15"
 echo "================================"
 echo ""
-echo "Starting scraper..."
+echo "Starting scraper with retry logic..."
 echo ""
 
-node scraper-v13.js
+bash scraper-launcher.sh
 
 echo ""
 echo "Scraper complete!"

@@ -91,10 +91,10 @@ echo ""
 
 # 5. Check scraper file
 echo "5️⃣  Scraper Script..."
-if [ -f "$(pwd)/scraper-v13.js" ]; then
-    echo "   ✅ scraper-v13.js found"
+if [ -f "$(pwd)/scraper-v15-integrated.js" ]; then
+    echo "   ✅ scraper-v15-integrated.js found"
 else
-    echo "   ❌ scraper-v13.js not found!"
+    echo "   ❌ scraper-v15-integrated.js not found!"
     exit 1
 fi
 echo ""
@@ -106,4 +106,4 @@ echo "Scraper will run automatically at:"
 echo "  • 11:30 AM EST (every day)"
 echo "  • 6:00 PM EST (every day)"
 echo ""
-echo "Manual run: node scraper-v13.js"
+echo "Manual run: bash scraper-launcher.sh"
