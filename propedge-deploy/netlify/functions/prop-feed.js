@@ -1,9 +1,9 @@
 /**
  * PropEdge prop-feed — serves sheet data via Google Sheets API (always fresh).
- * Falls back to gviz/tq public URL for sheets not covered by the API path.
+ * Falls back to API key (for public sheets), then gviz.
  *
  * GET /.netlify/functions/prop-feed?sheet=propedge-main
- * GET /.netlify/functions/prop-feed?sheet=_meta
+ * GET /.netlify/functions/prop-feed?sheet=meta
  * GET /.netlify/functions/prop-feed?sheet=Prop_Hits
  */
 
@@ -20,7 +20,7 @@ const SHEET_ID = "1e53GcCS9alxJhzDQPqkH55mpllEjVUShPKyP63R-BeY";
 const DEFAULT_SHEET = "propedge-main";
 const ALLOWED_SHEETS = new Set(["propedge-main", "Prop_Hits", "meta"]);
 
-// Sheets that we fetch via the API (guaranteed fresh, bypasses Google CDN cache)
+// Sheets fetched via authenticated API (bypasses Google CDN cache)
 const API_SHEETS = new Set(["propedge-main"]);
 
 // One-time auth init per cold start
@@ -30,14 +30,12 @@ async function getSheetsClient() {
 
   let auth;
   if (process.env.GOOGLE_CREDENTIALS_JSON) {
-    // Production: credentials stored as Netlify environment variable
     const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
     auth = new google.auth.GoogleAuth({
       credentials,
       scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
     });
   } else {
-    // Local dev: read from credentials.json file
     const keyFile = path.join(__dirname, "..", "..", "credentials.json");
     auth = new google.auth.GoogleAuth({
       keyFile,
@@ -66,7 +64,7 @@ function valuesToCsv(rows) {
     .join("\n");
 }
 
-// Fetch via Google Sheets API — always returns live data
+// Fetch via service account (full API access)
 async function fetchViaApi(sheetName) {
   const sheets = await getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
@@ -79,7 +77,20 @@ async function fetchViaApi(sheetName) {
   return valuesToCsv(rows);
 }
 
-// Fallback: gviz/tq public URL (may be cached by Google for a few minutes)
+// Fetch via Google API key — works for public sheets, key fits in Netlify env var
+async function fetchViaApiKey(sheetName) {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  if (!apiKey) return null;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(sheetName)}!A:Z?key=${apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const data = await res.json();
+  const rows = data.values || [];
+  if (rows.length === 0) return null;
+  return valuesToCsv(rows);
+}
+
+// Last resort: gviz public URL
 async function fetchViaGviz(sheetName) {
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
   const res = await fetch(url, { headers: { "User-Agent": "PropEdge-prop-feed/1.0" } });
@@ -104,15 +115,15 @@ exports.handler = async (event) => {
     let csv = null;
 
     if (API_SHEETS.has(sheet)) {
-      // Use the Sheets API for critical sheets — bypasses Google CDN cache entirely
       try {
         csv = await fetchViaApi(sheet);
-      } catch (apiErr) {
-        console.warn(`[prop-feed] API fetch failed for ${sheet}, falling back to gviz: ${apiErr.message}`);
-        csv = await fetchViaGviz(sheet);
+      } catch (_) {
+        csv = await fetchViaApiKey(sheet);
+        if (!csv) csv = await fetchViaGviz(sheet);
       }
     } else {
-      csv = await fetchViaGviz(sheet);
+      csv = await fetchViaApiKey(sheet);
+      if (!csv) csv = await fetchViaGviz(sheet);
     }
 
     if (!csv) {
@@ -128,7 +139,6 @@ exports.handler = async (event) => {
       headers: {
         ...CORS_HEADERS,
         "Content-Type": "text/csv; charset=utf-8",
-        // No-cache for API-served sheets so every load gets fresh data
         "Cache-Control": API_SHEETS.has(sheet)
           ? "no-store"
           : "public, max-age=60, stale-while-revalidate=120",
