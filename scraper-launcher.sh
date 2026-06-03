@@ -120,6 +120,9 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     if gtimeout 1800 "$NODE_BIN" scraper-v15-integrated.js 2>&1; then
       log "✅ Scraper completed successfully"
       log "=== Scraper Launcher Finished (SUCCESS) ==="
+      printf '{"status":"success","last_success_at":"%s","last_run_at":"%s","attempt":%d}' \
+        "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RETRY_COUNT" \
+        > "$SCRIPT_DIR/scraper-status.json"
       notify "✅ Sync complete" "Props updated successfully"
       exit 0
     else
