@@ -20708,7 +20708,7 @@ nav.tabs > button,
         console.warn('[PropEdge] Direct propedge-main response was not CSV');
       }
       if (location.protocol !== 'file:') {
-        response = await fetch(proxiedUrl, { cache: 'default' });
+        response = await fetch(proxiedUrl, { cache: 'no-store' });
         if (response.ok) {
           const csv = await response.text();
           if (isPropFeedCsvBody(csv)) return csv;
