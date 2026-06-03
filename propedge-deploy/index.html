@@ -18291,7 +18291,7 @@ nav.tabs > button,
   <!-- Stale data warning banner -->
   <div id="staleBanner" style="display:none;background:rgba(255,165,0,0.12);border:1px solid rgba(255,165,0,0.35);border-radius:10px;margin:0 16px 8px;padding:8px 14px;display:none;align-items:center;gap:10px;font-size:12px;color:var(--accent-orange,#f5a623);">
     <span>⚠️</span>
-    <span id="staleBannerText">Props data is stale — scraper may not have run recently.</span>
+    <span id="staleBannerText">Props have not been updated yet — data may be missing or incomplete.</span>
     <button onclick="hideStaleBanner()" style="margin-left:auto;background:none;border:none;color:inherit;font-size:16px;cursor:pointer;padding:0 2px;line-height:1;">✕</button>
   </div>
 
@@ -40252,8 +40252,8 @@ nav.tabs > button,
       const text = document.getElementById('staleBannerText');
       if (!banner) return;
       if (text) text.textContent = ageHours
-        ? `Props data is ${ageHours}h old — scraper may not have run. Refresh to try again.`
-        : `Scraper hasn't run yet — props data may be missing or outdated.`;
+        ? `Props were last updated ${ageHours}h ago — data may be outdated. Refresh to try again.`
+        : `Props have not been updated yet — data may be missing or incomplete.`;
       banner.style.display = 'flex';
     }
 
