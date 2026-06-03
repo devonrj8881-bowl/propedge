@@ -17052,6 +17052,12 @@ nav.tabs > button,
       align-items: start;
     }
 
+    @media (min-width: 600px) {
+      .site-home-dashboard .site-home-featured-full .propai-feature-confidence.propai-feature-score-duo {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
     @media (min-width: 1024px) {
       .site-shell-content .props-container:has(.site-home-dashboard) {
         --home-bleed-x: clamp(16px, 2vw, 36px);
