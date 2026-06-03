@@ -20830,18 +20830,31 @@ nav.tabs > button,
     }
 
     async function fetchScrapeMeta() {
-      try {
-        const url = `/.netlify/functions/prop-feed?sheet=meta`;
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) return null;
-        const text = await res.text();
-        const rows = text.trim().split('\n').slice(1); // skip header
+      function parseCsvMeta(text) {
+        const rows = text.trim().split('\n').slice(1);
         const meta = {};
         rows.forEach(row => {
           const [k, v] = row.split(',').map(s => s.replace(/^"|"$/g, '').trim());
           if (k) meta[k] = v;
         });
         return meta.last_scraped ? meta : null;
+      }
+      // Try Netlify function first
+      try {
+        const res = await fetch('/.netlify/functions/prop-feed?sheet=meta', { cache: 'no-store' });
+        if (res.ok) {
+          const meta = parseCsvMeta(await res.text());
+          if (meta) return meta;
+        }
+      } catch (_) {}
+      // Fallback: read gviz directly from browser (works for public sheets)
+      try {
+        const SHEET_ID = '1e53GcCS9alxJhzDQPqkH55mpllEjVUShPKyP63R-BeY';
+        const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=meta`);
+        if (!res.ok) return null;
+        const text = await res.text();
+        if (!text || /^\s*</.test(text)) return null;
+        return parseCsvMeta(text);
       } catch (_) { return null; }
     }
 
