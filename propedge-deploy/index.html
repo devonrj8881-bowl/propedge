@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.155 — Override 1400px featured-full rules in two-col left col — 2026-06-03 -->
+<!-- PropEdge v7.156 — Fix left col max-width so right col gets full space — 2026-06-03 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7286,8 +7286,8 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     /* Two-column desktop layout: left = sticky analysis, right = full slate */
     .site-home-dashboard--two-col {
       display: grid;
-      grid-template-columns: minmax(420px, 1fr) minmax(0, 1fr);
-      gap: 20px;
+      grid-template-columns: minmax(400px, 460px) minmax(0, 1fr);
+      gap: 24px;
       align-items: start;
     }
 
