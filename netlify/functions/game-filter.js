@@ -21,8 +21,16 @@ const ESPN_ENDPOINTS = {
 const ABBR_MAP = {
   WSH: "WAS",
   JAX: "JAC",
-  NOS: "NO",
+  NOS: "NOP",
   KCK: "KC",
+  // NBA short abbreviations ESPN returns for some teams
+  NY:  "NYK",
+  SA:  "SAS",
+  GS:  "GSW",
+  NO:  "NOP",
+  PHX: "PHX",
+  // NFL
+  LAR: "LAR",
 };
 
 function normalizeAbbr(abbr) {

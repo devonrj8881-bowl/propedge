@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.158 — Fix NBA props filtered out by ESPN short abbr mismatch (SA→SAS, NY→NYK) — 2026-06-03 -->
+<!-- PropEdge v7.159 — Fix NBA props wiped by ESPN short abbr in game-filter + applyEspnGameFilter — 2026-06-03 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -27928,11 +27928,13 @@ nav.tabs > button,
         const before = state.props.length;
         state.props = state.props.filter(p => {
           const league = (p.league || '').toUpperCase();
-          const team = (p.team || p.Team || '').toUpperCase().trim();
-          const opp = (p.opponent || p.opp || '').toUpperCase().trim();
+          const team = normalizeTeam(p.team || p.Team || '');
+          const opp  = normalizeTeam(p.opponent || p.opp || '');
           const active = data.activeTeams[league];
           if (!active || !active.length) return false; // no games today for league → hide props
-          return active.includes(team) || active.includes(opp);
+          // Normalize active team abbrs too (ESPN sometimes returns short forms like SA, NY)
+          const activeNorm = active.map(a => normalizeTeam(a));
+          return activeNorm.includes(team) || (opp && activeNorm.includes(opp));
         });
 
         const removed = before - state.props.length;
