@@ -1056,14 +1056,20 @@ async function selectAllGames(page) {
 
   await _unhideModals(page);
 
+  // Open the Games dropdown. Matches "N selected", "0 selected", "Games", "All Games".
   const gamesClicked = await page.evaluate(() => {
     const elements = Array.from(document.querySelectorAll('*'));
     const candidates = [];
     for (const el of elements) {
       const text = el.textContent.trim();
-      if (/^\d+\s+selected$/i.test(text)) {
-        const rect = el.getBoundingClientRect();
-        if (rect.top > 50 && rect.top < 200) candidates.push({ el, left: rect.left });
+      const rect = el.getBoundingClientRect();
+      if (rect.top < 50 || rect.top > 200 || rect.width === 0 || rect.height === 0) continue;
+      if (
+        /^\d+\s+selected$/i.test(text) ||
+        /^games$/i.test(text) ||
+        /^all\s+games$/i.test(text)
+      ) {
+        candidates.push({ el, left: rect.left });
       }
     }
     candidates.sort((a, b) => b.left - a.left);
@@ -1072,33 +1078,7 @@ async function selectAllGames(page) {
   });
 
   if (!gamesClicked) {
-    logWarning('Could not find Games dropdown — trying to click individual game items directly', 2);
-    // Single-game days (e.g. Finals) may not show an "N selected" dropdown.
-    // Try clicking any visible game/matchup tiles so props load.
-    const gameClicked = await page.evaluate(() => {
-      // Look for team name elements or matchup containers in the header area
-      const selectors = [
-        '[class*="game"]', '[class*="Game"]', '[class*="matchup"]', '[class*="Matchup"]',
-        '[class*="fixture"]', '[class*="event"]'
-      ];
-      for (const sel of selectors) {
-        const els = Array.from(document.querySelectorAll(sel));
-        for (const el of els) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top > 50 && rect.top < 250 && rect.width > 50) {
-            el.click();
-            return el.textContent.trim().substring(0, 60);
-          }
-        }
-      }
-      return null;
-    });
-    if (gameClicked) {
-      logSuccess(`Clicked game item directly: "${gameClicked}"`, 2);
-      await sleep(1500);
-    } else {
-      logWarning('No game items found — proceeding as-is (page may already have props loaded)', 2);
-    }
+    logWarning('Could not find Games dropdown — proceeding as-is', 2);
     return;
   }
 
