@@ -1072,7 +1072,33 @@ async function selectAllGames(page) {
   });
 
   if (!gamesClicked) {
-    logWarning('Could not find Games dropdown', 2);
+    logWarning('Could not find Games dropdown — trying to click individual game items directly', 2);
+    // Single-game days (e.g. Finals) may not show an "N selected" dropdown.
+    // Try clicking any visible game/matchup tiles so props load.
+    const gameClicked = await page.evaluate(() => {
+      // Look for team name elements or matchup containers in the header area
+      const selectors = [
+        '[class*="game"]', '[class*="Game"]', '[class*="matchup"]', '[class*="Matchup"]',
+        '[class*="fixture"]', '[class*="event"]'
+      ];
+      for (const sel of selectors) {
+        const els = Array.from(document.querySelectorAll(sel));
+        for (const el of els) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top > 50 && rect.top < 250 && rect.width > 50) {
+            el.click();
+            return el.textContent.trim().substring(0, 60);
+          }
+        }
+      }
+      return null;
+    });
+    if (gameClicked) {
+      logSuccess(`Clicked game item directly: "${gameClicked}"`, 2);
+      await sleep(1500);
+    } else {
+      logWarning('No game items found — proceeding as-is (page may already have props loaded)', 2);
+    }
     return;
   }
 
