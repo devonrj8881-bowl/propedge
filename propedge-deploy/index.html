@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.159 — Fix NBA props wiped by ESPN short abbr in game-filter + applyEspnGameFilter — 2026-06-03 -->
+<!-- PropEdge v7.160 — Fix Markets scroll jump (double-rAF) + tab switch flash + normalizeTeam perf cache — 2026-06-03 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -27895,12 +27895,16 @@ nav.tabs > button,
         }
       });
 
+      // Cache normalizeTeam results — avoids alias-table scan for every one of ~7k props
+      const _teamNormCache = {};
+      const normT = t => _teamNormCache[t] !== undefined ? _teamNormCache[t] : (_teamNormCache[t] = normalizeTeam(t));
+
       const before = state.props.length;
       state.props = state.props.filter(p => {
         const league = String(p.league || '').toUpperCase();
         // If ESPN has no data for this league today, keep all props for it
         if (!hasAnyGameForLeague[league]) return true;
-        const team = normalizeTeam(p.team);
+        const team = normT(p.team);
         const active = activeTeams[league];
         // If all games for this league are final, active will be empty set
         return active && active.has(team);
@@ -38211,14 +38215,18 @@ nav.tabs > button,
       requestAnimationFrame(() => {
         listEl.innerHTML = header + ranked.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
         if (isFullBoard) setupMarketsLoadMore(totalCount);
-        // Restore scroll — skip if user is mid-swipe or in momentum
-        if (_scrollBeforeRender > 0 && Math.abs(window.scrollY - _scrollBeforeRender) > 4) {
-          if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
-            window.scrollTo(0, _scrollBeforeRender);
-          }
-        }
         // Batch headshot lookups: first 15 immediately, rest during idle time
         batchHeadshotLookups(ranked);
+        // Double-rAF: wait for layout to commit before restoring scroll.
+        // Single-rAF fires before iOS Safari has painted the new layout,
+        // causing scrollTo to land at the wrong position.
+        if (_scrollBeforeRender > 0) {
+          requestAnimationFrame(() => {
+            if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
+              window.scrollTo({ top: _scrollBeforeRender, behavior: 'instant' });
+            }
+          });
+        }
       });
     }
 
@@ -40032,6 +40040,7 @@ nav.tabs > button,
           tab.classList.add('active');
           try { tab.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); } catch (err) {}
           state.view = nextView;
+          if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'instant' });
           applyViewVisibility();
 
           runAfterPaint(() => {

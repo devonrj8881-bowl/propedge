@@ -4,10 +4,8 @@
   functions = "netlify/functions"
   publish = "propedge-deploy"
 
-# Faster packaging: copy SDK trees verbatim instead of deep esgraph tracing (avoids lock-ups locally).
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["googleapis", "@anthropic-ai/sdk"]
 
 [dev]
   framework = "none"
