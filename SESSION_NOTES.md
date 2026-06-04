@@ -4,6 +4,29 @@
 
 ---
 
+### 5. NBA Props Not Showing on Site — ESPN Abbreviation Mismatch
+
+**Problem:** Clicking NBA game in ticker showed zero props despite 1,273 NBA rows in sheet.
+
+**Root cause:** `applyLocalGameStatusFilter` built the active-teams set using raw ESPN abbreviations (`SA`, `NY`). Props from PropFinder use full abbreviations (`SAS`, `NYK`). No alias lookup → every NBA prop silently removed from `state.props` before any other filter ran.
+
+**Fix:** `propedge-deploy/index.html` — `applyLocalGameStatusFilter`: swapped `normalizeT` → `normalizeTeam` in both the set-building step and the prop-check step. `normalizeTeam` uses the alias table so `SA`→`SAS`, `NY`→`NYK` resolve correctly.
+
+**Version:** v7.157 → v7.158  
+**Deployed:** ✅ https://propedgemasters.netlify.app
+
+---
+
+### 6. prop-feed.js — API Key Fallback + meta Tab Rename
+
+**Changes (user-authored):**
+- Added `fetchViaApiKey` as fallback between Sheets API and gviz
+- Added `GOOGLE_CREDENTIALS_JSON` env var support for Netlify-hosted credentials
+- Renamed `_meta` → `meta` in `ALLOWED_SHEETS` and `API_SHEETS`
+- `meta` sheet now falls through API key → gviz instead of only authenticated API
+
+---
+
 ### 4. Scraper Scheduler — launchd TCC Fix (Permanent)
 
 **Problem:** Scraper never ran automatically via launchd — always required manual execution.

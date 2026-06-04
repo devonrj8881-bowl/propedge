@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.157 — Equal 1fr 1fr columns, hide confidence gauge in left col — 2026-06-03 -->
+<!-- PropEdge v7.158 — Fix NBA props filtered out by ESPN short abbr mismatch (SA→SAS, NY→NYK) — 2026-06-03 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -27890,8 +27890,8 @@ nav.tabs > button,
           /final|completed|ended|post/i.test(g.statusText || g.statusDisplay || g.status || '');
         if (!isFinal) {
           if (!activeTeams[league]) activeTeams[league] = new Set();
-          activeTeams[league].add(normalizeT(g.homeTeam));
-          activeTeams[league].add(normalizeT(g.awayTeam));
+          activeTeams[league].add(normalizeTeam(g.homeTeam));
+          activeTeams[league].add(normalizeTeam(g.awayTeam));
         }
       });
 
@@ -27900,7 +27900,7 @@ nav.tabs > button,
         const league = String(p.league || '').toUpperCase();
         // If ESPN has no data for this league today, keep all props for it
         if (!hasAnyGameForLeague[league]) return true;
-        const team = normalizeT(p.team);
+        const team = normalizeTeam(p.team);
         const active = activeTeams[league];
         // If all games for this league are final, active will be empty set
         return active && active.has(team);
