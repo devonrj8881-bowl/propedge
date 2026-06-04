@@ -1056,28 +1056,26 @@ async function selectAllGames(page) {
 
   await _unhideModals(page);
 
-  // Open the Games dropdown. Matches "N selected", "0 selected", "Games", "All Games".
-  const gamesClicked = await page.evaluate(() => {
-    const elements = Array.from(document.querySelectorAll('*'));
+  // Find and click the Games dropdown button. Pick rightmost "N selected" element
+  // in the header row (avoids matching the Categories dropdown which is further left).
+  const { clicked, alreadySelected } = await page.evaluate(() => {
     const candidates = [];
-    for (const el of elements) {
+    for (const el of document.querySelectorAll('*')) {
       const text = el.textContent.trim();
       const rect = el.getBoundingClientRect();
       if (rect.top < 50 || rect.top > 200 || rect.width === 0 || rect.height === 0) continue;
-      if (
-        /^\d+\s+selected$/i.test(text) ||
-        /^games$/i.test(text) ||
-        /^all\s+games$/i.test(text)
-      ) {
-        candidates.push({ el, left: rect.left });
+      const m = text.match(/^(\d+)\s+selected$/i);
+      if (m || /^games$/i.test(text) || /^all\s+games$/i.test(text)) {
+        candidates.push({ el, left: rect.left, count: m ? parseInt(m[1]) : 0 });
       }
     }
     candidates.sort((a, b) => b.left - a.left);
-    if (candidates[0]) { candidates[0].el.click(); return true; }
-    return false;
+    if (!candidates[0]) return { clicked: false, alreadySelected: 0 };
+    candidates[0].el.click();
+    return { clicked: true, alreadySelected: candidates[0].count };
   });
 
-  if (!gamesClicked) {
+  if (!clicked) {
     logWarning('Could not find Games dropdown — proceeding as-is', 2);
     return;
   }
@@ -1085,15 +1083,26 @@ async function selectAllGames(page) {
   await sleep(1500);
   await _unhideModals(page);
 
+  // Count game items in the open dropdown (everything except the "Select All" header).
   const menuItems = await page.evaluate(() =>
-    Array.from(document.querySelectorAll('li, [role="option"], [role="menuitem"], div, span'))
+    Array.from(document.querySelectorAll('li, [role="option"], [role="menuitem"]'))
       .filter(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top > 100; })
       .map(el => el.textContent.trim())
-      .filter(t => t.length > 0 && t.length < 80)
-      .slice(0, 15)
+      .filter(t => t.length > 0 && t.length < 120)
   );
   log(`Dropdown items: ${JSON.stringify(menuItems)}`, 2);
 
+  const gameCount = menuItems.filter(t => !/select all/i.test(t)).length;
+
+  if (alreadySelected >= gameCount && gameCount > 0) {
+    // All games already selected — clicking Select All would deselect them. Just close.
+    logSuccess(`All games already selected (${alreadySelected}/${gameCount}) — closing dropdown`, 2);
+    await page.keyboard.press('Escape');
+    await sleep(500);
+    return;
+  }
+
+  // Not all games selected — click Select All to select everything.
   const matched = await page.evaluate(() => {
     for (const el of document.querySelectorAll('li, [role="option"], [role="menuitem"], div, span, button, a')) {
       const t = el.textContent.trim().toLowerCase();
