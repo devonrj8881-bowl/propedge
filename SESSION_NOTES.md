@@ -4,6 +4,26 @@
 
 ---
 
+### 7. Generative Analyst — googleapis Bundle Fix
+
+**Problem:** Vercel analyst showing "Invalid prop feed response" — prop-feed Netlify function crashing with `Cannot find module 'googleapis'` before returning any data.
+
+**Root cause:** `netlify.toml` had `external_node_modules = ["googleapis", "@anthropic-ai/sdk"]` telling esbuild to skip bundling them. With `--no-build` deploys, Netlify's Lambda runtime doesn't have these packages pre-installed — function crashed on import.
+
+**Fix:** Removed `external_node_modules` from `netlify.toml` — esbuild now bundles both packages inline. Verified: `prop-feed?sheet=propedge-main` returns proper CSV headers. Analyst working.
+
+---
+
+### End of Session State
+
+**Scraper:** ✅ launchd firing every 15 min — 25 successful runs today, last exit 0 at 11:12 PM  
+**Daily audit:** ✅ launchd firing at 9am/12pm/3pm/6pm/9pm  
+**Site:** ✅ https://propedgemasters.netlify.app — v7.160  
+**Analyst:** ✅ https://propedge-generative-analyst.vercel.app — working  
+**Main branch:** ✅ commit `5c7deaf` — all changes pushed
+
+---
+
 ### 5. NBA Props Not Showing on Site — ESPN Abbreviation Mismatch
 
 **Problem:** Clicking NBA game in ticker showed zero props despite 1,273 NBA rows in sheet.
