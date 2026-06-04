@@ -1084,12 +1084,23 @@ async function selectAllGames(page) {
   await _unhideModals(page);
 
   // Count game items in the open dropdown (everything except the "Select All" header).
-  const menuItems = await page.evaluate(() =>
-    Array.from(document.querySelectorAll('li, [role="option"], [role="menuitem"]'))
-      .filter(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top > 100; })
+  // PropFinder uses div/span for dropdown items, not li/role="option".
+  const menuItems = await page.evaluate(() => {
+    const seen = new Set();
+    return Array.from(document.querySelectorAll('li, [role="option"], [role="menuitem"], div, span'))
+      .filter(el => {
+        const r = el.getBoundingClientRect();
+        // Must be visible and in the dropdown zone (below header, not full-width page elements)
+        return r.width > 0 && r.height > 0 && r.top > 150 && r.top < 600 && r.width < 600;
+      })
       .map(el => el.textContent.trim())
-      .filter(t => t.length > 0 && t.length < 120)
-  );
+      .filter(t => {
+        if (t.length < 3 || t.length > 120) return false;
+        if (seen.has(t)) return false;
+        seen.add(t);
+        return true;
+      });
+  });
   log(`Dropdown items: ${JSON.stringify(menuItems)}`, 2);
 
   const gameCount = menuItems.filter(t => !/select all/i.test(t)).length;
@@ -1105,8 +1116,10 @@ async function selectAllGames(page) {
   // Not all games selected — click Select All to select everything.
   const matched = await page.evaluate(() => {
     for (const el of document.querySelectorAll('li, [role="option"], [role="menuitem"], div, span, button, a')) {
+      const r = el.getBoundingClientRect();
+      if (r.top < 150 || r.top > 600 || r.width > 600) continue;
       const t = el.textContent.trim().toLowerCase();
-      if (t.includes('select all') || t === 'all' || t === 'all games') {
+      if (t === 'select all' || t === 'all' || t === 'all games') {
         el.click(); return el.textContent.trim();
       }
     }
