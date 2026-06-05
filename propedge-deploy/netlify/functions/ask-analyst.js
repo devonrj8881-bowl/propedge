@@ -799,7 +799,7 @@ exports.handler = async function handler(event) {
   const league = body.league || "NBA";
   const rawProps = body.props || [];
   const props = Array.isArray(rawProps) ? rawProps.filter(p => p && typeof p === 'object') : [];
-  const responseMode = body.response_mode || "";
+  let responseMode = body.response_mode || "";
   const propedgePayloads = Array.isArray(body.propedge_payloads) ? body.propedge_payloads : [];
   const clientOptions = body.options || {};
   let sourceContext = body.source_context || [];
@@ -979,17 +979,30 @@ exports.handler = async function handler(event) {
     });
   } catch (error) {
     console.error("CLAUDE API ERROR:", error.message, error.stack);
-    const diagnosticAnswer = buildStructuredFallback(question, league, props, sourceContext, error.message);
-
-    return json(200, {
-      ok: true,
-      provider: "claude-fallback",
-      model: DEFAULT_MODEL,
-      error: error.message,
-      circuit_status: CLAUDE_CIRCUIT.isOpen ? "OPEN" : "CLOSED",
-      answer: diagnosticAnswer,
-      article_context_included: articleContext.length > 0 || sourceContext.some((s) => s?.article_excerpt || s?.summary || s?.excerpt),
-    });
+    // Claude unavailable — route to Gemini instead of structured fallback
+    try {
+      const geminiMessages = buildEvDetailMessages(question, league, propedgePayloads, props);
+      const answer = await callGeminiEvDetail(geminiMessages, { temperature: 0.5, max_tokens: 1500 });
+      setCachedResponse(question, league, props, answer, "ev_detail");
+      return json(200, {
+        ok: true,
+        provider: "gemini",
+        model: GEMINI_EV_DETAIL_MODEL,
+        answer,
+        source_context: sourceContext,
+        fallback_reason: `Claude unavailable: ${error.message}`,
+      });
+    } catch (geminiErr) {
+      console.error("GEMINI FALLBACK ERROR:", geminiErr.message);
+      return json(200, {
+        ok: true,
+        provider: "gemini-fallback",
+        model: GEMINI_EV_DETAIL_MODEL,
+        error: error.message,
+        answer: buildStructuredFallback(question, league, props, sourceContext, error.message),
+        article_context_included: articleContext.length > 0 || sourceContext.some((s) => s?.article_excerpt || s?.summary || s?.excerpt),
+      });
+    }
   } finally {
     clearTimeout(timeoutHandle);
   }
