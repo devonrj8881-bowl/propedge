@@ -198,21 +198,33 @@ async function fetchStartingPitchers(games) {
       // Format: YYYY-MM-DD
       const gameDate = new Date(game.date).toISOString().split('T')[0];
       const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${gameDate}`;
+
+      console.log(`  📅 Fetching schedule for ${gameDate}...`);
       const scheduleData = await fetchJSON(url, { timeout: 5000 });
+      console.log(`  📊 Schedule returned ${scheduleData.games?.length || 0} games`);
 
       // Find game matching away/home teams
-      const matchedGame = (scheduleData.games || []).find(g =>
-        (g.awayTeam?.team?.abbreviation === game.awayTeam && g.homeTeam?.team?.abbreviation === game.homeTeam) ||
-        (g.awayTeam?.teamName?.includes(game.awayTeamName) && g.homeTeam?.teamName?.includes(game.homeTeamName))
-      );
+      // MLB schedule endpoint uses: awayTeam.team.name, homeTeam.team.name, and probablePitchers
+      const matchedGame = (scheduleData.games || []).find(g => {
+        const awayAbbr = g.awayTeam?.team?.abbreviation || g.awayTeam?.team?.teamCode || '';
+        const homeAbbr = g.homeTeam?.team?.abbreviation || g.homeTeam?.team?.teamCode || '';
+        const awayName = g.awayTeam?.team?.name || '';
+        const homeName = g.homeTeam?.team?.name || '';
+
+        return (awayAbbr === game.awayTeam && homeAbbr === game.homeTeam) ||
+               (awayName.toUpperCase().includes(game.awayTeamName?.toUpperCase()) &&
+                homeName.toUpperCase().includes(game.homeTeamName?.toUpperCase()));
+      });
 
       if (!matchedGame) {
         console.warn(`⚠️  Could not match ${game.awayTeam} @ ${game.homeTeam} in schedule`);
+        console.warn(`   Available games in schedule: ${scheduleData.games?.map(g => `${g.awayTeam?.team?.abbreviation}@${g.homeTeam?.team?.abbreviation}`).join(', ')}`);
         continue;
       }
 
-      const awayPitcher = matchedGame.awayTeam?.probablePitcher;
-      const homePitcher = matchedGame.homeTeam?.probablePitcher;
+      // probablePitchers is at the game level or in each team object
+      const awayPitcher = matchedGame.awayTeam?.probablePitcher || matchedGame.probablePitchers?.away;
+      const homePitcher = matchedGame.homeTeam?.probablePitcher || matchedGame.probablePitchers?.home;
 
       if (awayPitcher?.id) {
         const name = awayPitcher.fullName || awayPitcher.name || 'Unknown';
