@@ -18808,7 +18808,7 @@ nav.tabs > button,
               </div>
               <div class="propai-browser-search">
                 <span class="propai-browser-search-icon">⌕</span>
-                <input id="propAIMarketSearch" type="text" placeholder="Search player or market" />
+                <input id="propAIMarketSearch" type="text" placeholder="Search player or market" onkeydown="if(event.key==='Enter') event.preventDefault();" />
               </div>
               <div class="propai-board-meta">
                 <div class="propai-board-meta-label">Market Type</div>
@@ -18925,7 +18925,7 @@ nav.tabs > button,
         </div>
         <div class="propai-browser-search">
           <span class="propai-browser-search-icon">⌕</span>
-          <input id="marketsSearchInput" type="text" placeholder="Search player, team, or market" />
+          <input id="marketsSearchInput" type="text" placeholder="Search player, team, or market" onkeydown="if(event.key==='Enter') event.preventDefault();" />
         </div>
         <div class="propai-board-meta">
           <div class="propai-board-meta-label">Direction</div>
