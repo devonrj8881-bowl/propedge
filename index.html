@@ -18805,7 +18805,7 @@ nav.tabs > button,
               </div>
               <div class="propai-browser-search">
                 <span class="propai-browser-search-icon">⌕</span>
-                <input id="propAIMarketSearch" type="text" placeholder="Search player or market" oninput="updatePropAIMarketSearch(this.value)" />
+                <input id="propAIMarketSearch" type="text" placeholder="Search player or market" />
               </div>
               <div class="propai-board-meta">
                 <div class="propai-board-meta-label">Market Type</div>
@@ -18922,7 +18922,7 @@ nav.tabs > button,
         </div>
         <div class="propai-browser-search">
           <span class="propai-browser-search-icon">⌕</span>
-          <input id="marketsSearchInput" type="text" placeholder="Search player, team, or market" oninput="updatePropAIMarketSearch(this.value)" />
+          <input id="marketsSearchInput" type="text" placeholder="Search player, team, or market" />
         </div>
         <div class="propai-board-meta">
           <div class="propai-board-meta-label">Direction</div>
@@ -20490,6 +20490,18 @@ nav.tabs > button,
                 window.scrollTo(0, lastScrollY);
               }
             }, 100);
+          });
+          // Use change event (fires when field loses focus) instead of input (fires on every keystroke)
+          input.addEventListener('change', () => {
+            updatePropAIMarketSearch(input.value);
+          });
+        });
+      } else {
+        // Desktop: use input event for real-time search
+        const searchInputs = document.querySelectorAll('#propAIMarketSearch, #marketsSearchInput');
+        searchInputs.forEach(input => {
+          input.addEventListener('input', () => {
+            updatePropAIMarketSearch(input.value);
           });
         });
       }
