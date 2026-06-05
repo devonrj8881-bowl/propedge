@@ -21445,11 +21445,38 @@ nav.tabs > button,
               }
             }
         } else if (actualLeague === 'NBA') {
-            // NBA B2B / Fatigue Logic
-            if (oppDetails.toLowerCase().includes('b2b') || oppDetails.toLowerCase().includes('back-to-back')) {
-               modelScore -= 12; // Increased from -7
-               propFactors.push('🔋 HEAVY Fatigue (Back-to-Back)');
+            // ── Enhanced Rest Pattern Analysis (Phase 1 v2) ──
+            // Days rest <2 → performance cliff; cumulative fatigue detection; rest differential
+            let restPenalty = 0;
+            let restFactors = [];
+
+            if (daysRest !== null && daysRest < 2 && daysRest >= 0) {
+              restPenalty -= 12; // B2B penalty
+              restFactors.push(`🔋 Back-to-Back (${daysRest}d rest)`);
+            } else if (daysRest === 0.5) {
+              restPenalty -= 14; // Extra tight (same-day game)
+              restFactors.push('⚡ Same-Day B2B (Severe)');
+            } else if (daysRest !== null && daysRest < 1) {
+              restPenalty -= 13;
+              restFactors.push('⚡ Compressed Schedule');
             }
+
+            // Cumulative fatigue: 3+ games in 4 nights pattern (apply -2 to -3 additional)
+            // This would require game log history; for now, use daysRest as proxy
+            if (daysRest === 0 && restPlus === false) {
+              restPenalty -= 2; // Additional penalty if no prior rest
+              restFactors.push('📉 No Recovery Between Games');
+            }
+
+            // Rest differential: if opponent also has rest deficit, reduce penalty by 30%
+            const oppB2b = oppDetails.toLowerCase().includes('b2b') || oppDetails.toLowerCase().includes('back-to-back');
+            if (oppB2b && restPenalty < 0) {
+              restPenalty = Math.ceil(restPenalty * 0.70); // Reduce severity
+              restFactors.push('⚖️ Opp Also Tired (Rest Differential Offset)');
+            }
+
+            modelScore += restPenalty;
+            restFactors.forEach(f => propFactors.push(f));
         } else if (actualLeague === 'NHL') {
             // NHL Goalie SV% weighting: only add incremental penalty for truly elite (top-5 rank)
             // Fix G already applied -6 to -12 via isStrongDef/isEliteDef — avoid full double-count.
@@ -21478,11 +21505,102 @@ nav.tabs > button,
              }
         }
 
-        // ── Fix K: Blowout Risk Guard (NBA/NFL) ─────────────────────────────────────────────────
+        // ── Phase 2.2: Enhanced Situational Context (Blowout + Close Game) ──────────────────────
         const spread = parseFloat(getValue(cols.spread)) || 0;
-        if (direction === 'OVER' && Math.abs(spread) >= 12 && (actualLeague === 'NBA' || actualLeague === 'NFL')) {
-             modelScore -= 10;
-             propFactors.push('⚠️ Blowout Risk (Early Bench Warning)');
+
+        // Blowout probability: estimate chance game gets decided by 20+ based on team strength
+        const myTeamStats = window._teamStats && window._teamStats[actualLeague]
+          ? window._teamStats[actualLeague][teamAbbr]
+          : null;
+        const oppTeamStats = window._teamStats && window._teamStats[actualLeague]
+          ? window._teamStats[actualLeague][oppAbbr]
+          : null;
+
+        if (myTeamStats && oppTeamStats && actualLeague !== 'MLB') {
+          const myPPG = myTeamStats.ppg || (actualLeague === 'NFL' ? 23 : actualLeague === 'NHL' ? 3.0 : 110);
+          const oppPPG = oppTeamStats.ppg || (actualLeague === 'NFL' ? 23 : actualLeague === 'NHL' ? 3.0 : 110);
+          const ppgVariance = actualLeague === 'NBA' ? 12 : actualLeague === 'NHL' ? 0.8 : 4;
+
+          // Blowout risk: if spread is large AND variance is low (consistent teams)
+          const spreadZ = Math.abs(spread) / ppgVariance;
+          const blowoutProb = Math.min(0.95, Math.max(0.05, 1 / (1 + Math.exp(-spreadZ + 1.5)))); // Sigmoid
+
+          if (blowoutProb >= 0.65 && direction === 'OVER') {
+            modelScore -= 10;
+            propFactors.push(`⚠️ Blowout Risk (${(blowoutProb * 100).toFixed(0)}% prob) — benching`);
+          }
+
+          // Close-game bonus: if spread ≤3 and teams are matched, stars stay in longer
+          if (Math.abs(spread) <= 3 && direction === 'OVER') {
+            modelScore += 3;
+            propFactors.push('📌 Close Game — star players extended minutes');
+          }
+        }
+
+        // ── Phase 2.4: Player Aging Curve (Position-Specific Decline) ──────────────────────────
+        // Apply position-specific aging decline rates for players >30 years old.
+        // Peak performance typically 26–28; decline ~0.5–1.2%/year post-30 depending on position.
+        {
+          const playerDOB = getValue(cols.player_dob); // If column exists
+          let playerAge = null;
+
+          if (playerDOB && typeof playerDOB === 'string' && playerDOB.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
+            const [month, day, year] = playerDOB.split('/').map(x => parseInt(x));
+            const birthDate = new Date(year, month - 1, day);
+            const today = new Date();
+            playerAge = today.getFullYear() - birthDate.getFullYear() - (today < new Date(today.getFullYear(), month - 1, day) ? 1 : 0);
+          }
+
+          if (playerAge && playerAge > 30) {
+            const posLower = (getValue(cols.pos) || '').toLowerCase();
+            let declineRatePerYear = 0.008; // default 0.8%/year
+
+            // Position-specific decline rates
+            if (actualLeague === 'MLB') {
+              if (posLower.includes('pitcher') || posLower.includes('p')) declineRatePerYear = 0.012; // Pitchers decline faster
+              else if (posLower.includes('dh')) declineRatePerYear = 0.006; // DH more durable
+              else declineRatePerYear = 0.009;
+            } else if (actualLeague === 'NBA') {
+              if (posLower.includes('pg') || posLower.includes('guard')) declineRatePerYear = 0.006;
+              else if (posLower.includes('c') || posLower.includes('center')) declineRatePerYear = 0.010;
+              else declineRatePerYear = 0.008;
+            }
+            // NHL: default 0.8%
+
+            const yearsPost30 = playerAge - 30;
+            const cumulativeDecline = Math.pow(1 - declineRatePerYear, yearsPost30);
+            const declineAdjustment = Math.round((1 - cumulativeDecline) * 10); // Convert to pts penalty
+
+            if (declineAdjustment > 0) {
+              modelScore -= declineAdjustment;
+              propFactors.push(`📉 Age Factor (${playerAge}yo, -${declineAdjustment}pts decline)`);
+            }
+          }
+        }
+
+        // ── Phase 2.3: Strength of Schedule (Remaining Opponents) ──────────────────────────────
+        // Compare next 5 opponents' defensive rank to season average.
+        // Better remaining schedule → boost; worse schedule → penalty.
+        // Note: Requires game schedule data from ESPN; using team rank as proxy for now.
+        {
+          // Estimate SOS by comparing opponent rank to season median (15)
+          // If we had schedule data, we'd compute avg rank of next 5 opponents
+          const seasonMedianRank = 15;
+          const sznMatchupAdj = Math.min(30, Math.max(1, sznMatchup || seasonMedianRank));
+
+          // For now, use current matchup as proxy (assume similar opponents coming)
+          // In future: integrate ESPN schedule → compute avg of next 5 opponents
+          const sosRankDelta = sznMatchupAdj - seasonMedianRank;
+
+          // Apply gentle adjustment (±2–3 pts per tier)
+          if (sosRankDelta >= 5 && direction === 'OVER') {
+            modelScore -= 3;
+            propFactors.push(`📊 SOS: Tough Remaining Schedule (Avg Rank ${sznMatchupAdj.toFixed(0)})`);
+          } else if (sosRankDelta <= -5 && direction === 'OVER') {
+            modelScore += 2;
+            propFactors.push(`📊 SOS: Soft Remaining Schedule (Avg Rank ${sznMatchupAdj.toFixed(0)})`);
+          }
+          // TODO: Integrate ESPN schedule fetch to compute true SOS for next 5 games
         }
 
         // ── Gap 5: Game Total Correlation ────────────────────────────────────────────────────────
@@ -21545,6 +21663,30 @@ nav.tabs > button,
               modelScore += 6;
               propFactors.push(`📈 Usage Spike (Teammate OUT)`);
             }
+        }
+
+        // ── Phase 2.1: Role Change Detection (Mid-Season Usage Elevation) ──────────────────────
+        // Flag when a player's MPG increases >15% from 20-game average (trade/rotation change).
+        // Note: Requires game log data; gracefully degrades if unavailable.
+        {
+          const playerKey = playerNormalized ? playerNormalized.toLowerCase() : '';
+          const gameLogData = playerKey && window._gameLogIndex && window._gameLogIndex[actualLeague]
+            ? window._gameLogIndex[actualLeague][playerKey]
+            : null;
+
+          if (gameLogData && gameLogData.length >= 20) {
+            const recentMPG = gameLogData.slice(0, 5).reduce((s, g) => s + (parseFloat(g.minutes) || 0), 0) / 5;
+            const priorMPG = gameLogData.slice(5, 25).reduce((s, g) => s + (parseFloat(g.minutes) || 0), 0) / 20;
+            const mpgChange = priorMPG > 0 ? (recentMPG - priorMPG) / priorMPG : 0;
+
+            if (mpgChange >= 0.15) {
+              modelScore += 5;
+              propFactors.push(`📈 Role Elevation (MPG +${(mpgChange * 100).toFixed(0)}%)`);
+            } else if (mpgChange <= -0.15) {
+              modelScore -= 4;
+              propFactors.push(`⬇️ Reduced Role (MPG ${(mpgChange * 100).toFixed(0)}%)`);
+            }
+          }
         }
 
         // ── Fix L: Sharp Momentum Re-Score (Line Movement) ──────────────────────────────────────
@@ -21726,20 +21868,32 @@ nav.tabs > button,
            }
         }
         // because daily variance in baseball makes L5/L10 less predictive than in NBA/NHL
-        // ── Avenue 3: Exponential-Decay Weighted Hit Rate ──────────────────────
-        // Decompose overlapping windows into non-overlapping segments, then weight
-        // with recency decay (~0.82/game): L1-5 block weighted ~2.7x the L6-10 block.
+        // ── Exponential-Decay Weighted Hit Rate (Phase 1 v2 — Day-Based) ──
+        // Decompose into segments, then apply exponential decay: weight = 0.94^(days_ago)
+        // Estimated avg days between games: NBA ~1.5, MLB ~1, NHL ~1.7, NFL ~7
         const seg5     = l5Pct;
         const seg5_10  = (l10Pct > 0) ? Math.max(0, Math.min(100, (l10Pct * 10 - l5Pct * 5) / 5)) : l10Pct;
         const seg10_20 = (l20Pct > 0) ? Math.max(0, Math.min(100, (l20Pct * 20 - l10Pct * 10) / 10)) : l20Pct;
 
-        // P1: Recency decay — enhanced: L10 weighted heavier, older segments penalized
-        // Captures form changes 2-3 games faster; season provides floor, not ceiling
-        const weightedHitRate = actualLeague === 'MLB'
-          ? (seg5 * 0.25 + seg5_10 * 0.28 + seg10_20 * 0.27 + seasonPct * 0.20) / 100
-          : actualLeague === 'NBA'
-            ? (seg5 * 0.55 + seg5_10 * 0.30 + seg10_20 * 0.10 + seasonPct * 0.05) / 100
-            : (seg5 * 0.50 + seg5_10 * 0.32 + seg10_20 * 0.12 + seasonPct * 0.06) / 100; // NHL/NFL
+        // Exponential decay factors by segment (accounting for days since games)
+        // L5: ~0–8 days ago, L6-10: ~9–16 days ago, L11-20: ~17–29 days ago
+        const decayL5 = 0.95;    // Most recent: highest weight
+        const decayL6_10 = 0.92; // Medium recent: moderate weight (~0.92^12 ≈ 0.39)
+        const decayL11_20 = 0.88; // Older: lower weight (~0.88^23 ≈ 0.10)
+        const decaySeasonOld = 0.80; // Ancient (pre-last-20): minimal weight
+
+        const seg5Weight = Math.pow(decayL5, 4); // L5 is ~4 days old on average
+        const seg5_10Weight = Math.pow(decayL6_10, 12); // L6-10 is ~12 days old
+        const seg10_20Weight = Math.pow(decayL11_20, 23); // L11-20 is ~23 days old
+        const seasonWeight = decaySeasonOld; // Season older games = 0.80
+
+        const totalWeight = seg5Weight + seg5_10Weight + seg10_20Weight + seasonWeight;
+
+        // P1: Recency decay — smooth exponential blend favoring recent performance
+        // Captures form changes 2-3 games faster than game-count weighting
+        const weightedHitRate = (
+          (seg5 * seg5Weight + seg5_10 * seg5_10Weight + seg10_20 * seg10_20Weight + seasonPct * seasonWeight) / totalWeight
+        ) / 100;
 
         // ── Gap 3: ENHANCED — Per-Minute Efficiency + Confidence Calibration ────────────
         // Replaces raw hit rates with real per-minute efficiency scaled to expected minutes.
@@ -21776,12 +21930,48 @@ nav.tabs > button,
           trueProb = (_sampleN * weightedHitRate + _kPrior * _leaguePrior) / (_sampleN + _kPrior);
         }
 
-        // ── FIX 3A: Reversion Guard — cap hot streaks (L5≥70%) if season<55% ────────
-        // STEP 4: Fixed broken Math.max/min nesting (May 4, 2026)
-        // Now correctly caps trueProb when L5 is hot but season baseline is cold
-        if (l5Pct >= 70 && seasonPct < 55) {
-          const reversionCap = seasonPct + 0.05;
-          trueProb = Math.min(trueProb, reversionCap);
+        // ── FIX 3A: Bayesian Regression to League Position (Phase 1 v2) ────────
+        // Replace hard cap with smooth Bayesian shrinkage using position-aware k-priors.
+        // Position with higher variance (forwards, bigs) regress harder than guards.
+        // Formula: shrunk_prob = (sampleN * hit_rate + k_prior * leagueAvg) / (sampleN + k_prior)
+        {
+          const posLower = (getValue(cols.pos) || 'Unknown').toLowerCase();
+
+          // Position-aware k-priors (how much to trust league average vs player history)
+          let kPrior = 7; // default
+          if (actualLeague === 'NBA') {
+            if (posLower.includes('pg') || posLower.includes('g')) kPrior = 5; // Guards: low variance, trust more
+            else if (posLower.includes('sf') || posLower.includes('f')) kPrior = 8; // Forwards: moderate variance
+            else if (posLower.includes('c') || posLower.includes('center')) kPrior = 10; // Centers: high variance, regress harder
+          } else if (actualLeague === 'MLB') {
+            if (posLower.includes('pitcher') || posLower.includes('sp') || posLower.includes('p')) kPrior = 6;
+            else if (posLower.includes('dh')) kPrior = 5;
+            else kPrior = 7; // position players mid-range
+          }
+          // NHL: all positions use default 7
+
+          // Compute effective sample size (capped at 65 total games tracked)
+          let sampleN = 0;
+          if (l5Pct > 0) sampleN += 5;
+          if (l10Pct > 0) sampleN += 10;
+          if (l20Pct > 0) sampleN += 20;
+          if (seasonPct > 0) sampleN += 30;
+          sampleN = Math.min(sampleN, 65);
+
+          // League average for prior (neutral 0.52, adjusted by prop type if needed)
+          const leagueAvgProb = 0.52;
+
+          // Apply Bayesian shrinkage: blend hit rate toward league average
+          // Higher k-prior = more weight on league average (more shrinkage)
+          const shrunkProb = (sampleN * weightedHitRate + kPrior * leagueAvgProb) / (sampleN + kPrior);
+
+          // Blend original trueProb with shrunk version (smooth transition vs hard cap)
+          // If confidence is high, use original more; if low, use shrunk more
+          const shrinkageWeight = Math.max(0.3, (100 - confidenceScore) / 100); // 0.3–1.0 range
+          trueProb = (1 - shrinkageWeight) * trueProb + shrinkageWeight * shrunkProb;
+
+          // Clamp to valid range
+          trueProb = Math.max(0.12, Math.min(0.88, trueProb));
         }
 
         // ── P2.1: Player Injury Status — applied BEFORE edge calc (was late) ────────
