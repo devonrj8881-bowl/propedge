@@ -188,86 +188,6 @@ function stripJsonFence(text) {
     .trim();
 }
 
-async function callGeminiStandard(messages, options = {}) {
-  // Fast, plain-text Gemini for standard analyst conversation
-  if (!GEMINI_API_KEY) {
-    throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not configured");
-  }
-
-  const systemMessage = messages.find((m) => m.role === "system")?.content || "";
-  const userMessage = messages
-    .filter((m) => m.role === "user")
-    .map((m) => m.content)
-    .join("\n\n");
-
-  const modelChain = Array.from(new Set([GEMINI_EV_DETAIL_MODEL, ...GEMINI_MODEL_FALLBACKS].filter(Boolean)));
-
-  const payloadBase = {
-    ...(systemMessage ? { systemInstruction: { parts: [{ text: systemMessage }] } } : {}),
-    contents: [{ role: "user", parts: [{ text: userMessage }] }],
-    generationConfig: {
-      temperature: options.temperature != null ? options.temperature : 0.3,
-      maxOutputTokens: options.max_tokens || options.num_predict || 900, // Reduced for speed
-      // No responseMimeType = plain text (faster)
-    },
-  };
-
-  let lastErr;
-  for (const model of modelChain) {
-    for (let attempt = 0; attempt < 2; attempt++) { // 2 attempts instead of 3
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
-      let timeoutId;
-      const shortTimeout = 12000; // 12s for standard (vs 27s for ev_detail)
-      const timeoutPromise = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error(`Gemini timeout (${shortTimeout}ms)`)), shortTimeout);
-      });
-
-      try {
-        const res = await Promise.race([
-          fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payloadBase),
-          }),
-          timeoutPromise,
-        ]);
-        clearTimeout(timeoutId);
-
-        if (!res.ok) {
-          const errBody = await res.text().catch(() => "");
-          const modelUnavailable = res.status === 404 || /not found/i.test(errBody);
-          lastErr = new Error(`Gemini HTTP ${res.status}: ${errBody.slice(0, 120)}`);
-          if (modelUnavailable) break;
-          if (attempt < 1) {
-            await new Promise((r) => setTimeout(r, 500));
-            continue;
-          }
-          throw lastErr;
-        }
-
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
-        if (!text.trim()) {
-          lastErr = new Error("Gemini returned empty");
-          if (attempt < 1) continue;
-          throw lastErr;
-        }
-        return text;
-      } catch (err) {
-        clearTimeout(timeoutId);
-        lastErr = err;
-        if (attempt < 1 && /timeout|UNAVAILABLE/i.test(err?.message || "")) {
-          await new Promise((r) => setTimeout(r, 500));
-          continue;
-        }
-        throw err;
-      }
-    }
-  }
-
-  throw lastErr || new Error("Gemini unavailable");
-}
-
 async function callGeminiEvDetail(messages, options = {}) {
   if (!GEMINI_API_KEY) {
     throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not configured");
@@ -286,7 +206,7 @@ async function callGeminiEvDetail(messages, options = {}) {
     contents: [{ role: "user", parts: [{ text: userMessage }] }],
     generationConfig: {
       temperature: options.temperature != null ? options.temperature : 0.5,
-      maxOutputTokens: options.max_tokens || options.num_predict || 1200, // Reduced from 1500 for speed
+      maxOutputTokens: options.max_tokens || options.num_predict || 1500,
       responseMimeType: "application/json",
     },
   };
@@ -693,7 +613,7 @@ function buildDeepSynthesisMessages(question, league, props, sourceContext, sour
     injuryContext = `\n⚠️ INJURY ALERTS: ${injuryList}\n`;
   }
 
-  const systemPrompt = `You are PropEdgeMasters Ask an Analyst for ${dateStr}. Gemini is primary analyst. PropEdge props, rosters, and article excerpts are supplemental context only.
+  const systemPrompt = `You are PropEdgeMasters Ask an Analyst for ${dateStr}. Claude is primary. PropEdge props, rosters, and article excerpts are supplemental context only.
 
 CRITICAL: Provide player prop OPTIONS for BOTH TEAMS. Show which props favor the AWAY team, which favor the HOME team, and best overall edges. Include team-level context (form, injuries, trades, news) for both competitors.
 
@@ -854,13 +774,16 @@ function enforceStructuredResponse(text, question, league, props, sourceContext)
 }
 
 exports.handler = async function handler(event) {
-  // Hard timeout: 28s (Netlify limit is 30s, leaving 2s buffer for response serialization)
-  const HARD_TIMEOUT_MS = 28000;
+  // Hard timeout: 45s (allowing Gemini time to respond; Netlify limit is 50s)
+  const HARD_TIMEOUT_MS = 45000;
   let requestTimedOut = false;
   const timeoutHandle = setTimeout(() => {
     requestTimedOut = true;
-    console.error("HARD TIMEOUT: Function exceeded 25s");
+    console.error(`HARD TIMEOUT: Function exceeded ${HARD_TIMEOUT_MS / 1000}s`);
   }, HARD_TIMEOUT_MS);
+
+  // Update error message timeout value
+  const timeoutErrMsg = `Request timeout (>${Math.round(HARD_TIMEOUT_MS / 1000)}s)`;
 
   if (event.httpMethod === "OPTIONS") {
     clearTimeout(timeoutHandle);
@@ -900,7 +823,7 @@ exports.handler = async function handler(event) {
   if (requestTimedOut) {
     return json(503, {
       ok: false,
-      error: "Request timeout (>25s)",
+      error: timeoutErrMsg,
       provider: "timeout",
     });
   }
