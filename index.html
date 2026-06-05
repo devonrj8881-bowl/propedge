@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.135 — PropIQ grading guide panel — 2026-05-31 -->
+<!-- PropEdge v7.160 — Fix Markets scroll jump (double-rAF) + tab switch flash + normalizeTeam perf cache — 2026-06-03 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7283,6 +7283,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       max-width: 100%;
     }
 
+    /* Two-column desktop layout: left = sticky analysis, right = full slate */
     .site-home-dashboard--two-col {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -7304,6 +7305,9 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       min-width: 0;
     }
 
+    /* Compact featured pick card in two-column desktop context.
+       Use !important to beat the .site-home-featured-full @media rules
+       that kick in at 1024px and 1400px. */
     .site-home-left-col .site-home-featured-full .propai-feature-hero,
     .site-home-left-col .propai-feature-hero {
       grid-template-columns: minmax(130px, 160px) minmax(0, 1fr) !important;
@@ -7321,6 +7325,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
     .site-home-left-col .propai-feature-player { font-size: 18px !important; }
     .site-home-left-col .propai-feature-metrics { gap: 8px !important; }
+    /* Hide the large PropIQ gauge + confidence wheel in compact left col — saves ~200px height */
     .site-home-left-col .propai-feature-confidence { display: none !important; }
 
     @media (max-width: 1199px) {
@@ -9258,8 +9263,10 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       border: 0;
       border-radius: 12px;
       background: var(--bg-primary, #1a1d2e);
+      /* Prevent iframe from stealing touch events while user scrolls the page */
       touch-action: pan-y;
     }
+    /* Disable pointer events on iframe while page is scrolling to prevent iOS freeze */
     body.is-scrolling .propai-generative-frame {
       pointer-events: none;
     }
@@ -17045,6 +17052,16 @@ nav.tabs > button,
       align-items: start;
     }
 
+    @media (min-width: 600px) {
+      .site-home-dashboard .site-home-featured-full .propai-feature-confidence.propai-feature-score-duo {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: center;
+        gap: 32px;
+      }
+    }
+
     @media (min-width: 1024px) {
       .site-shell-content .props-container:has(.site-home-dashboard) {
         --home-bleed-x: clamp(16px, 2vw, 36px);
@@ -18088,17 +18105,21 @@ nav.tabs > button,
     }
   /* ── Mobile performance: reduce motion, improve paint containment ── */
   @media (max-width: 767px) {
+    /* Contain each prop card so layout changes don't cascade across the whole list */
     .prop-card {
       contain: layout style;
     }
+    /* Contain market rows similarly */
     .propai-market-player {
       contain: layout style;
     }
+    /* Reduce costly box-shadows and backdrop-filters on scroll */
     .propai-generative-panel,
     .propai-analyst-conversation-panel {
       contain: layout style;
     }
   }
+  /* Respect system reduced-motion preference */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -18265,13 +18286,6 @@ nav.tabs > button,
       <span class="toggle-dot" id="autoToggleDot"></span>
       <span>Auto</span>
     </div>
-  </div>
-
-  <!-- Stale data warning banner -->
-  <div id="staleBanner" style="display:none;background:rgba(255,165,0,0.12);border:1px solid rgba(255,165,0,0.35);border-radius:10px;margin:0 16px 8px;padding:8px 14px;display:none;align-items:center;gap:10px;font-size:12px;color:var(--accent-orange,#f5a623);">
-    <span>⚠️</span>
-    <span id="staleBannerText">Props data is stale — scraper may not have run recently.</span>
-    <button onclick="hideStaleBanner()" style="margin-left:auto;background:none;border:none;color:inherit;font-size:16px;cursor:pointer;padding:0 2px;line-height:1;">✕</button>
   </div>
 
   <!-- Game Board -->
@@ -20439,6 +20453,7 @@ nav.tabs > button,
         window._isTouching = false;
         window._lastTouchEndAt = Date.now();
       }, { passive: true });
+      // Returns true if finger is down OR momentum scroll is likely still running (600ms window)
       window._isScrollMomentumActive = function() {
         return window._isTouching || (Date.now() - window._lastTouchEndAt < 600);
       };
@@ -20597,7 +20612,7 @@ nav.tabs > button,
         // Smart refresh: poll _meta every 5 min; reload props only if scraper ran since last fetch
         if (!state.propRefreshInterval) {
           state.propRefreshInterval = setInterval(() => {
-            if (document.hidden) return;
+            if (document.hidden) return; // skip when tab is backgrounded
             fetchScrapeMeta().then(meta => {
               if (!meta || !meta.last_scraped) return;
               const scraperRanAt = new Date(meta.last_scraped).getTime();
@@ -20607,7 +20622,7 @@ nav.tabs > button,
                 loadData().catch(err => console.error('[PropEdge] Smart refresh failed:', err));
               }
             }).catch(() => {});
-          }, 5 * 60 * 1000);
+          }, 5 * 60 * 1000); // Check every 5 minutes
         }
       }).catch(err => console.warn('[PropEdge] Initial prop load failed:', err));
     }
@@ -20808,18 +20823,31 @@ nav.tabs > button,
     }
 
     async function fetchScrapeMeta() {
-      try {
-        const url = `/.netlify/functions/prop-feed?sheet=_meta`;
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) return null;
-        const text = await res.text();
-        const rows = text.trim().split('\n').slice(1); // skip header
+      function parseCsvMeta(text) {
+        const rows = text.trim().split('\n').slice(1);
         const meta = {};
         rows.forEach(row => {
           const [k, v] = row.split(',').map(s => s.replace(/^"|"$/g, '').trim());
           if (k) meta[k] = v;
         });
         return meta.last_scraped ? meta : null;
+      }
+      // Try Netlify function first
+      try {
+        const res = await fetch('/.netlify/functions/prop-feed?sheet=meta', { cache: 'no-store' });
+        if (res.ok) {
+          const meta = parseCsvMeta(await res.text());
+          if (meta) return meta;
+        }
+      } catch (_) {}
+      // Fallback: read gviz directly from browser (works for public sheets)
+      try {
+        const SHEET_ID = '1e53GcCS9alxJhzDQPqkH55mpllEjVUShPKyP63R-BeY';
+        const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=meta`);
+        if (!res.ok) return null;
+        const text = await res.text();
+        if (!text || /^\s*</.test(text)) return null;
+        return parseCsvMeta(text);
       } catch (_) { return null; }
     }
 
@@ -20915,13 +20943,10 @@ nav.tabs > button,
             const age = formatDataAge(meta.last_scraped);
             if (age) el.textContent = age;
           }
-          if (meta && meta.last_scraped) {
-            const ageHrs = (Date.now() - new Date(meta.last_scraped).getTime()) / 3600000;
-            if (ageHrs > 6) { showStaleBanner(Math.round(ageHrs)); } else { hideStaleBanner(); }
-          }
         }).catch(() => {});
         // Async ESPN game-filter: fires after render, never blocks prop display
         applyEspnGameFilter().catch(e => console.warn('[game-filter] ESPN filter failed silently:', e.message));
+        // Also apply local game-status filter (uses state.games, works offline/instantly)
         applyLocalGameStatusFilter();
         if (typeof renderMarketsView === 'function') renderMarketsView();
         window.clearTimeout(window.__propLoadWatchdog);
@@ -27844,6 +27869,8 @@ nav.tabs > button,
     // prop.tier, and prop.propFactors for ALL downstream consumers
     // (card display, sort/filter, parlay AI, sharp money rescore baseline).
     // ESPN game-filter: fetches today's active teams and hides props for teams not playing
+    // Filter state.props using local state.games — removes props for concluded games.
+    // Called after fetchGames and after each live sync so the board stays current.
     function applyLocalGameStatusFilter() {
       const allGames = [
         ...(state.games.NBA || []), ...(state.games.NHL || []),
@@ -27852,8 +27879,10 @@ nav.tabs > button,
       if (!allGames.length || !Array.isArray(state.props) || !state.props.length) return;
 
       const normalizeT = t => String(t || '').toUpperCase().trim();
-      const activeTeams = {};
-      const hasAnyGameForLeague = {};
+
+      // Build set of teams with active (non-final) games
+      const activeTeams = {}; // { LEAGUE: Set<team> }
+      const hasAnyGameForLeague = {}; // track which leagues have any ESPN data today
       allGames.forEach(g => {
         const league = String(g.league || '').toUpperCase();
         if (!hasAnyGameForLeague[league]) hasAnyGameForLeague[league] = true;
@@ -27861,17 +27890,23 @@ nav.tabs > button,
           /final|completed|ended|post/i.test(g.statusText || g.statusDisplay || g.status || '');
         if (!isFinal) {
           if (!activeTeams[league]) activeTeams[league] = new Set();
-          activeTeams[league].add(normalizeT(g.homeTeam));
-          activeTeams[league].add(normalizeT(g.awayTeam));
+          activeTeams[league].add(normalizeTeam(g.homeTeam));
+          activeTeams[league].add(normalizeTeam(g.awayTeam));
         }
       });
+
+      // Cache normalizeTeam results — avoids alias-table scan for every one of ~7k props
+      const _teamNormCache = {};
+      const normT = t => _teamNormCache[t] !== undefined ? _teamNormCache[t] : (_teamNormCache[t] = normalizeTeam(t));
 
       const before = state.props.length;
       state.props = state.props.filter(p => {
         const league = String(p.league || '').toUpperCase();
+        // If ESPN has no data for this league today, keep all props for it
         if (!hasAnyGameForLeague[league]) return true;
-        const team = normalizeT(p.team);
+        const team = normT(p.team);
         const active = activeTeams[league];
+        // If all games for this league are final, active will be empty set
         return active && active.has(team);
       });
 
@@ -27897,11 +27932,13 @@ nav.tabs > button,
         const before = state.props.length;
         state.props = state.props.filter(p => {
           const league = (p.league || '').toUpperCase();
-          const team = (p.team || p.Team || '').toUpperCase().trim();
-          const opp = (p.opponent || p.opp || '').toUpperCase().trim();
+          const team = normalizeTeam(p.team || p.Team || '');
+          const opp  = normalizeTeam(p.opponent || p.opp || '');
           const active = data.activeTeams[league];
           if (!active || !active.length) return false; // no games today for league → hide props
-          return active.includes(team) || active.includes(opp);
+          // Normalize active team abbrs too (ESPN sometimes returns short forms like SA, NY)
+          const activeNorm = active.map(a => normalizeTeam(a));
+          return activeNorm.includes(team) || (opp && activeNorm.includes(opp));
         });
 
         const removed = before - state.props.length;
@@ -28015,6 +28052,7 @@ nav.tabs > button,
       // ── ALWAYS render ticker with all games (live + upcoming)
       // Background clock sync will update live game scores in-place via _startLiveTickerPoll()
       renderTicker(allGames);
+      // Filter out props for completed games now that state.games is fresh
       if (typeof applyLocalGameStatusFilter === 'function') applyLocalGameStatusFilter();
 
       // ── AUTO-DETECT PROP HITS: Trigger when game transitions to final (NEW)
@@ -28518,6 +28556,7 @@ nav.tabs > button,
         });
       });
 
+      // After each live sync, drop props for any games that just went final
       if (typeof applyLocalGameStatusFilter === 'function') applyLocalGameStatusFilter();
     }
 
@@ -34811,7 +34850,8 @@ nav.tabs > button,
           ` : ''}
         `;
       }
-      // Restore scroll — skip if user is mid-swipe or in momentum
+      // Restore scroll — but skip entirely if user is mid-swipe or in momentum
+      // (calling scrollTo during momentum interrupts the animation and causes the jump-to-middle bug)
       if (_savedScrollY > 0 && Math.abs(window.scrollY - _savedScrollY) > 4) {
         if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
           window.scrollTo(0, _savedScrollY);
@@ -37756,7 +37796,7 @@ nav.tabs > button,
             g.league === league &&
             (normalizeT(g.homeTeam) === team || normalizeT(g.awayTeam) === team)
           );
-          if (!game) return true;
+          if (!game) return true; // no ESPN game found — keep (scraper may have data ESPN doesn't)
           return !(game.isCompleted || game.status === 'final' ||
             /final|completed|ended/i.test(game.statusText || game.statusDisplay || ''));
         });
@@ -38175,14 +38215,18 @@ nav.tabs > button,
       requestAnimationFrame(() => {
         listEl.innerHTML = header + ranked.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
         if (isFullBoard) setupMarketsLoadMore(totalCount);
-        // Restore scroll — skip if user is mid-swipe or in momentum
-        if (_scrollBeforeRender > 0 && Math.abs(window.scrollY - _scrollBeforeRender) > 4) {
-          if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
-            window.scrollTo(0, _scrollBeforeRender);
-          }
-        }
         // Batch headshot lookups: first 15 immediately, rest during idle time
         batchHeadshotLookups(ranked);
+        // Double-rAF: wait for layout to commit before restoring scroll.
+        // Single-rAF fires before iOS Safari has painted the new layout,
+        // causing scrollTo to land at the wrong position.
+        if (_scrollBeforeRender > 0) {
+          requestAnimationFrame(() => {
+            if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
+              window.scrollTo({ top: _scrollBeforeRender, behavior: 'instant' });
+            }
+          });
+        }
       });
     }
 
@@ -38272,6 +38316,8 @@ nav.tabs > button,
       const url = base + '/?league=' + encodeURIComponent(league);
       if (frame.dataset.srcLoaded === url) return;
 
+      // On mobile, don't auto-load the heavy Vercel app — show a tap-to-launch button
+      // to prevent iOS from freezing the host page during iframe parse/render.
       const isMobile = window.innerWidth < 1024;
       if (isMobile && !force) {
         const placeholder = document.getElementById('propedgeGenerativeLaunchPlaceholder');
@@ -38288,6 +38334,7 @@ nav.tabs > button,
         return;
       }
 
+      // Remove placeholder if present
       const placeholder = document.getElementById('propedgeGenerativeLaunchPlaceholder');
       if (placeholder) placeholder.remove();
 
@@ -38371,6 +38418,7 @@ nav.tabs > button,
     let _marketSearchDebounceTimer;
     function updatePropAIMarketSearch(value) {
       state.propAIMarketSearch = value || '';
+      // Debounce: wait 220ms after the user stops typing before re-rendering
       clearTimeout(_marketSearchDebounceTimer);
       _marketSearchDebounceTimer = setTimeout(() => {
         renderMarketsView();
@@ -38847,6 +38895,7 @@ nav.tabs > button,
         if (!state.apiSportsBundle) await loadApiSportsBundle(false);
         const html = await getServerlessAnalystHTML(q, ranked, ranked.length, league);
         if (html) {
+          // Defer large HTML write to next frame so it doesn't block scroll/touch
           requestAnimationFrame(() => { feed.innerHTML = html; });
           return;
         }
@@ -39590,7 +39639,7 @@ nav.tabs > button,
             <button type="button" class="propai-cta" style="width:100%;" onclick="triggerShellView('recommendations')">Open PropAI Analyst</button>
           </div>
 
-          <!-- RIGHT COLUMN: full game slate -->
+          <!-- RIGHT COLUMN: full game slate, scrolls independently -->
           <div class="site-home-right-col">
             <section class="panel propai-panel propai-upcoming-stage">
               <div class="propai-panel-header">
@@ -39617,6 +39666,9 @@ nav.tabs > button,
         const active = (state.league || 'ALL') === league ? ' active' : '';
         return `<button type="button" class="site-league-chip${active}" data-shell-league="${league}" onclick="triggerShellLeague('${league}', this)">${label}</button>`;
       }).join('');
+
+      // Phase 1 HTML: only above-fold content (featured pick + league strip)
+      // Lower sections are injected deferred via _renderMobileHomeDeferredSections()
       return `
         <div class="site-mobile-home-dashboard">
           <div class="site-mobile-league-strip">${leagueChips}</div>
@@ -39639,6 +39691,7 @@ nav.tabs > button,
       `;
     }
 
+    // Fills in the heavier below-fold sections after the first paint
     function _renderMobileHomeDeferredSections() {
       const el = document.getElementById('mobileDashboardDeferredSections');
       if (!el) return;
@@ -39987,6 +40040,7 @@ nav.tabs > button,
           tab.classList.add('active');
           try { tab.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); } catch (err) {}
           state.view = nextView;
+          if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'instant' });
           applyViewVisibility();
 
           runAfterPaint(() => {
@@ -40196,19 +40250,6 @@ nav.tabs > button,
       if (shellStatGames) shellStatGames.textContent = String(uniqueGames.size);
       if (shellStatPrime) shellStatPrime.textContent = String(state.props.filter(p => p.tier === 'prime' || p.tier === 'ultimate').length);
       if (shellStatValue) shellStatValue.textContent = String(state.props.filter(p => p.isValue).length);
-    }
-
-    function showStaleBanner(ageHours) {
-      const banner = document.getElementById('staleBanner');
-      const text = document.getElementById('staleBannerText');
-      if (!banner) return;
-      if (text) text.textContent = `Props data is ${ageHours}h old — scraper may not have run. Refresh to try again.`;
-      banner.style.display = 'flex';
-    }
-
-    function hideStaleBanner() {
-      const banner = document.getElementById('staleBanner');
-      if (banner) banner.style.display = 'none';
     }
 
     function showLoading() {
