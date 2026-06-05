@@ -1,6 +1,54 @@
 # PropEdge Session Notes
 
-## Session: 2026-06-03
+## Session: 2026-06-05 (Late Night)
+
+---
+
+### 1. ask-analyst — Gemini as Primary for All Modes
+
+**Problem:** Every PropAI query showed "PROPAI · CLAUDE-FALLBACK · STRUCTURED FALLBACK · CLAUDE-SONNET-4-6". `ANTHROPIC_API_KEY` not set on Netlify caused immediate structured fallback before Gemini was ever attempted.
+
+**Bugs fixed (3 separate issues):**
+- `const responseMode` — couldn't be reassigned, fix silently failed
+- `ANTHROPIC_API_KEY` guard blocked ALL requests before Gemini path
+- Claude catch block returned `claude-fallback` instead of trying Gemini
+
+**Fix:** `let responseMode`; force `ev_detail` when no Anthropic key; Claude catch block now routes to Gemini. Verified live: `provider: gemini, model: gemini-1.5-flash`.
+
+**Also:** Removed fake Gemini models from fallback list (`gemini-3.5-flash`, `gemini-3.1-flash-lite` etc.) — they 404'd and wasted time before reaching `gemini-2.5-flash`.
+
+---
+
+### 2. Prop Card Category: Blocks → Strikeouts (NBA)
+
+**Root cause:** `'blocks'.includes('ks')` = true — NBA blocks props matched the Strikeouts bucket.
+
+**Fix:** Added explicit `block` and `steals` checks before `ks` pattern; tightened `ks` to `\bks\b`.
+
+---
+
+### 3. Prop Category: Full Coverage All Leagues (v7.163)
+
+**Problem:** MLB Singles, Doubles, HR, Runs, NHL Shots on Goal, PP Points, NFL Yardage all fell through to `'ALL'`.
+
+**Fix:** Rewrote `propAIMarketCategory` with 35+ categories covering NBA/MLB/NHL/NFL. Combo props checked first to avoid partial matches. Fallback changed `'ALL'` → `'Other'`.
+
+---
+
+### 4. Markets Load-More: Append-Only (No Blank Flash)
+
+**Problem:** IntersectionObserver triggered full `innerHTML` replace → 5-second blank blue screen while re-rendering all rows.
+
+**Fix:** Observer now appends only new rows before the sentinel. Existing content stays in DOM — no wipe, no flash, load feels instant.
+
+---
+
+### End of Session State
+
+**Site:** ✅ https://propedgemasters.netlify.app — v7.163  
+**Analyst:** ✅ Gemini primary for all query modes — `provider: gemini`  
+**Main branch:** ✅ commit `23cab8c`  
+**Scraper:** ✅ launchd running every 15 min — 25+ successful runs  
 
 ---
 
