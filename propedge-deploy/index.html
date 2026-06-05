@@ -38244,23 +38244,40 @@ nav.tabs > button,
       const header = isFullBoard ? buildMarketsBoardHeaderHTML() : '';
       const _scrollBeforeRender = window.scrollY;
       const isMobile = window.innerWidth < 1024;
-      // On mobile, render incrementally: 8 props → rest on idle (reduces input lag & visual jank)
-      const initialChunkSize = isMobile ? 8 : ranked.length;
+      // On mobile, render VERY incrementally to avoid iOS color shift during filtering
+      // iOS Safari flickers when adding many DOM nodes - minimize initial render
+      const initialChunkSize = isMobile ? 4 : ranked.length; // Only 4 props initially on mobile
+      const secondChunkSize = isMobile ? 8 : 0; // Then 8 more
       const initialProps = ranked.slice(0, initialChunkSize);
-      const deferredProps = ranked.slice(initialChunkSize);
+      const secondProps = ranked.slice(initialChunkSize, initialChunkSize + secondChunkSize);
+      const deferredProps = ranked.slice(initialChunkSize + secondChunkSize);
 
-      // On mobile, defer the entire initial render to requestIdleCallback to prevent input blocking
+      // On mobile, render in three waves to minimize jank
       if (isMobile && typeof requestIdleCallback !== 'undefined') {
         requestIdleCallback(() => {
+          // Wave 1: Render first 4 props
           const initialHTML = initialProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
           listEl.innerHTML = header + initialHTML;
-          if (deferredProps.length > 0) {
+
+          // Wave 2: Add next 8 props
+          if (secondProps.length > 0) {
             requestIdleCallback(() => {
-              const deferredHTML = deferredProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
-              listEl.innerHTML += deferredHTML;
-              if (isFullBoard) setupMarketsLoadMore(totalCount);
-              batchHeadshotLookups(ranked);
-            }, { timeout: 2000 });
+              const secondHTML = secondProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
+              listEl.innerHTML += secondHTML;
+
+              // Wave 3: Add remaining props
+              if (deferredProps.length > 0) {
+                requestIdleCallback(() => {
+                  const deferredHTML = deferredProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
+                  listEl.innerHTML += deferredHTML;
+                  if (isFullBoard) setupMarketsLoadMore(totalCount);
+                  batchHeadshotLookups(ranked);
+                }, { timeout: 3000 });
+              } else {
+                if (isFullBoard) setupMarketsLoadMore(totalCount);
+                batchHeadshotLookups(ranked);
+              }
+            }, { timeout: 1000 });
           } else {
             if (isFullBoard) setupMarketsLoadMore(totalCount);
             batchHeadshotLookups(ranked);
