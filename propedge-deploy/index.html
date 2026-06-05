@@ -9001,6 +9001,8 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         pointer-events: none;
         transition: opacity 0.24s ease;
         z-index: 60;
+        /* iOS Safari: disable backdrop on mobile to prevent color shift artifact */
+        display: none !important;
       }
       body.propai-markets-open .propai-browser-backdrop {
         opacity: 1;
