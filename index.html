@@ -38232,22 +38232,21 @@ nav.tabs > button,
       }
       const propsLoaded = Array.isArray(state.props) && state.props.length > 0;
       if (!ranked.length) {
-        const emptyMsg = !propsLoaded && isFullBoard
-          ? 'No props loaded yet — board updates when data finishes loading.'
-          : state.marketsGameFilter
-            ? `No props match ${state.marketsGameFilter.awayTeam} @ ${state.marketsGameFilter.homeTeam} with the current search or market filter.`
-            : 'No props match this league, search, or market filter.';
-        // On mobile, defer empty message rendering to avoid iOS color shift from layout change
         const isMobile = window.innerWidth < 1024;
-        if (isMobile && typeof requestIdleCallback !== 'undefined') {
-          requestIdleCallback(() => {
-            listEl.innerHTML = `<div class="ai-context-empty" style="min-height: 60px; display: flex; align-items: center;">${emptyMsg}</div>`;
-            if (isFullBoard) setupMarketsLoadMore(0);
-          }, { timeout: 300 });
-        } else {
+        // On mobile, avoid rendering empty message - iOS Safari color shift artifact
+        // Just keep the container empty to minimize DOM changes
+        if (!isMobile) {
+          const emptyMsg = !propsLoaded && isFullBoard
+            ? 'No props loaded yet — board updates when data finishes loading.'
+            : state.marketsGameFilter
+              ? `No props match ${state.marketsGameFilter.awayTeam} @ ${state.marketsGameFilter.homeTeam} with the current search or market filter.`
+              : 'No props match this league, search, or market filter.';
           listEl.innerHTML = `<div class="ai-context-empty">${emptyMsg}</div>`;
-          if (isFullBoard) setupMarketsLoadMore(0);
+        } else {
+          // On mobile: render absolutely nothing to prevent iOS color shift
+          listEl.innerHTML = '';
         }
+        if (isFullBoard) setupMarketsLoadMore(0);
         return;
       }
       const header = isFullBoard ? buildMarketsBoardHeaderHTML() : '';
