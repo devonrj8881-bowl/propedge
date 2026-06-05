@@ -37831,7 +37831,7 @@ nav.tabs > button,
           return blob.includes(search);
         });
       }
-      return filtered.sort((a, b) => buildPropAIScore(b) - buildPropAIScore(a));
+      return filtered.sort((a, b) => cachedPropScore(b) - cachedPropScore(a));
     }
 
     function getMarketsSlateGames() {
@@ -38177,9 +38177,9 @@ nav.tabs > button,
       // Use the load-more cap for the full board (grows as user scrolls)
       if (isFullBoard) _marketsDisplayCap = Math.max(_marketsDisplayCap, baseCap);
       const MARKETS_RENDER_CAP = isFullBoard ? _marketsDisplayCap : baseCap;
-      // Use memoized scores for sort to avoid recomputing on every render
+      // getMarketsBoardFiltered() already returns sorted results; getPropAIBrowserFiltered() also sorts
       const allRanked = isFullBoard
-        ? getMarketsBoardFiltered().sort((a, b) => cachedPropScore(b) - cachedPropScore(a))
+        ? getMarketsBoardFiltered()
         : getPropAIBrowserFiltered('');
       const totalCount = allRanked.length;
       const maxRows = Math.max(1, MARKETS_RENDER_CAP);
