@@ -22441,7 +22441,7 @@ nav.tabs > button,
       }
       rebuildFdLineIndex();
       state.fdLinesSource = 'sheet';
-      await loadFanDuelLinesFromOddsAPI(true, { teamsByLeague: buildSlateLiveOddsTargets() });
+      await loadFanDuelLinesFromOddsAPI(true, { teamsByLeague: buildSlateLiveOddsTargets(), silent: true });
       if (btn) { btn.textContent = '🔄'; btn.style.pointerEvents = ''; }
     };
 
@@ -38212,11 +38212,38 @@ nav.tabs > button,
       const header = isFullBoard ? buildMarketsBoardHeaderHTML() : '';
       // Defer DOM write to next animation frame to keep filter toggles responsive
       const _scrollBeforeRender = window.scrollY;
+      const isMobile = window.innerWidth < 1024;
+      // On mobile, render in two phases to reduce jank: render first 20 immediately, rest when idle
+      const initialChunkSize = isMobile ? 20 : ranked.length;
+      const initialProps = ranked.slice(0, initialChunkSize);
+      const deferredProps = ranked.slice(initialChunkSize);
+
       requestAnimationFrame(() => {
-        listEl.innerHTML = header + ranked.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
-        if (isFullBoard) setupMarketsLoadMore(totalCount);
-        // Batch headshot lookups: first 15 immediately, rest during idle time
-        batchHeadshotLookups(ranked);
+        const initialHTML = initialProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
+        listEl.innerHTML = header + initialHTML;
+
+        if (deferredProps.length > 0) {
+          if (typeof requestIdleCallback !== 'undefined') {
+            requestIdleCallback(() => {
+              const deferredHTML = deferredProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
+              listEl.innerHTML += deferredHTML;
+              if (isFullBoard) setupMarketsLoadMore(totalCount);
+              batchHeadshotLookups(ranked);
+            }, { timeout: 2000 });
+          } else {
+            // Fallback for browsers without requestIdleCallback
+            setTimeout(() => {
+              const deferredHTML = deferredProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
+              listEl.innerHTML += deferredHTML;
+              if (isFullBoard) setupMarketsLoadMore(totalCount);
+              batchHeadshotLookups(ranked);
+            }, 100);
+          }
+        } else {
+          if (isFullBoard) setupMarketsLoadMore(totalCount);
+          batchHeadshotLookups(ranked);
+        }
+
         // Double-rAF: wait for layout to commit before restoring scroll.
         // Single-rAF fires before iOS Safari has painted the new layout,
         // causing scrollTo to land at the wrong position.
