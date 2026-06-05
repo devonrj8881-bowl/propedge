@@ -20469,40 +20469,23 @@ nav.tabs > button,
         return window._isTouching || (Date.now() - window._lastTouchEndAt < 600);
       };
 
-      // iOS Safari web app: prevent keyboard from causing layout shift
-      // When keyboard appears/disappears, iOS resizes the viewport which causes jank.
-      // Fix: lock scroll position during keyboard transitions
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        let keyboardOpen = false;
-        let lastScrollY = 0;
-        const searchInputs = document.querySelectorAll('.propai-browser-search input, #propAIMarketSearch, #marketsSearchInput');
+      // Re-attach search handlers now that inputs exist
+      // Mobile: debounced on blur. Desktop: real-time input
+      const isMobile = window.innerWidth < 1024;
+      const searchInputs = document.querySelectorAll('#propAIMarketSearch, #marketsSearchInput');
+
+      if (isMobile) {
+        // On mobile, use change event only (fires on blur) to avoid frequent repaints
         searchInputs.forEach(input => {
-          input.addEventListener('focus', () => {
-            keyboardOpen = true;
-            lastScrollY = window.scrollY;
-            // Add padding-bottom to account for keyboard
-            document.body.style.paddingBottom = '0';
-          });
-          input.addEventListener('blur', () => {
-            keyboardOpen = false;
-            // Restore scroll position
-            setTimeout(() => {
-              if (window.scrollY !== lastScrollY) {
-                window.scrollTo(0, lastScrollY);
-              }
-            }, 100);
-          });
-          // Use change event (fires when field loses focus) instead of input (fires on every keystroke)
-          input.addEventListener('change', () => {
-            updatePropAIMarketSearch(input.value);
+          input.addEventListener('change', (e) => {
+            updatePropAIMarketSearch(e.target.value);
           });
         });
       } else {
-        // Desktop: use input event for real-time search
-        const searchInputs = document.querySelectorAll('#propAIMarketSearch, #marketsSearchInput');
+        // On desktop, use input event for real-time search
         searchInputs.forEach(input => {
-          input.addEventListener('input', () => {
-            updatePropAIMarketSearch(input.value);
+          input.addEventListener('input', (e) => {
+            updatePropAIMarketSearch(e.target.value);
           });
         });
       }
