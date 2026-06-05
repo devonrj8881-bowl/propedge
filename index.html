@@ -5715,38 +5715,39 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     }
 
     .propai-browser-search {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-height: 48px;
-      padding: 0 14px;
-      border-radius: 14px;
+      display: block;
+      min-height: 44px;
+      padding: 0;
+      margin: 0;
       background: rgba(7, 18, 34, 0.9);
-      border: 1px solid rgba(255,255,255,0.08);
-      /* iOS fix: prevent keyboard from causing layout shift */
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      will-change: transform;
-      -webkit-user-select: none;
-      user-select: none;
+      border: none;
+      /* iOS fix: disable expensive rendering during input */
+      -webkit-appearance: none;
+      -webkit-transform: translate3d(0, 0, 0);
+      will-change: auto;
+      contain: layout style paint;
     }
 
     .propai-browser-search input {
-      flex: 1;
+      display: block;
+      width: 100%;
       min-width: 0;
+      height: 44px;
+      padding: 12px 14px;
       border: none;
       outline: none;
       background: transparent;
       color: var(--text-primary);
-      font-size: 14px;
-      /* iOS: allow selection in input */
+      font-size: 16px;
+      -webkit-appearance: none;
       -webkit-user-select: text;
       user-select: text;
+      margin: 0;
+      font-family: inherit;
     }
 
     .propai-browser-search input::placeholder { color: var(--text-muted); }
-    .propai-browser-search-icon { color: var(--text-muted); font-size: 15px; }
+    .propai-browser-search-icon { display: none; }
 
     .propai-browser-tabs {
       display: flex;
