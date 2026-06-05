@@ -194,30 +194,45 @@ async function fetchStartingPitchers(games) {
     console.log(`🔍 Looking up pitchers for ${game.awayTeam} @ ${game.homeTeam}`);
 
     try {
-      // Fetch game boxscore endpoint which contains pitcher info
-      const url = `https://statsapi.mlb.com/api/v1/games/${game.id}/live`;
-      const gameData = await fetchJSON(url, { timeout: 5000 });
+      // Use schedule endpoint with date to find probable pitchers
+      // Format: YYYY-MM-DD
+      const gameDate = new Date(game.date).toISOString().split('T')[0];
+      const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${gameDate}`;
+      const scheduleData = await fetchJSON(url, { timeout: 5000 });
 
-      const awayPitcher = gameData.gameData?.probablePitchers?.away;
-      const homePitcher = gameData.gameData?.probablePitchers?.home;
+      // Find game matching away/home teams
+      const matchedGame = (scheduleData.games || []).find(g =>
+        (g.awayTeam?.team?.abbreviation === game.awayTeam && g.homeTeam?.team?.abbreviation === game.homeTeam) ||
+        (g.awayTeam?.teamName?.includes(game.awayTeamName) && g.homeTeam?.teamName?.includes(game.homeTeamName))
+      );
 
-      if (awayPitcher) {
-        console.log(`  ⚾ Away pitcher: ${awayPitcher.fullName} (ID: ${awayPitcher.id})`);
+      if (!matchedGame) {
+        console.warn(`⚠️  Could not match ${game.awayTeam} @ ${game.homeTeam} in schedule`);
+        continue;
+      }
+
+      const awayPitcher = matchedGame.awayTeam?.probablePitcher;
+      const homePitcher = matchedGame.homeTeam?.probablePitcher;
+
+      if (awayPitcher?.id) {
+        const name = awayPitcher.fullName || awayPitcher.name || 'Unknown';
+        console.log(`  ⚾ Away pitcher: ${name} (ID: ${awayPitcher.id})`);
         pitchers.push({
           team: game.awayTeam,
           opponent: game.homeTeam,
-          name: awayPitcher.fullName,
+          name: name,
           playerId: awayPitcher.id,
           isHome: false
         });
       }
 
-      if (homePitcher) {
-        console.log(`  ⚾ Home pitcher: ${homePitcher.fullName} (ID: ${homePitcher.id})`);
+      if (homePitcher?.id) {
+        const name = homePitcher.fullName || homePitcher.name || 'Unknown';
+        console.log(`  ⚾ Home pitcher: ${name} (ID: ${homePitcher.id})`);
         pitchers.push({
           team: game.homeTeam,
           opponent: game.awayTeam,
-          name: homePitcher.fullName,
+          name: name,
           playerId: homePitcher.id,
           isHome: true
         });
