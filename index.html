@@ -38463,17 +38463,17 @@ nav.tabs > button,
 
     let _marketSearchDebounceTimer;
     function updatePropAIMarketSearch(value) {
+      // DEBUG: Minimal handler to isolate the issue
       state.propAIMarketSearch = value || '';
-      // Debounce: wait 300ms after the user stops typing before re-rendering (increased from 220 to reduce main thread blocking)
-      clearTimeout(_marketSearchDebounceTimer);
+      // On mobile, use longer debounce (600ms) to see if timing helps
+      const debounceMs = window.innerWidth < 1024 ? 600 : 300;
+      if (_marketSearchDebounceTimer) clearTimeout(_marketSearchDebounceTimer);
       _marketSearchDebounceTimer = setTimeout(() => {
-        // Only render the markets board (search is in markets context)
         renderMarketsView();
-        // Only update dashboard if we have active analyst content
         if (state.propAIContextQuestion) {
           renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
         }
-      }, 300);
+      }, debounceMs);
     }
 
     function propAISlatePlayerForGame(game, picks) {
