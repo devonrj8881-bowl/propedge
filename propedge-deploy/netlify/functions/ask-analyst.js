@@ -51,13 +51,9 @@ try {
 
 const DEFAULT_MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
 const GEMINI_MODEL_FALLBACKS = [
-  "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
-  "gemini-3.1-flash-image",
-  "gemini-3-pro-image",
-  "gemini-2.5-flash-image",
+  "gemini-2.0-flash",
 ];
 const GEMINI_EV_DETAIL_MODEL = process.env.GEMINI_EV_DETAIL_MODEL || process.env.GEMINI_MODEL || GEMINI_MODEL_FALLBACKS[0];
 const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
@@ -836,8 +832,8 @@ exports.handler = async function handler(event) {
     });
   }
 
-  // Check API key
-  if (!process.env.ANTHROPIC_API_KEY) {
+  // Check API key — only block non-ev_detail requests (ev_detail uses Gemini as primary, not Claude)
+  if (!process.env.ANTHROPIC_API_KEY && responseMode !== "ev_detail") {
     return json(200, {
       ok: true,
       error: "ANTHROPIC_API_KEY not configured",

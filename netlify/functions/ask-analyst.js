@@ -51,13 +51,9 @@ try {
 
 const DEFAULT_MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
 const GEMINI_MODEL_FALLBACKS = [
-  "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
-  "gemini-3.1-flash-image",
-  "gemini-3-pro-image",
-  "gemini-2.5-flash-image",
+  "gemini-2.0-flash",
 ];
 const GEMINI_EV_DETAIL_MODEL = process.env.GEMINI_EV_DETAIL_MODEL || process.env.GEMINI_MODEL || GEMINI_MODEL_FALLBACKS[0];
 const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
@@ -774,16 +770,13 @@ function enforceStructuredResponse(text, question, league, props, sourceContext)
 }
 
 exports.handler = async function handler(event) {
-  // Hard timeout: 45s (allowing Gemini time to respond; Netlify limit is 50s)
-  const HARD_TIMEOUT_MS = 45000;
+  // Hard timeout: 28s (Netlify limit is 30s, leaving 2s buffer for response serialization)
+  const HARD_TIMEOUT_MS = 28000;
   let requestTimedOut = false;
   const timeoutHandle = setTimeout(() => {
     requestTimedOut = true;
-    console.error(`HARD TIMEOUT: Function exceeded ${HARD_TIMEOUT_MS / 1000}s`);
+    console.error("HARD TIMEOUT: Function exceeded 25s");
   }, HARD_TIMEOUT_MS);
-
-  // Update error message timeout value
-  const timeoutErrMsg = `Request timeout (>${Math.round(HARD_TIMEOUT_MS / 1000)}s)`;
 
   if (event.httpMethod === "OPTIONS") {
     clearTimeout(timeoutHandle);
@@ -823,7 +816,7 @@ exports.handler = async function handler(event) {
   if (requestTimedOut) {
     return json(503, {
       ok: false,
-      error: timeoutErrMsg,
+      error: "Request timeout (>25s)",
       provider: "timeout",
     });
   }
@@ -839,8 +832,8 @@ exports.handler = async function handler(event) {
     });
   }
 
-  // Check API key
-  if (!process.env.ANTHROPIC_API_KEY) {
+  // Check API key — only block non-ev_detail requests (ev_detail uses Gemini as primary, not Claude)
+  if (!process.env.ANTHROPIC_API_KEY && responseMode !== "ev_detail") {
     return json(200, {
       ok: true,
       error: "ANTHROPIC_API_KEY not configured",
@@ -960,39 +953,17 @@ exports.handler = async function handler(event) {
     }
   }
 
-  // Call Gemini for standard analyst (primary) with Claude fallback only
+  // Call Claude (no retries — 25s hard limit doesn't allow time for backoff + retry)
   try {
-    let answer;
-    let provider = "gemini";
-    let model = GEMINI_EV_DETAIL_MODEL;
-
-    // Try Gemini first
-    try {
-      const geminiOpts = {
-        temperature: 0.3,
-        max_tokens: 900,
-      };
-      answer = await callGeminiStandard(messages, geminiOpts);
-      console.log(`[Standard Analyst] Gemini returned ${answer.length} chars`);
-    } catch (geminiErr) {
-      console.warn(`[Standard Analyst] Gemini failed: ${geminiErr.message}, trying Claude fallback...`);
-      provider = "claude";
-      model = DEFAULT_MODEL;
-
-      // Claude fallback only if Gemini fails
-      const response = await callClaudeWithRetry(messages, 1, { temperature: 0.1, max_tokens: 850 });
-      answer = (response?.content?.[0]?.text || "").trim();
-
-      if (!answer) {
-        throw new Error("Both Gemini and Claude returned empty responses");
-      }
-    }
+    const claudeOpts = {};
+    const response = await callClaudeWithRetry(messages, 1, claudeOpts);
+    let answer = (response?.content?.[0]?.text || "").trim();
 
     if (!answer) {
       return json(200, {
         ok: false,
-        error: "Empty response from both Gemini and Claude",
-        answer: "PropEdge IQ Analysis\n\nError: API returned empty response.\n\nThis may indicate:\n- API timeout\n- Message formatting issue\n- Model unavailable\n\nPlease check function logs: https://app.netlify.com/projects/propedgemasters/logs/functions",
+        error: "Empty response from Claude",
+        answer: "PropEdge IQ Analysis\n\nError: Claude API returned empty response.\n\nThis may indicate:\n- API timeout\n- Message formatting issue\n- Model unavailable\n\nPlease check function logs: https://app.netlify.com/projects/propedgemasters/logs/functions",
       });
     }
 
@@ -1002,21 +973,26 @@ exports.handler = async function handler(event) {
 
     return json(200, {
       ok: true,
-      provider,
-      model,
+      provider: "claude",
+      model: DEFAULT_MODEL,
       answer,
       source_context: sourceContext,
       article_context_included: articleContext.length > 0 || sourceContext.some((s) => s?.article_excerpt || s?.summary || s?.excerpt),
+      usage: {
+        input_tokens: response?.usage?.input_tokens,
+        output_tokens: response?.usage?.output_tokens,
+      },
     });
   } catch (error) {
-    console.error("ANALYST API ERROR:", error.message, error.stack);
+    console.error("CLAUDE API ERROR:", error.message, error.stack);
     const diagnosticAnswer = buildStructuredFallback(question, league, props, sourceContext, error.message);
 
     return json(200, {
       ok: true,
-      provider: "fallback",
-      model: "deterministic",
+      provider: "claude-fallback",
+      model: DEFAULT_MODEL,
       error: error.message,
+      circuit_status: CLAUDE_CIRCUIT.isOpen ? "OPEN" : "CLOSED",
       answer: diagnosticAnswer,
       article_context_included: articleContext.length > 0 || sourceContext.some((s) => s?.article_excerpt || s?.summary || s?.excerpt),
     });
