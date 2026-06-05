@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.162 — Fix Blocks→Strikeouts miscat + Markets append-only load-more (no blank flash) — 2026-06-05 LIVE DEPLOY -->
+<!-- PropEdge v7.163 — Full prop category coverage all leagues NBA/MLB/NHL/NFL — 2026-06-05 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -37956,19 +37956,49 @@ nav.tabs > button,
 
     function propAIMarketCategory(prop) {
       const market = normalizeLiveOddsText(propMarketText(prop));
+      // ── Combo props (check before single-stat to avoid partial matches) ──
       if (market.includes('points rebounds assists') || market.includes('pts reb ast') || market.includes('pra')) return 'PRA';
-      if (market.includes('3 pointers') || market.includes('three') || market.includes('3pt')) return '3PM';
-      if (market.includes('blocks')) return 'Blocks';
-      if (market.includes('steals')) return 'Steals';
-      if (market.includes('strikeouts') || /\bks\b/.test(market)) return 'Strikeouts';
-      if (market.includes('hits runs rbis') || market.includes('hits + runs + rbis') || market.includes('hrr')) return 'HRR';
-      if (market.includes('total bases') || /\btb\b/.test(market)) return 'TB';
-      if (market.includes('points')) return 'Points';
-      if (market.includes('rebounds')) return 'Rebounds';
-      if (market.includes('assists')) return 'Assists';
-      if (market.includes('hits')) return 'Hits';
-      if (market.includes('goals')) return 'Goals';
-      return 'ALL';
+      if (market.includes('hits runs rbis') || market.includes('hits runs rbi') || market.includes('hrr')) return 'HRR';
+      if (market.includes('points rebounds') || market.includes('pts reb')) return 'Pts+Reb';
+      if (market.includes('points assists') || market.includes('pts ast')) return 'Pts+Ast';
+      if (market.includes('rebounds assists') || market.includes('reb ast')) return 'Reb+Ast';
+      // ── NBA ──
+      if (market.includes('3 pointer') || market.includes('three pointer') || market.includes('3pt') || market.includes('threes')) return '3PM';
+      if (market.includes('block')) return 'Blocks';     // covers "blocks" and "blocked shots"
+      if (market.includes('steal')) return 'Steals';
+      if (market.includes('turnover')) return 'Turnovers';
+      if (market.includes('double double')) return 'Dbl-Dbl';
+      if (market.includes('triple double')) return 'Trpl-Dbl';
+      if (market.includes('rebound')) return 'Rebounds';
+      if (market.includes('assist')) return 'Assists';
+      if (market.includes('points') || market.includes(' pts')) return 'Points';
+      // ── MLB ──
+      if (market.includes('strikeout') || market.includes(' ks') || market.includes('ks ') || market === 'ks') return 'Strikeouts';
+      if (market.includes('total base') || /\btb\b/.test(market)) return 'TB';
+      if (market.includes('home run') || /\bhr\b/.test(market)) return 'HR';
+      if (market.includes('single')) return 'Singles';
+      if (market.includes('double')) return 'Doubles';
+      if (market.includes('walk')) return 'Walks';
+      if (market.includes('rbi')) return 'RBI';
+      if (market.includes('run')) return 'Runs';
+      if (market.includes('stolen base')) return 'SB';
+      if (market.includes('hit')) return 'Hits';
+      if (market.includes('inning') || market.includes('outs recorded')) return 'Innings';
+      if (market.includes('pitch')) return 'Pitches';
+      if (market.includes('earned run') || market.includes(' era')) return 'ERA';
+      // ── NHL ──
+      if (market.includes('shot')) return 'Shots';       // covers "shots on goal" and "shots"
+      if (market.includes('powerplay') || market.includes('power play') || market.includes('pp ')) return 'PP Pts';
+      if (market.includes('save')) return 'Saves';
+      if (market.includes('goal')) return 'Goals';
+      // ── NFL ──
+      if (market.includes('passing yard') || market.includes('pass yard')) return 'Pass Yds';
+      if (market.includes('rushing yard') || market.includes('rush yard') || market.includes('rec yard')) return 'Rush Yds';
+      if (market.includes('receiving yard') || market.includes('recv yard')) return 'Rec Yds';
+      if (market.includes('reception') || market.includes('catch')) return 'Receptions';
+      if (market.includes('passing td') || market.includes('pass td') || market.includes('touchdown')) return 'TDs';
+      if (market.includes('interception') || market.includes('sack')) return 'Defense';
+      return 'Other';
     }
 
     function getMarketsBoardFiltered() {
