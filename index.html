@@ -20590,7 +20590,7 @@ nav.tabs > button,
         setTimeout(() => loadMatchupMatrixData(), 2200);
         setTimeout(() => loadPropLineHistory(), 2400);
         if (!PERF_FLAGS.skipLiveOddsBootFetch) {
-          setTimeout(() => loadFanDuelLinesFromOddsAPI(false, { teamsByLeague: buildSlateLiveOddsTargets() }), 3000); // Live FD lines after sheet loads
+          setTimeout(() => loadFanDuelLinesFromOddsAPI(false, { teamsByLeague: buildSlateLiveOddsTargets(), silent: true }), 3000); // Live FD lines after sheet loads (silent on boot)
         } else {
           console.log('[PropEdge] Perf: skipping startup live-odds boot fetch');
         }
