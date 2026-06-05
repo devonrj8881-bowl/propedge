@@ -188,6 +188,86 @@ function stripJsonFence(text) {
     .trim();
 }
 
+async function callGeminiStandard(messages, options = {}) {
+  // Fast, plain-text Gemini for standard analyst conversation
+  if (!GEMINI_API_KEY) {
+    throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not configured");
+  }
+
+  const systemMessage = messages.find((m) => m.role === "system")?.content || "";
+  const userMessage = messages
+    .filter((m) => m.role === "user")
+    .map((m) => m.content)
+    .join("\n\n");
+
+  const modelChain = Array.from(new Set([GEMINI_EV_DETAIL_MODEL, ...GEMINI_MODEL_FALLBACKS].filter(Boolean)));
+
+  const payloadBase = {
+    ...(systemMessage ? { systemInstruction: { parts: [{ text: systemMessage }] } } : {}),
+    contents: [{ role: "user", parts: [{ text: userMessage }] }],
+    generationConfig: {
+      temperature: options.temperature != null ? options.temperature : 0.3,
+      maxOutputTokens: options.max_tokens || options.num_predict || 900, // Reduced for speed
+      // No responseMimeType = plain text (faster)
+    },
+  };
+
+  let lastErr;
+  for (const model of modelChain) {
+    for (let attempt = 0; attempt < 2; attempt++) { // 2 attempts instead of 3
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+      let timeoutId;
+      const shortTimeout = 12000; // 12s for standard (vs 27s for ev_detail)
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(`Gemini timeout (${shortTimeout}ms)`)), shortTimeout);
+      });
+
+      try {
+        const res = await Promise.race([
+          fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payloadBase),
+          }),
+          timeoutPromise,
+        ]);
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          const errBody = await res.text().catch(() => "");
+          const modelUnavailable = res.status === 404 || /not found/i.test(errBody);
+          lastErr = new Error(`Gemini HTTP ${res.status}: ${errBody.slice(0, 120)}`);
+          if (modelUnavailable) break;
+          if (attempt < 1) {
+            await new Promise((r) => setTimeout(r, 500));
+            continue;
+          }
+          throw lastErr;
+        }
+
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
+        if (!text.trim()) {
+          lastErr = new Error("Gemini returned empty");
+          if (attempt < 1) continue;
+          throw lastErr;
+        }
+        return text;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        lastErr = err;
+        if (attempt < 1 && /timeout|UNAVAILABLE/i.test(err?.message || "")) {
+          await new Promise((r) => setTimeout(r, 500));
+          continue;
+        }
+        throw err;
+      }
+    }
+  }
+
+  throw lastErr || new Error("Gemini unavailable");
+}
+
 async function callGeminiEvDetail(messages, options = {}) {
   if (!GEMINI_API_KEY) {
     throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not configured");
@@ -206,7 +286,7 @@ async function callGeminiEvDetail(messages, options = {}) {
     contents: [{ role: "user", parts: [{ text: userMessage }] }],
     generationConfig: {
       temperature: options.temperature != null ? options.temperature : 0.5,
-      maxOutputTokens: options.max_tokens || options.num_predict || 1500,
+      maxOutputTokens: options.max_tokens || options.num_predict || 1200, // Reduced from 1500 for speed
       responseMimeType: "application/json",
     },
   };
@@ -613,7 +693,7 @@ function buildDeepSynthesisMessages(question, league, props, sourceContext, sour
     injuryContext = `\n⚠️ INJURY ALERTS: ${injuryList}\n`;
   }
 
-  const systemPrompt = `You are PropEdgeMasters Ask an Analyst for ${dateStr}. Claude is primary. PropEdge props, rosters, and article excerpts are supplemental context only.
+  const systemPrompt = `You are PropEdgeMasters Ask an Analyst for ${dateStr}. Gemini is primary analyst. PropEdge props, rosters, and article excerpts are supplemental context only.
 
 CRITICAL: Provide player prop OPTIONS for BOTH TEAMS. Show which props favor the AWAY team, which favor the HOME team, and best overall edges. Include team-level context (form, injuries, trades, news) for both competitors.
 
@@ -957,17 +1037,39 @@ exports.handler = async function handler(event) {
     }
   }
 
-  // Call Claude (no retries — 25s hard limit doesn't allow time for backoff + retry)
+  // Call Gemini for standard analyst (primary) with Claude fallback only
   try {
-    const claudeOpts = {};
-    const response = await callClaudeWithRetry(messages, 1, claudeOpts);
-    let answer = (response?.content?.[0]?.text || "").trim();
+    let answer;
+    let provider = "gemini";
+    let model = GEMINI_EV_DETAIL_MODEL;
+
+    // Try Gemini first
+    try {
+      const geminiOpts = {
+        temperature: 0.3,
+        max_tokens: 900,
+      };
+      answer = await callGeminiStandard(messages, geminiOpts);
+      console.log(`[Standard Analyst] Gemini returned ${answer.length} chars`);
+    } catch (geminiErr) {
+      console.warn(`[Standard Analyst] Gemini failed: ${geminiErr.message}, trying Claude fallback...`);
+      provider = "claude";
+      model = DEFAULT_MODEL;
+
+      // Claude fallback only if Gemini fails
+      const response = await callClaudeWithRetry(messages, 1, { temperature: 0.1, max_tokens: 850 });
+      answer = (response?.content?.[0]?.text || "").trim();
+
+      if (!answer) {
+        throw new Error("Both Gemini and Claude returned empty responses");
+      }
+    }
 
     if (!answer) {
       return json(200, {
         ok: false,
-        error: "Empty response from Claude",
-        answer: "PropEdge IQ Analysis\n\nError: Claude API returned empty response.\n\nThis may indicate:\n- API timeout\n- Message formatting issue\n- Model unavailable\n\nPlease check function logs: https://app.netlify.com/projects/propedgemasters/logs/functions",
+        error: "Empty response from both Gemini and Claude",
+        answer: "PropEdge IQ Analysis\n\nError: API returned empty response.\n\nThis may indicate:\n- API timeout\n- Message formatting issue\n- Model unavailable\n\nPlease check function logs: https://app.netlify.com/projects/propedgemasters/logs/functions",
       });
     }
 
@@ -977,26 +1079,21 @@ exports.handler = async function handler(event) {
 
     return json(200, {
       ok: true,
-      provider: "claude",
-      model: DEFAULT_MODEL,
+      provider,
+      model,
       answer,
       source_context: sourceContext,
       article_context_included: articleContext.length > 0 || sourceContext.some((s) => s?.article_excerpt || s?.summary || s?.excerpt),
-      usage: {
-        input_tokens: response?.usage?.input_tokens,
-        output_tokens: response?.usage?.output_tokens,
-      },
     });
   } catch (error) {
-    console.error("CLAUDE API ERROR:", error.message, error.stack);
+    console.error("ANALYST API ERROR:", error.message, error.stack);
     const diagnosticAnswer = buildStructuredFallback(question, league, props, sourceContext, error.message);
 
     return json(200, {
       ok: true,
-      provider: "claude-fallback",
-      model: DEFAULT_MODEL,
+      provider: "fallback",
+      model: "deterministic",
       error: error.message,
-      circuit_status: CLAUDE_CIRCUIT.isOpen ? "OPEN" : "CLOSED",
       answer: diagnosticAnswer,
       article_context_included: articleContext.length > 0 || sourceContext.some((s) => s?.article_excerpt || s?.summary || s?.excerpt),
     });
