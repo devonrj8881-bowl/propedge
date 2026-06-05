@@ -5723,6 +5723,13 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       border-radius: 14px;
       background: rgba(7, 18, 34, 0.9);
       border: 1px solid rgba(255,255,255,0.08);
+      /* iOS fix: prevent keyboard from causing layout shift */
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      will-change: transform;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     .propai-browser-search input {
@@ -5733,6 +5740,9 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       background: transparent;
       color: var(--text-primary);
       font-size: 14px;
+      /* iOS: allow selection in input */
+      -webkit-user-select: text;
+      user-select: text;
     }
 
     .propai-browser-search input::placeholder { color: var(--text-muted); }
@@ -20457,6 +20467,32 @@ nav.tabs > button,
       window._isScrollMomentumActive = function() {
         return window._isTouching || (Date.now() - window._lastTouchEndAt < 600);
       };
+
+      // iOS Safari web app: prevent keyboard from causing layout shift
+      // When keyboard appears/disappears, iOS resizes the viewport which causes jank.
+      // Fix: lock scroll position during keyboard transitions
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        let keyboardOpen = false;
+        let lastScrollY = 0;
+        const searchInputs = document.querySelectorAll('.propai-browser-search input, #propAIMarketSearch, #marketsSearchInput');
+        searchInputs.forEach(input => {
+          input.addEventListener('focus', () => {
+            keyboardOpen = true;
+            lastScrollY = window.scrollY;
+            // Add padding-bottom to account for keyboard
+            document.body.style.paddingBottom = '0';
+          });
+          input.addEventListener('blur', () => {
+            keyboardOpen = false;
+            // Restore scroll position
+            setTimeout(() => {
+              if (window.scrollY !== lastScrollY) {
+                window.scrollTo(0, lastScrollY);
+              }
+            }, 100);
+          });
+        });
+      }
 
       // Mark body as scrolling so iframes yield pointer events during scroll
       (function() {
