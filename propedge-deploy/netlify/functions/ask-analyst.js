@@ -832,15 +832,9 @@ exports.handler = async function handler(event) {
     });
   }
 
-  // Check API key — only block non-ev_detail requests (ev_detail uses Gemini as primary, not Claude)
+  // When ANTHROPIC_API_KEY is missing, force ev_detail so all requests go through Gemini
   if (!process.env.ANTHROPIC_API_KEY && responseMode !== "ev_detail") {
-    return json(200, {
-      ok: true,
-      error: "ANTHROPIC_API_KEY not configured",
-      provider: "claude-fallback",
-      model: DEFAULT_MODEL,
-      answer: buildStructuredFallback(question, league, props, sourceContext, "Claude API key is not configured"),
-    });
+    responseMode = "ev_detail";
   }
 
   // Check cache
