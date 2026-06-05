@@ -38210,14 +38210,34 @@ nav.tabs > button,
         return;
       }
       const header = isFullBoard ? buildMarketsBoardHeaderHTML() : '';
-      // Defer DOM write to next animation frame to keep filter toggles responsive
       const _scrollBeforeRender = window.scrollY;
       const isMobile = window.innerWidth < 1024;
-      // On mobile, render in two phases to reduce jank: render first 20 immediately, rest when idle
-      const initialChunkSize = isMobile ? 20 : ranked.length;
+      // On mobile, render incrementally: 8 props → rest on idle (reduces input lag & visual jank)
+      const initialChunkSize = isMobile ? 8 : ranked.length;
       const initialProps = ranked.slice(0, initialChunkSize);
       const deferredProps = ranked.slice(initialChunkSize);
 
+      // On mobile, defer the entire initial render to requestIdleCallback to prevent input blocking
+      if (isMobile && typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(() => {
+          const initialHTML = initialProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
+          listEl.innerHTML = header + initialHTML;
+          if (deferredProps.length > 0) {
+            requestIdleCallback(() => {
+              const deferredHTML = deferredProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
+              listEl.innerHTML += deferredHTML;
+              if (isFullBoard) setupMarketsLoadMore(totalCount);
+              batchHeadshotLookups(ranked);
+            }, { timeout: 2000 });
+          } else {
+            if (isFullBoard) setupMarketsLoadMore(totalCount);
+            batchHeadshotLookups(ranked);
+          }
+        }, { timeout: 500 });
+        return; // Skip the rest on mobile with requestIdleCallback
+      }
+
+      // Desktop: use rAF as before
       requestAnimationFrame(() => {
         const initialHTML = initialProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
         listEl.innerHTML = header + initialHTML;
@@ -38231,7 +38251,6 @@ nav.tabs > button,
               batchHeadshotLookups(ranked);
             }, { timeout: 2000 });
           } else {
-            // Fallback for browsers without requestIdleCallback
             setTimeout(() => {
               const deferredHTML = deferredProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
               listEl.innerHTML += deferredHTML;
