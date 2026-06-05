@@ -38254,46 +38254,27 @@ nav.tabs > button,
       const header = isFullBoard ? buildMarketsBoardHeaderHTML() : '';
       const _scrollBeforeRender = window.scrollY;
       const isMobile = window.innerWidth < 1024;
-      // On mobile, render VERY incrementally to avoid iOS color shift during filtering
-      // iOS Safari flickers when adding many DOM nodes - minimize initial render
-      const initialChunkSize = isMobile ? 4 : ranked.length; // Only 4 props initially on mobile
-      const secondChunkSize = isMobile ? 8 : 0; // Then 8 more
-      const initialProps = ranked.slice(0, initialChunkSize);
-      const secondProps = ranked.slice(initialChunkSize, initialChunkSize + secondChunkSize);
-      const deferredProps = ranked.slice(initialChunkSize + secondChunkSize);
 
-      // On mobile, render in three waves to minimize jank
-      if (isMobile && typeof requestIdleCallback !== 'undefined') {
-        requestIdleCallback(() => {
-          // Wave 1: Render first 4 props
-          const initialHTML = initialProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
-          listEl.innerHTML = header + initialHTML;
+      // On mobile, render all matched props in single batch instead of 3 waves
+      // This reduces DOM reflows and improves responsiveness
+      if (isMobile) {
+        // Build all HTML at once, then single DOM write
+        const allHTML = ranked.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
+        listEl.innerHTML = header + allHTML;
 
-          // Wave 2: Add next 8 props
-          if (secondProps.length > 0) {
-            requestIdleCallback(() => {
-              const secondHTML = secondProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
-              listEl.innerHTML += secondHTML;
-
-              // Wave 3: Add remaining props
-              if (deferredProps.length > 0) {
-                requestIdleCallback(() => {
-                  const deferredHTML = deferredProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
-                  listEl.innerHTML += deferredHTML;
-                  if (isFullBoard) setupMarketsLoadMore(totalCount);
-                  batchHeadshotLookups(ranked);
-                }, { timeout: 3000 });
-              } else {
-                if (isFullBoard) setupMarketsLoadMore(totalCount);
-                batchHeadshotLookups(ranked);
-              }
-            }, { timeout: 1000 });
-          } else {
+        // Defer heavy post-render work to requestIdleCallback
+        if (typeof requestIdleCallback !== 'undefined') {
+          requestIdleCallback(() => {
             if (isFullBoard) setupMarketsLoadMore(totalCount);
             batchHeadshotLookups(ranked);
-          }
-        }, { timeout: 500 });
-        return; // Skip the rest on mobile with requestIdleCallback
+          }, { timeout: 2000 });
+        } else {
+          setTimeout(() => {
+            if (isFullBoard) setupMarketsLoadMore(totalCount);
+            batchHeadshotLookups(ranked);
+          }, 100);
+        }
+        return;
       }
 
       // Desktop: use rAF as before
@@ -38522,10 +38503,9 @@ nav.tabs > button,
 
     let _marketSearchDebounceTimer;
     function updatePropAIMarketSearch(value) {
-      // DEBUG: Minimal handler to isolate the issue
       state.propAIMarketSearch = value || '';
-      // On mobile, use longer debounce (600ms) to see if timing helps
-      const debounceMs = window.innerWidth < 1024 ? 600 : 300;
+      // Mobile: 800ms debounce reduces intermediate renders and allows input responsiveness
+      const debounceMs = window.innerWidth < 1024 ? 800 : 300;
       if (_marketSearchDebounceTimer) clearTimeout(_marketSearchDebounceTimer);
       _marketSearchDebounceTimer = setTimeout(() => {
         renderMarketsView();
@@ -40045,11 +40025,26 @@ nav.tabs > button,
         parlayEl.classList.toggle('view-force-hidden', !showParlayRail);
         parlayEl.style.display = showParlayRail ? 'block' : 'none';
       }
-      syncParlayRailBadge();
-      syncMobileShellLayout();
-      requestAnimationFrame(() => syncMobileStickyHeaderOffset());
-      syncShellNavState();
-      renderAIFastModeToggle();
+
+      // Defer expensive DOM queries to requestIdleCallback to unblock tab switch responsiveness
+      if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(() => {
+          syncParlayRailBadge();
+          syncMobileShellLayout();
+          syncMobileStickyHeaderOffset();
+          syncShellNavState();
+          renderAIFastModeToggle();
+        }, { timeout: 100 });
+      } else {
+        // Fallback for browsers without requestIdleCallback
+        setTimeout(() => {
+          syncParlayRailBadge();
+          syncMobileShellLayout();
+          syncMobileStickyHeaderOffset();
+          syncShellNavState();
+          renderAIFastModeToggle();
+        }, 0);
+      }
     }
 
     function initTabs() {
