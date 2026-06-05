@@ -38237,8 +38237,17 @@ nav.tabs > button,
           : state.marketsGameFilter
             ? `No props match ${state.marketsGameFilter.awayTeam} @ ${state.marketsGameFilter.homeTeam} with the current search or market filter.`
             : 'No props match this league, search, or market filter.';
-        listEl.innerHTML = `<div class="ai-context-empty">${emptyMsg}</div>`;
-        if (isFullBoard) setupMarketsLoadMore(0);
+        // On mobile, defer empty message rendering to avoid iOS color shift from layout change
+        const isMobile = window.innerWidth < 1024;
+        if (isMobile && typeof requestIdleCallback !== 'undefined') {
+          requestIdleCallback(() => {
+            listEl.innerHTML = `<div class="ai-context-empty" style="min-height: 60px; display: flex; align-items: center;">${emptyMsg}</div>`;
+            if (isFullBoard) setupMarketsLoadMore(0);
+          }, { timeout: 300 });
+        } else {
+          listEl.innerHTML = `<div class="ai-context-empty">${emptyMsg}</div>`;
+          if (isFullBoard) setupMarketsLoadMore(0);
+        }
         return;
       }
       const header = isFullBoard ? buildMarketsBoardHeaderHTML() : '';
