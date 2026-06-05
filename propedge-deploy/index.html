@@ -21200,7 +21200,9 @@ nav.tabs > button,
         dk_line: headers.findIndex(h => h && (h === 'dk_line' || h.includes('draftkings'))),
         fd_line_live: headers.findIndex(h => h && (h === 'fd_line' || h.includes('fanduel line'))),
         book_delta_col: headers.findIndex(h => h && h.toLowerCase().includes('book_delta')),
-        def_matchup_rank: headers.findIndex(h => h && (h.includes('def_matchup') || h.includes('def vs')))
+        def_matchup_rank: headers.findIndex(h => h && (h.includes('def_matchup') || h.includes('def vs'))),
+        pitcher_era: headers.findIndex(h => h && (h.toLowerCase().includes('pitcher') && h.toLowerCase().includes('era'))),
+        pitcher_stats: headers.findIndex(h => h && h.toLowerCase().includes('pitcher_stats'))
       };
       
       console.log(`${league} column mapping:`, cols);
@@ -21446,14 +21448,15 @@ nav.tabs > button,
               }
             }
 
-            // ── Pitcher ERA context (parsed from h2h / oppDetails) ────────────
-            const eraMatch = oppLower.match(/era\s*[:<]\s*([\d.]+)/);
-            const pitcherERA = eraMatch ? parseFloat(eraMatch[1]) : null;
-            if (pitcherERA !== null) {
+            // ── Pitcher ERA context (from pitcher_era column) ────────────
+            // Read ERA directly from enriched pitcher_era column (populated by scraper/ESPN/Statcast)
+            const pitcherERAStr = getValue(cols.pitcher_era);
+            const pitcherERA = pitcherERAStr ? parseFloat(pitcherERAStr) : null;
+            if (pitcherERA !== null && pitcherERA > 0) {
               if (pitcherERA < 3.0) {
                 const pen = isTBProp ? -12 : -8;
                 modelScore += pen;
-                propFactors.push(`🔒 Elite Starter (ERA ${pitcherERA.toFixed(2)}) — suppress TB`);
+                propFactors.push(`🔒 Elite Starter (ERA ${pitcherERA.toFixed(2)}) — suppress`);
               } else if (pitcherERA < 3.75) {
                 const pen = isTBProp ? -7 : -5;
                 modelScore += pen;
@@ -21461,7 +21464,7 @@ nav.tabs > button,
               } else if (pitcherERA > 5.0) {
                 const boost = isTBProp ? 10 : 6;
                 modelScore += boost;
-                propFactors.push(`🔥 Weak Starter (ERA ${pitcherERA.toFixed(2)}) — TB upside`);
+                propFactors.push(`🔥 Weak Starter (ERA ${pitcherERA.toFixed(2)}) — upside`);
               } else if (pitcherERA > 4.25) {
                 const boost = isTBProp ? 6 : 3;
                 modelScore += boost;
@@ -21469,14 +21472,13 @@ nav.tabs > button,
               }
             }
 
-            // ── HR rate context for TB (hr/9 or hr/game if present) ──────────
+            // ── HR rate context for TB (from pitcher_stats column) ──────────
+            // Future: populate pitcher_stats with HR/9 from Statcast/ESPN
             if (isTBProp) {
-              const hrPer9Match = oppLower.match(/hr\/9\s*[:<]\s*([\d.]+)/);
-              const hrPer9 = hrPer9Match ? parseFloat(hrPer9Match[1]) : null;
-              if (hrPer9 !== null) {
-                if (hrPer9 >= 1.5 && direction === 'OVER')  { modelScore += 6; propFactors.push(`💣 High HR-Rate Pitcher (${hrPer9.toFixed(1)} HR/9) — TB ceiling`); }
-                if (hrPer9 <= 0.7 && direction === 'OVER')  { modelScore -= 5; propFactors.push(`🧱 Low HR-Rate Pitcher (${hrPer9.toFixed(1)} HR/9)`); }
-              }
+              const pitcherStats = getValue(cols.pitcher_stats);
+              // For now, skip HR/9 parsing until enrichment pipeline is ready
+              // When populated, parse: "HR/9: 1.25" or similar format
+              // TODO: Add HR/9 parsing once pitcher_stats column is populated
             }
         } else if (actualLeague === 'NBA') {
             // NBA B2B / Fatigue Logic
