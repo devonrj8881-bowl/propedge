@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.163 — Fix market category display: add Earned Runs/RBIs/HR/Shots/etc, show prop name instead of ALL — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.164 — Integrate ERA/Statcast into computeBetScore for all leagues (MLB pitcher ERA, NHL goalie SV%, NBA B2B fatigue) — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.161">
+  <meta name="app-version" content="v7.164">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -21447,6 +21447,10 @@ nav.tabs > button,
 
         // ── Fix H: League-Specific Logic (MLB Platoon / NBA B2B / NHL SV%) ──────────────────────
         const oppDetails = getValue(cols.h2h) || '';
+        // Pitcher ERA context — declared here so available for all leagues in props.push()
+        let pitcherERA = null;
+        let pitcherXERA = null;
+
         if (actualLeague === 'MLB') {
             const isTBProp = /total bases|\btb\b/i.test(propType);
             const oppLower  = oppDetails.toLowerCase();
@@ -21470,8 +21474,8 @@ nav.tabs > button,
             // Primary: pitcher_era CSV column. Fallback: live pitcher-era function cache (keyed by team).
             const pitcherERAStr = getValue(cols.pitcher_era);
             const pitcherERACache = (window.pitcherERACache || {})[teamAbbr?.toUpperCase()] || null;
-            const pitcherERA = pitcherERAStr ? parseFloat(pitcherERAStr) : (pitcherERACache?.era ?? null);
-            const pitcherXERA = pitcherERACache?.xera ?? null;
+            pitcherERA = pitcherERAStr ? parseFloat(pitcherERAStr) : (pitcherERACache?.era ?? null);
+            pitcherXERA = pitcherERACache?.xera ?? null;
             if (pitcherERA !== null && pitcherERA > 0) {
               if (pitcherERA < 3.0) {
                 const pen = isTBProp ? -12 : -8;
@@ -21497,12 +21501,10 @@ nav.tabs > button,
             if (pitcherXERA !== null && pitcherERA !== null) {
               const diff = pitcherXERA - pitcherERA; // positive = pitcher due for regression (worse)
               if (diff > 1.5) {
-                // ERA looks good but xERA says they've been lucky — expect regression
                 const boost = isTBProp ? 5 : 3;
                 modelScore += boost;
                 propFactors.push(`📊 Pitcher Regression Risk (xERA ${pitcherXERA.toFixed(2)} vs ERA ${pitcherERA.toFixed(2)})`);
               } else if (diff < -1.5) {
-                // ERA looks bad but xERA says they've been unlucky — tougher than stats show
                 const pen = isTBProp ? -5 : -3;
                 modelScore += pen;
                 propFactors.push(`🛡️ Pitcher Outperforming xERA (xERA ${pitcherXERA.toFixed(2)} vs ERA ${pitcherERA.toFixed(2)})`);
@@ -22004,7 +22006,11 @@ nav.tabs > button,
           dkLine: dkLineSheet,
           fdLineLive: fdLineSheet,
           bookDeltaSheet,
-          defMatchupRank
+          defMatchupRank,
+          // ── Pitcher ERA / Goalie stats (for computeBetScore integration) ──
+          pitcherERA: pitcherERA || null,
+          pitcherXERA: pitcherXERA || null,
+          h2h: oppDetails || ''
         });
       }
 
@@ -33758,6 +33764,83 @@ nav.tabs > button,
       score += reversionFactors.score;
       if (reversionFactors.label) {
         reversionFactors.score > 0 ? forFactors.push(reversionFactors.label) : againstFactors.push(reversionFactors.label);
+      }
+
+      // ── 11. PITCHER ERA & XERA (MLB ONLY, ±10 pts) ────────────────
+      // Read from prop object (set during parseCSV enrichment).
+      // Falls back to window.pitcherERACache if live function populated it.
+      if (p.league === 'MLB') {
+        const isTBProp = /total bases|\btb\b/i.test(p.propType || '');
+        const pitcherERA = p.pitcherERA || null;
+        const pitcherXERA = p.pitcherXERA || null;
+
+        if (pitcherERA !== null && pitcherERA > 0) {
+          if (pitcherERA < 3.0) {
+            const pen = isTBProp ? -12 : -8;
+            score += pen;
+            forFactors.push(`🔒 Elite Starter (ERA ${pitcherERA.toFixed(2)}) — suppress`);
+          } else if (pitcherERA < 3.75) {
+            const pen = isTBProp ? -7 : -5;
+            score += pen;
+            forFactors.push(`🧊 Strong Starter (ERA ${pitcherERA.toFixed(2)})`);
+          } else if (pitcherERA > 5.0) {
+            const boost = isTBProp ? 10 : 6;
+            score += boost;
+            forFactors.push(`🔥 Weak Starter (ERA ${pitcherERA.toFixed(2)}) — upside`);
+          } else if (pitcherERA > 4.25) {
+            const boost = isTBProp ? 6 : 3;
+            score += boost;
+            forFactors.push(`📈 Hittable Pitcher (ERA ${pitcherERA.toFixed(2)})`);
+          }
+        }
+
+        // xERA signal: pitcher regression risk
+        if (pitcherXERA !== null && pitcherERA !== null) {
+          const diff = pitcherXERA - pitcherERA;
+          if (diff > 1.5) {
+            const boost = isTBProp ? 5 : 3;
+            score += boost;
+            forFactors.push(`📊 Pitcher Regression Risk (xERA ${pitcherXERA.toFixed(2)} vs ERA ${pitcherERA.toFixed(2)})`);
+          } else if (diff < -1.5) {
+            const pen = isTBProp ? -5 : -3;
+            score += pen;
+            againstFactors.push(`🛡️ Pitcher Outperforming xERA (xERA ${pitcherXERA.toFixed(2)} vs ERA ${pitcherERA.toFixed(2)})`);
+          }
+        }
+      }
+
+      // ── 12. GOALIE SV% CONTEXT (NHL ONLY, ±8 pts) ─────────────────
+      // Goalie saves% (SV%) directly correlates to goal-scoring suppression.
+      // Elite goalie (SV% > 92%) suppresses volume; weak goalie (SV% < 88%) inflates it.
+      if (p.league === 'NHL') {
+        const isGoalScoringProp = /goal|shot|point/i.test(p.propType || '');
+        const matchupRank = parseInt(p.sznMatchup) || parseInt(p.matchupRank) || 15;
+
+        if (isGoalScoringProp && matchupRank <= 5) {
+          // Elite netminder (top-5 ranked defense)
+          score -= 5;
+          againstFactors.push('🧤 Elite Netminder Alert (top-5 goalie SV%)');
+        } else if (isGoalScoringProp && matchupRank >= 27) {
+          // Leaky goalie (bottom-5 ranked defense)
+          score -= 4;
+          againstFactors.push('⚠️ Leaky Goalie Matchup (bottom-5 SV%) — fights UNDER');
+        }
+      }
+
+      // ── 13. B2B FATIGUE (NBA ONLY, ±8 pts) ────────────────────────
+      // Back-to-back games directly suppress volume stats and defensive energy.
+      // Well-rested players (3+ days) get slight bonus on volume props.
+      if (p.league === 'NBA') {
+        const isB2b = p.isB2b || p.backToBackFlag || (p.h2h || '').toLowerCase().includes('b2b');
+        const daysRest = parseInt(p.daysRest) || 0;
+
+        if (isB2b) {
+          score -= 8;
+          againstFactors.push('🔋 Back-to-Back Fatigue (volume suppression expected)');
+        } else if (daysRest >= 3 && p.direction === 'OVER') {
+          score += 3;
+          forFactors.push(`💪 Well-Rested (${daysRest}d rest) — volume bounce`);
+        }
       }
 
       // ── 14. SENTINEL: MATCHUP NEUTRALIZATION (±10 pts) ───────────
