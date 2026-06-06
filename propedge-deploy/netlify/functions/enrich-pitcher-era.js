@@ -194,9 +194,12 @@ async function fetchStartingPitchers(games) {
     console.log(`🔍 Looking up pitchers for ${game.awayTeam} @ ${game.homeTeam}`);
 
     try {
-      // Use schedule endpoint with date to find probable pitchers
-      // Format: YYYY-MM-DD
-      const gameDate = new Date(game.date).toISOString().split('T')[0];
+      // Parse game date without timezone conversion (keep as-is)
+      // ESPN provides dates in ISO format, extract just YYYY-MM-DD part
+      const gameDate = typeof game.date === 'string'
+        ? game.date.split('T')[0]  // Extract date part directly
+        : new Date(game.date).toISOString().split('T')[0];
+
       const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${gameDate}`;
 
       console.log(`  📅 Fetching schedule for ${gameDate}...`);
