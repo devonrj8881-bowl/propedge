@@ -34,22 +34,8 @@ try {
   formatRostersForContext = () => "";
 }
 
-// Import Claude SDK. Claude is the primary analyst. PropEdge board data,
-// article excerpts, rosters, and source context are supplemental context only.
-let Anthropic;
-let claudeClient;
-try {
-  Anthropic = require("@anthropic-ai/sdk");
-  claudeClient = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  });
-  console.log('Claude SDK initialized');
-} catch (err) {
-  console.error('FATAL: Claude SDK initialization failed:', err.message);
-  claudeClient = null;
-}
-
-const DEFAULT_MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
+// Gemini is the sole analyst model. No Claude dependency.
+const DEFAULT_MODEL = GEMINI_MODEL_FALLBACKS[0]; // kept for legacy response fields only
 const GEMINI_MODEL_FALLBACKS = [
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
@@ -60,10 +46,6 @@ const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.G
 const DEFAULT_TIMEOUT_MS = Number(process.env.CLAUDE_TIMEOUT_MS || 27000);
 const MAX_INPUT_CHARS = Number(process.env.ANALYST_MAX_INPUT_CHARS || 9000);
 
-// Circuit breaker
-const CLAUDE_CIRCUIT = { isOpen: false, failureCount: 0, lastFailureTime: 0 };
-const CIRCUIT_FAILURE_THRESHOLD = 3;
-const CIRCUIT_COOLDOWN_MS = 60000;
 const RESPONSE_CACHE = new Map();
 const CACHE_TTL_MS = 3600000;
 
@@ -88,93 +70,6 @@ function setCachedResponse(question, league, props, answer, responseMode) {
   RESPONSE_CACHE.set(key, { answer, timestamp: Date.now() });
 }
 
-function isCircuitOpen() {
-  if (!CLAUDE_CIRCUIT.isOpen) return false;
-  const timeSinceLast = Date.now() - CLAUDE_CIRCUIT.lastFailureTime;
-  if (timeSinceLast > CIRCUIT_COOLDOWN_MS) {
-    CLAUDE_CIRCUIT.isOpen = false;
-    CLAUDE_CIRCUIT.failureCount = 0;
-    return false;
-  }
-  return true;
-}
-
-function recordClaudeFailure() {
-  CLAUDE_CIRCUIT.failureCount++;
-  CLAUDE_CIRCUIT.lastFailureTime = Date.now();
-  if (CLAUDE_CIRCUIT.failureCount >= CIRCUIT_FAILURE_THRESHOLD) {
-    CLAUDE_CIRCUIT.isOpen = true;
-  }
-}
-
-function recordClaudeSuccess() {
-  CLAUDE_CIRCUIT.failureCount = Math.max(0, CLAUDE_CIRCUIT.failureCount - 1);
-  if (CLAUDE_CIRCUIT.failureCount === 0) {
-    CLAUDE_CIRCUIT.isOpen = false;
-  }
-}
-
-async function callClaudeWithRetry(messages, maxAttempts = 3, claudeOptions = {}) {
-  if (isCircuitOpen()) {
-    throw new Error('Claude API circuit breaker open');
-  }
-
-  let systemMessage = "";
-  let userMessages = [];
-  for (const msg of messages) {
-    if (msg.role === "system") {
-      systemMessage = msg.content;
-    } else {
-      userMessages.push(msg);
-    }
-  }
-
-  const backoffMs = [1000, 3000, 8000];
-  let lastError;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      if (!claudeClient) {
-        throw new Error('Claude client not initialized');
-      }
-
-      const payload = {
-        model: DEFAULT_MODEL,
-        max_tokens: claudeOptions.max_tokens || Number(process.env.CLAUDE_MAX_TOKENS || 850),
-        temperature: claudeOptions.temperature != null ? claudeOptions.temperature : 0.1,
-        messages: userMessages,
-      };
-
-      if (systemMessage) {
-        payload.system = systemMessage;
-      }
-
-      // Add timeout using Promise.race
-      let timeoutId;
-      const timeoutPromise = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error(`Claude API timeout (${DEFAULT_TIMEOUT_MS}ms)`)), DEFAULT_TIMEOUT_MS);
-      });
-
-      const response = await Promise.race([
-        claudeClient.messages.create(payload),
-        timeoutPromise,
-      ]);
-      clearTimeout(timeoutId);
-      recordClaudeSuccess();
-      return response;
-    } catch (error) {
-      lastError = error;
-      console.error(`Claude attempt ${attempt + 1}: ${error.message}`);
-      recordClaudeFailure();
-
-      if (attempt < maxAttempts - 1) {
-        await new Promise(resolve => setTimeout(resolve, backoffMs[attempt]));
-      }
-    }
-  }
-
-  throw lastError || new Error('Claude API failed after retries');
-}
 
 function stripJsonFence(text) {
   return String(text || "")
@@ -197,14 +92,17 @@ async function callGeminiEvDetail(messages, options = {}) {
 
   const modelChain = Array.from(new Set([GEMINI_EV_DETAIL_MODEL, ...GEMINI_MODEL_FALLBACKS].filter(Boolean)));
 
+  const genConfig = {
+    temperature: options.temperature != null ? options.temperature : 0.5,
+    maxOutputTokens: options.max_tokens || options.num_predict || 1500,
+  };
+  // Only force JSON mime type when caller expects structured JSON (ev_detail mode)
+  if (!options.textMode) genConfig.responseMimeType = "application/json";
+
   const payloadBase = {
     ...(systemMessage ? { systemInstruction: { parts: [{ text: systemMessage }] } } : {}),
     contents: [{ role: "user", parts: [{ text: userMessage }] }],
-    generationConfig: {
-      temperature: options.temperature != null ? options.temperature : 0.5,
-      maxOutputTokens: options.max_tokens || options.num_predict || 1500,
-      responseMimeType: "application/json",
-    },
+    generationConfig: genConfig,
   };
 
   let lastErr;
@@ -392,22 +290,39 @@ function extractInjuriesFromArticles(articleContext) {
 }
 
 function compactPropsForClaude(props) {
-  return (props || []).slice(0, 18).map((p) => ({
-    player: p.player || p.name || "",
-    team: p.team || p.teamAbbr || "",
-    opponent: p.opponent || p.opp || "",
-    league: p.league || "",
-    market: p.market || p.stat || p.prop_type || "",
-    line: p.line ?? p.point ?? p.points ?? "",
-    side: p.side || p.direction || "",
-    book: p.book || p.sportsbook || "",
-    odds: p.odds ?? p.price ?? "",
-    edge: p.edge ?? p.bet_edge ?? "",
-    propiq: p.propiq ?? p.prop_iq ?? p.prop_iq_score ?? p.modelScore ?? p.score ?? p.PropIQ ?? "",
-    probability: p.probability ?? p.model_probability ?? "",
-    confidence: p.confidence ?? "",
-    risk: p.risk_notes || p.risk || "",
-  })).filter((p) => p.player || p.team || p.market);
+  return (props || []).slice(0, 18).map((p) => {
+    const obj = {
+      player: p.player || p.name || "",
+      team: p.team || p.teamAbbr || "",
+      opponent: p.opponent || p.opp || "",
+      league: p.league || "",
+      market: p.market || p.stat || p.prop_type || "",
+      line: p.line ?? p.point ?? p.points ?? "",
+      side: p.side || p.direction || "",
+      book: p.book || p.sportsbook || "",
+      odds: p.odds ?? p.price ?? "",
+      edge: p.edge ?? p.bet_edge ?? "",
+      propiq: p.propiq ?? p.prop_iq ?? p.prop_iq_score ?? p.modelScore ?? p.score ?? p.PropIQ ?? "",
+      probability: p.probability ?? p.model_probability ?? "",
+      confidence: p.confidence ?? "",
+      risk: p.risk_notes || p.risk || "",
+      // Recent performance trends
+      l5: p.l5Pct ?? p.l5_hit_rate ?? p.l5 ?? null,
+      l10: p.l10Pct ?? p.l10_hit_rate ?? p.l10 ?? null,
+      l20: p.l20Pct ?? p.l20_hit_rate ?? p.l20 ?? null,
+      l30: p.l30Pct ?? p.l30_hit_rate ?? p.l30 ?? null,
+      // Season / historical baselines
+      season_hit_pct: p.seasonPct ?? p.season_pct ?? p.seasonHitRate ?? p.season_hit_pct ?? null,
+      last_season_pct: p.lastSeasonPct ?? p.last_season_pct ?? p.lastSeasonHitRate ?? null,
+      // Additional context
+      pitcher_era: p.pitcherERA ?? p.pitcher_era ?? null,
+      pitcher_xera: p.pitcherXERA ?? p.pitcher_xera ?? null,
+      b2b: p.isB2B ?? p.b2b ?? null,
+    };
+    // Drop null fields to keep payload compact
+    Object.keys(obj).forEach(k => { if (obj[k] === null || obj[k] === "") delete obj[k]; });
+    return obj;
+  }).filter((p) => p.player || p.team || p.market);
 }
 
 function normalizeToken(value) {
@@ -914,95 +829,52 @@ exports.handler = async function handler(event) {
       });
     } catch (geminiErr) {
       console.error("[ev_detail] Gemini failed:", geminiErr.message);
-      try {
-        const claudeOpts = {
-          temperature: geminiOpts.temperature,
-          max_tokens: geminiOpts.max_tokens,
-        };
-        const response = await callClaudeWithRetry(messages, 1, claudeOpts);
-        let answer = stripJsonFence(response?.content?.[0]?.text || "");
-        if (!answer) throw new Error("Claude ev_detail backup returned empty response");
-        setCachedResponse(question, league, props, answer, responseMode);
-        return json(200, {
-          ok: true,
-          provider: "claude",
-          model: DEFAULT_MODEL,
-          answer,
-          source_context: sourceContext,
-          fallback_reason: `Gemini unavailable: ${geminiErr.message}`,
-        });
-      } catch (claudeErr) {
-        console.error("[ev_detail] Claude backup failed:", claudeErr.message);
-        return json(200, {
-          ok: false,
-          provider: "gemini-fallback",
-          model: GEMINI_EV_DETAIL_MODEL,
-          error: geminiErr.message,
-          answer: "",
-          source_context: sourceContext,
-        });
-      }
+      clearTimeout(timeoutHandle);
+      return json(200, {
+        ok: false,
+        provider: "gemini",
+        model: GEMINI_EV_DETAIL_MODEL,
+        error: geminiErr.message,
+        answer: "",
+        source_context: sourceContext,
+      });
     } finally {
       clearTimeout(timeoutHandle);
     }
   }
 
-  // Call Claude (no retries — 25s hard limit doesn't allow time for backoff + retry)
+  // Standard synthesis — Gemini only (plain text, not JSON)
   try {
-    const claudeOpts = {};
-    const response = await callClaudeWithRetry(messages, 1, claudeOpts);
-    let answer = (response?.content?.[0]?.text || "").trim();
-
-    if (!answer) {
-      return json(200, {
-        ok: false,
-        error: "Empty response from Claude",
-        answer: "PropEdge IQ Analysis\n\nError: Claude API returned empty response.\n\nThis may indicate:\n- API timeout\n- Message formatting issue\n- Model unavailable\n\nPlease check function logs: https://app.netlify.com/projects/propedgemasters/logs/functions",
-      });
-    }
+    const geminiOpts = {
+      temperature: 0.6,
+      max_tokens: 1800,
+      textMode: true,
+    };
+    let answer = await callGeminiEvDetail(messages, geminiOpts);
+    if (!answer || !answer.trim()) throw new Error("Gemini returned empty response");
 
     answer = enforceStructuredResponse(answer, question, league, props, sourceContext);
-
     setCachedResponse(question, league, props, answer, responseMode);
 
     return json(200, {
       ok: true,
-      provider: "claude",
-      model: DEFAULT_MODEL,
+      provider: "gemini",
+      model: GEMINI_EV_DETAIL_MODEL,
       answer,
       source_context: sourceContext,
       article_context_included: articleContext.length > 0 || sourceContext.some((s) => s?.article_excerpt || s?.summary || s?.excerpt),
-      usage: {
-        input_tokens: response?.usage?.input_tokens,
-        output_tokens: response?.usage?.output_tokens,
-      },
     });
   } catch (error) {
-    console.error("CLAUDE API ERROR:", error.message, error.stack);
-    // Claude unavailable — route to Gemini instead of structured fallback
-    try {
-      const geminiMessages = buildEvDetailMessages(question, league, propedgePayloads, props);
-      const answer = await callGeminiEvDetail(geminiMessages, { temperature: 0.5, max_tokens: 1500 });
-      setCachedResponse(question, league, props, answer, "ev_detail");
-      return json(200, {
-        ok: true,
-        provider: "gemini",
-        model: GEMINI_EV_DETAIL_MODEL,
-        answer,
-        source_context: sourceContext,
-        fallback_reason: `Claude unavailable: ${error.message}`,
-      });
-    } catch (geminiErr) {
-      console.error("GEMINI FALLBACK ERROR:", geminiErr.message);
-      return json(200, {
-        ok: true,
-        provider: "gemini-fallback",
-        model: GEMINI_EV_DETAIL_MODEL,
-        error: error.message,
-        answer: buildStructuredFallback(question, league, props, sourceContext, error.message),
-        article_context_included: articleContext.length > 0 || sourceContext.some((s) => s?.article_excerpt || s?.summary || s?.excerpt),
-      });
-    }
+    console.error("GEMINI SYNTHESIS ERROR:", error.message);
+    clearTimeout(timeoutHandle);
+    return json(200, {
+      ok: false,
+      provider: "gemini",
+      model: GEMINI_EV_DETAIL_MODEL,
+      error: error.message,
+      answer: buildStructuredFallback(question, league, props, sourceContext, error.message),
+      article_context_included: articleContext.length > 0 || sourceContext.some((s) => s?.article_excerpt || s?.summary || s?.excerpt),
+    });
   } finally {
     clearTimeout(timeoutHandle);
   }
