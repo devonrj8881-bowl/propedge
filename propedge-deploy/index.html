@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.161 — Fix analyst: Gemini primary for all modes + 45s timeout for slow responses — 2026-06-05 LIVE DEPLOY -->
+<!-- PropEdge v7.162 — Scoring: fix dead-code block, NBA rest days signal, NHL goalie prop-type filter — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -21516,18 +21516,28 @@ nav.tabs > button,
               // TODO: Add HR/9 parsing once pitcher_stats column is populated
             }
         } else if (actualLeague === 'NBA') {
-            // NBA B2B / Fatigue Logic
-            if (oppDetails.toLowerCase().includes('b2b') || oppDetails.toLowerCase().includes('back-to-back')) {
-               modelScore -= 12; // Increased from -7
+            // NBA B2B / Fatigue Logic — check dedicated column AND h2h text
+            const isB2bNBA = isB2b || oppDetails.toLowerCase().includes('b2b') || oppDetails.toLowerCase().includes('back-to-back');
+            if (isB2bNBA) {
+               modelScore -= 12;
                propFactors.push('🔋 HEAVY Fatigue (Back-to-Back)');
+            }
+            // Rest days bonus: well-rested players outperform in volume stats
+            if (!isB2bNBA && daysRest != null && daysRest >= 3 && direction === 'OVER') {
+               modelScore += 3;
+               propFactors.push(`💪 Well-Rested (${daysRest}d rest)`);
             }
         } else if (actualLeague === 'NHL') {
             // NHL Goalie SV% weighting: only add incremental penalty for truly elite (top-5 rank)
             // Fix G already applied -6 to -12 via isStrongDef/isEliteDef — avoid full double-count.
-            // Reduced from -10 to -4 to act as a tiebreaker nudge, not a standalone penalty.
-            if (sznMatchup <= 5 && direction === 'OVER') {
-               modelScore -= 4;
+            // Skip for assists — goalie rank doesn't materially affect playmaking props.
+            const isGoalScoringProp = /goal|shot|point/i.test(propType);
+            if (sznMatchup <= 5 && direction === 'OVER' && isGoalScoringProp) {
+               modelScore -= 5;
                propFactors.push('🧤 Elite Netminder Alert');
+            } else if (sznMatchup >= 27 && direction === 'UNDER' && isGoalScoringProp) {
+               modelScore -= 4;
+               propFactors.push('⚠️ Leaky Goalie — fights UNDER');
             }
         }
 
@@ -21897,24 +21907,6 @@ nav.tabs > button,
         const hasRealEdge = edge >= (breakEvenEdge + 5.5); // Need 5.5% above breakeven
 
         const isValue = hasRealEdge && edge >= valueThreshold && (trueProb - impliedProb) >= 0.10;
-
-        // STEP 3: Confidence gates removed (May 4, 2026)
-        // With Bayesian confidence now calibrated from real user outcomes,
-        // we trust the confidence signal without additional dampening.
-        const finalTrueProb = trueProb;
-
-        // Apply injury multiplier
-        if (injuryMultiplier < 0.95) {
-          finalTrueProb *= injuryMultiplier;
-        }
-
-        // Apply back-to-back fatigue
-        if (backToBackFlag && league === 'NBA') {
-          finalTrueProb *= 0.92; // 8% reduction for fatigued players
-        }
-
-        // Update trueProb with final value
-        trueProb = finalTrueProb;
 
         // Fix F: Raise meetsUltimate bar — requires genuine multi-window consistency + confidence
         // MLB: core criteria only (no confidenceScore gate); NBA/NHL: add confidence gate
