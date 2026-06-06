@@ -25,6 +25,8 @@ FORMATTING RULES:
 3. For every pick, include section "**The Angle:**" with:
    - L5/L10/L20/season trend read (regression or consistency signal)
    - EV math: cite ev_percentage, implied_probability, propiq_score
+   - If propiq_for_factors present: cite top 2 as supporting signals
+   - If propiq_against_factors present: cite top 1 as the key risk
    - Any suppression/context factor (ERA, B2B, rest, matchup rank)
 4. Only cite fields present in the payload. Do not invent stats.
 5. Multi-sport: apply the same rules for NBA, NHL, NFL, MLB.

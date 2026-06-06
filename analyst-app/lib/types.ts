@@ -30,6 +30,8 @@ export interface PropEdgeLlmPayload {
     projected_ks?: number;
     kelly_units?: number | null;
     propiq_score?: number | null;
+    propiq_for_factors?: string[];
+    propiq_against_factors?: string[];
     confidence?: number | null;
     board_edge_pct?: number | null;
     pitcher_era?: number | null;

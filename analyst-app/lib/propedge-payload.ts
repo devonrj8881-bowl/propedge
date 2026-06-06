@@ -6,6 +6,7 @@ import {
   kellyFromAmerican,
   parseAmericanOdds,
 } from "./betting-math";
+import { computePortablePropIq } from "./scoring";
 
 function parseCSVLine(line: string): string[] {
   const out: string[] = [];
@@ -167,6 +168,7 @@ export function buildPropEdgeLlmPayload(prop: BoardProp): PropEdgeLlmPayload | n
   const evPct = trueProb != null && american != null ? calculateEdge(trueProb, american) : null;
   const kelly = trueProb != null && american != null ? kellyFromAmerican(trueProb, american) : null;
   const l10 = parsePct(prop.l10Pct);
+  const iq = computePortablePropIq(prop);
 
   const payload: PropEdgeLlmPayload = {
     event: { date: estDateString(), home_team: null, away_team: prop.opponent || null },
@@ -187,7 +189,9 @@ export function buildPropEdgeLlmPayload(prop: BoardProp): PropEdgeLlmPayload | n
       ev_percentage: evPct,
       projected_value: prop.l10Avg ?? prop.l5Avg ?? null,
       kelly_units: kelly != null && kelly > 0 ? kelly : null,
-      propiq_score: prop.modelScore ?? prop.betScore ?? null,
+      propiq_score: iq.score,
+      propiq_for_factors: iq.forFactors.slice(0, 4),
+      propiq_against_factors: iq.againstFactors.slice(0, 3),
       confidence: prop.confidence ?? null,
       board_edge_pct: prop.edge ?? null,
       pitcher_era: prop.pitcherERA ?? null,
