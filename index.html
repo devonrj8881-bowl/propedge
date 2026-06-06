@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.166 — Markets game chips: replace bare "Live 0:00" with league-aware status (MLB inning/half, NHL/NBA/NFL period+clock via ESPN shortDetail) — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.167 — Always-on 15-min background sync: silent loadData refreshes prop counts + slate filtering live (default auto-refresh ON, no spinner flash, stat-bar updates after off-slate filter) — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.166">
+  <meta name="app-version" content="v7.167">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -20583,7 +20583,10 @@ nav.tabs > button,
       // Note: Portfolio/ROI data is loaded dynamically via renderPortfolio() when portfolio tab is clicked
       initOneSignalAlerts();  // SPRINT APRIL 4: Initialize OneSignal push alerts
 
-      state.autoRefresh = propEdgeStorage.getItem('propedge_autoRefresh') === 'true';
+      // Default ON: 15-min background poll keeps prop counts + slate filtering current
+      // without reopening the app. Respect an explicit user opt-out.
+      const _autoRefreshPref = propEdgeStorage.getItem('propedge_autoRefresh');
+      state.autoRefresh = _autoRefreshPref === null ? true : _autoRefreshPref === 'true';
       const savedHideCompleted = propEdgeStorage.getItem('propedge_hideCompleted');
       state.hideCompleted = savedHideCompleted === null ? true : savedHideCompleted === 'true';
       state.parlayOnlyMode = propEdgeStorage.getItem('propedge_parlayOnly') === 'true';
@@ -20970,7 +20973,10 @@ nav.tabs > button,
 
     async function loadData() {
       const renderedCache = renderCachedPropFeed();
-      if (!renderedCache) showLoading();
+      // Only show the loading spinner on first load. On background/auto refreshes
+      // (props already present), skip it so the user's current view isn't wiped.
+      const hasExistingProps = Array.isArray(state.props) && state.props.length > 0;
+      if (!renderedCache && !hasExistingProps) showLoading();
       window.clearTimeout(window.__propLoadWatchdog);
       prefetchPitcherERA(); // fire-and-forget, populates window.pitcherERACache
       window.__propLoadWatchdog = window.setTimeout(() => {
@@ -28043,7 +28049,9 @@ nav.tabs > button,
         const removed = before - state.props.length;
         if (removed > 0) {
           console.log(`[game-filter] ✅ Removed ${removed} props for teams not playing today`);
+          updateStats(); // refresh stat-bar counts after slate filtering
           schedulePropsRender('espn-game-filter', 100);
+          if (typeof renderMarketsView === 'function') renderMarketsView();
           showToast(`🏟️ Filtered ${removed} props — teams not playing today`);
         } else {
           console.log('[game-filter] ✅ All props have active games today');
@@ -40502,8 +40510,8 @@ nav.tabs > button,
     function startAutoRefresh() {
       stopAutoRefresh();
       state.refreshInterval = setInterval(() => {
-        loadData();
-        fetchGames();
+        loadData();          // silent when props already loaded; refreshes stats + slate filter
+        fetchGames(true);    // silent — don't wipe the ticker mid-refresh
       }, 15 * 60 * 1000);
     }
 
