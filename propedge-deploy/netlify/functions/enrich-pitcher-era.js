@@ -239,7 +239,7 @@ async function fetchStartingPitchers(games) {
 
       if (!matchedGame) {
         console.warn(`⚠️  Could not match ${game.awayTeam} @ ${game.homeTeam} in schedule`);
-        console.warn(`   Available games in schedule: ${scheduleData.games?.map(g => `${g.awayTeam?.team?.abbreviation}@${g.homeTeam?.team?.abbreviation}`).join(', ')}`);
+        console.warn(`   Available games in schedule: ${allScheduleGames?.map(g => `${g.awayTeam?.team?.abbreviation}@${g.homeTeam?.team?.abbreviation}`).join(', ')}`);
         continue;
       }
 
