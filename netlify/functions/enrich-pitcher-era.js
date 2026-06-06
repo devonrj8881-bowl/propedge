@@ -191,14 +191,13 @@ async function fetchStartingPitchers(games) {
       continue;
     }
 
-    console.log(`🔍 Looking up pitchers for ${game.awayTeam} @ ${game.homeTeam}`);
+    console.log(`🔍 Looking up pitchers for ${game.awayTeam} @ ${game.homeTeam} (raw date: ${game.date})`);
 
     try {
-      // Parse game date without timezone conversion (keep as-is)
-      // ESPN provides dates in ISO format, extract just YYYY-MM-DD part
-      const gameDate = typeof game.date === 'string'
-        ? game.date.split('T')[0]  // Extract date part directly
-        : new Date(game.date).toISOString().split('T')[0];
+      // Use today's date instead of trying to parse ESPN's date
+      // This ensures we always fetch the correct schedule
+      const today = new Date().toISOString().split('T')[0];
+      const gameDate = today;  // Always use today's date to match current games
 
       const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${gameDate}`;
 
