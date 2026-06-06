@@ -11,6 +11,14 @@ propedge-deploy/deployment*
 propedge-deploy/last_deploy*
 propedge-deploy/propedge-deploy-state.json
 
+# Tooling/cache directories (never commit)
+.npm-cache/
+.netlify-cli-runner/
+.netlify-home/
+.claude/
+node_modules.bak*/
+anthropic-ollama-proxy/
+
 # Local dev files
 .env
 .env.local
