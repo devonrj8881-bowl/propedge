@@ -211,7 +211,7 @@ async function fetchStartingPitchers(games) {
       for (const dateToCheck of datesToCheck) {
         console.log(`  📅 Fetching MLB schedule for ${dateToCheck}...`);
         // Schedule endpoint returns games in all states: scheduled, in-progress, final
-        const scheduleUrl = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateToCheck}`;
+        const scheduleUrl = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateToCheck}&hydrate=probablePitcher`;
         const scheduleData = await fetchJSON(scheduleUrl, { timeout: 5000 });
 
         const dateGames = scheduleData.dates?.[0]?.games || [];
@@ -226,37 +226,21 @@ async function fetchStartingPitchers(games) {
       }
 
       // Find game matching away/home teams
-      // MLB schedule endpoint uses: awayTeam.team.name, homeTeam.team.name, and probablePitchers
+      // MLB schedule endpoint uses: teams.away.team.abbreviation / teams.home.team.abbreviation
       const matchedGame = allScheduleGames.find(g => {
-        const awayAbbr = g.awayTeam?.team?.abbreviation || g.awayTeam?.team?.teamCode || '';
-        const homeAbbr = g.homeTeam?.team?.abbreviation || g.homeTeam?.team?.teamCode || '';
-        const awayName = g.awayTeam?.team?.name || '';
-        const homeName = g.homeTeam?.team?.name || '';
-
-        return (awayAbbr === game.awayTeam && homeAbbr === game.homeTeam) ||
-               (awayName.toUpperCase().includes(game.awayTeamName?.toUpperCase()) &&
-                homeName.toUpperCase().includes(game.homeTeamName?.toUpperCase()));
+        const awayAbbr = g.teams?.away?.team?.abbreviation || '';
+        const homeAbbr = g.teams?.home?.team?.abbreviation || '';
+        return awayAbbr === game.awayTeam && homeAbbr === game.homeTeam;
       });
 
       if (!matchedGame) {
         console.warn(`⚠️  Could not match ${game.awayTeam} @ ${game.homeTeam} in schedule`);
-        console.warn(`   Available games in schedule: ${allScheduleGames?.map(g => `${g.awayTeam?.team?.abbreviation}@${g.homeTeam?.team?.abbreviation}`).join(', ')}`);
+        console.warn(`   Available: ${allScheduleGames?.map(g => `${g.teams?.away?.team?.abbreviation}@${g.teams?.home?.team?.abbreviation}`).join(', ')}`);
         continue;
       }
 
-      // Try multiple pitcher fields for both scheduled and in-progress games
-      // Schedule: probablePitcher, Scoreboard: currentBatter/pitcher in live data
-      const awayPitcher =
-        matchedGame.awayTeam?.probablePitcher ||
-        matchedGame.probablePitchers?.away ||
-        matchedGame.teams?.away?.pitchers?.current ||
-        matchedGame.liveData?.linescore?.teams?.away?.pitcher;
-
-      const homePitcher =
-        matchedGame.homeTeam?.probablePitcher ||
-        matchedGame.probablePitchers?.home ||
-        matchedGame.teams?.home?.pitchers?.current ||
-        matchedGame.liveData?.linescore?.teams?.home?.pitcher;
+      const awayPitcher = matchedGame.teams?.away?.probablePitcher;
+      const homePitcher = matchedGame.teams?.home?.probablePitcher;
 
       if (awayPitcher?.id) {
         const name = awayPitcher.fullName || awayPitcher.name || 'Unknown';
