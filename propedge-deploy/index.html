@@ -33996,6 +33996,122 @@ nav.tabs > button,
       sauce.forFactors.forEach(f => forFactors.push(f));
       sauce.againstFactors.forEach(f => againstFactors.push(f));
 
+      // ── 18. KEY NUMBER PROXIMITY PENALTY (±6 pts) ─────────────────────────────
+      // Lines set AT natural scoring cluster boundaries = efficient/sharp pricing.
+      // NBA points near 14.5/19.5/24.5/29.5/34.5 — natural game-break clusters.
+      // MLB binary markets (Hits/RBI/HR/SB) near 0.5/1.5 — book prices these tightly.
+      // NHL goals near 0.5/1.5 — binary outcomes, sharp pricing, less exploitable edge.
+      {
+        const kLine = parseFloat(p.line) || 0;
+        if (kLine > 0) {
+          const kPropType = (p.propType || '').toLowerCase();
+          let nearKey = false;
+          if (p.league === 'NBA' && /point|pts/.test(kPropType)) {
+            const nbaBoundaries = [14.5, 19.5, 24.5, 29.5, 34.5, 39.5];
+            nearKey = nbaBoundaries.some(k => Math.abs(kLine - k) <= 0.3);
+          } else if (p.league === 'MLB' && /\bhit\b|rbi|\bhr\b|home.?run|stolen.?base/.test(kPropType)) {
+            nearKey = [0.5, 1.5].some(k => Math.abs(kLine - k) <= 0.3);
+          } else if (p.league === 'NHL' && /goal|puck/.test(kPropType)) {
+            nearKey = [0.5, 1.5].some(k => Math.abs(kLine - k) <= 0.3);
+          }
+          if (nearKey) {
+            score -= 6;
+            againstFactors.push(`🔢 Key Number Line (${kLine}): sharp boundary pricing, edge narrower`);
+          }
+        }
+      }
+
+      // ── 19. REGRESSION PROTECTION & BOUNCE-BACK (±8 pts) ──────────────────────
+      // Distinct from SentinelReversion (which uses L10 vs season).
+      // This compares L5 vs L20 directly — catches short-run inflation/deflation
+      // that season baseline misses. Also rewards long-term L20+L30 consistency.
+      {
+        const rL5  = parseFloat(p.l5Pct)    || 0;
+        const rL20 = parseFloat(p.l20Pct)   || 0;
+        const rL30 = parseFloat(p.l30Pct)   || 0;
+        const rSzn = parseFloat(p.seasonPct) || 0;
+        const rBase = rSzn > 0 ? rSzn : rL30;
+        if (rL5 > 0 && rL20 > 0) {
+          const hotDelta  = rL5 - rL20;  // positive = L5 hotter than L20
+          const coldDelta = rL20 - rL5;  // positive = L5 colder than L20
+          if (hotDelta >= 30 && rBase < 58) {
+            // Streak on a cold baseline — strong regression risk
+            score -= 8;
+            againstFactors.push(`🎢 Streak Inflation Risk: L5 ${rL5.toFixed(0)}% vs L20 ${rL20.toFixed(0)}% on cold baseline`);
+          } else if (hotDelta >= 20 && rBase < 53) {
+            score -= 4;
+            againstFactors.push(`⚠️ Regression Caution: L5 ${rL5.toFixed(0)}% overperforming L20 ${rL20.toFixed(0)}% baseline`);
+          } else if (coldDelta >= 25 && rL20 >= 60 && rBase >= 55) {
+            // Cold spell on a strong long-term baseline — bounce-back candidate
+            score += 7;
+            forFactors.push(`🔄 Bounce-Back Setup: L5 ${rL5.toFixed(0)}% cold vs strong L20 ${rL20.toFixed(0)}% baseline`);
+          } else if (coldDelta >= 15 && rL20 >= 62 && rBase >= 58) {
+            score += 4;
+            forFactors.push(`📈 Mean Reversion Opportunity: underperforming strong baseline (L20 ${rL20.toFixed(0)}%)`);
+          }
+        }
+        // Long-term consistency bonus: L20 + L30 + season all strong
+        if (rL20 >= 62 && rL30 >= 60 && rSzn >= 56) {
+          score += 5;
+          forFactors.push(`📊 Proven Consistency: L20 ${rL20.toFixed(0)}% | L30 ${rL30.toFixed(0)}% | Szn ${rSzn.toFixed(0)}% — sustained performer`);
+        }
+      }
+
+      // ── 20. MULTI-LEAGUE REST DIFFERENTIAL (±7 pts) ────────────────────────────
+      // NBA B2B already handled in Section 13. This covers NHL/NFL/MLB rest context.
+      // NFL: bye-week rest (10+ days) = peak readiness for OVER volume props.
+      // NHL: B2B fatigue same pattern as NBA.
+      // MLB: pitcher on short rest (≤3d vs normal 5d rotation) = regression risk.
+      if (p.league !== 'NBA') {
+        const rdDays   = parseInt(p.daysRest) || 0;
+        const rdIsB2b  = p.isB2b || p.backToBackFlag || (rdDays === 1);
+        if (rdIsB2b) {
+          score -= 6;
+          againstFactors.push(`🔋 B2B Fatigue (${p.league}): volume suppression expected`);
+        } else if (p.league === 'NFL' && rdDays >= 10 && p.direction === 'OVER') {
+          score += 6;
+          forFactors.push(`🏈 Bye-Week Freshness (${rdDays}d rest): peak readiness`);
+        } else if (p.league === 'NFL' && rdDays >= 10 && p.direction === 'UNDER') {
+          score += 3;
+          forFactors.push(`🏈 Bye-Week Rest: energized team, volume may be higher`);
+        } else if (rdDays >= 4 && /point|goal|strikeout|hit|yard/.test((p.propType || '').toLowerCase()) && p.direction === 'OVER') {
+          score += 3;
+          forFactors.push(`💪 Extended Rest (${rdDays}d): fresh legs boost`);
+        }
+      }
+
+      // ── 21. MARKET EFFICIENCY SIGNAL (±4 pts) ──────────────────────────────────
+      // Player prop markets vary in pricing efficiency. Assists/rebounds/3PM are
+      // softer (less sharp focus, wider book margins) = model has more edge.
+      // Note: rare-event markets (HR, TD, Goals) already penalized by Adaptive Variance Gate.
+      {
+        const meProp = (p.propType || '').toLowerCase();
+        const isSoftBook = /\brebound\b|assist|\bsteal\b|\bblock\b|\b3pm\b|three.?point.?made|turnover/.test(meProp);
+        // Note: /hr|td|goal/ already -8 from Adaptive Variance Gate — don't double-penalize
+        if (isSoftBook) {
+          score += 4;
+          forFactors.push(`📈 Soft Market: ${p.propType} pricing less efficient — model edge amplified`);
+        }
+      }
+
+      // ── 22. HISTORICAL BASELINE (last-season hit rate, ±5 pts) ─────────────────
+      // Cross-season consistency = structural reliability, not just recency noise.
+      // Data populated when scraper writes lastSeasonPct column; no-op if absent.
+      {
+        const lsLastSzn = parseFloat(p.lastSeasonPct ?? p.last_season_pct ?? 0) || 0;
+        const lsCurrSzn = parseFloat(p.seasonPct) || 0;
+        if (lsLastSzn > 0 && lsCurrSzn > 0) {
+          const crossDelta = Math.abs(lsLastSzn - lsCurrSzn);
+          if (crossDelta <= 10 && lsLastSzn >= 58 && lsCurrSzn >= 55) {
+            score += 5;
+            forFactors.push(`📅 Cross-Season Reliability: ${lsLastSzn.toFixed(0)}% last szn → ${lsCurrSzn.toFixed(0)}% current`);
+          } else if (lsLastSzn < 40 && lsCurrSzn < 45) {
+            score -= 5;
+            againstFactors.push(`📉 Historical Pattern: low hit rate across seasons (${lsLastSzn.toFixed(0)}% → ${lsCurrSzn.toFixed(0)}%)`);
+          }
+        }
+      }
+
       score = Math.max(5, Math.min(98, score));
       let action, actionClass, actionIcon;
       if      (score >= 83) { action = 'ELITE PLAY';    actionClass = 'score-strong'; actionIcon = '⭐'; }
