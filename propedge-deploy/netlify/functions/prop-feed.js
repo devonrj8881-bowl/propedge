@@ -1,14 +1,16 @@
 /**
- * PropEdge prop-feed — serves sheet data via Google Sheets API (always fresh).
- * Falls back to API key (for public sheets), then gviz.
+ * PropEdge prop-feed — serves sheet data as CSV.
+ *
+ * Pure fetch implementation (NO googleapis dependency — node_modules is not
+ * deployed, so requiring googleapis crashed the function at cold start with
+ * "Cannot find module 'googleapis'"). The sheet is public, so we read it via
+ * the Google API key (fresh, no CDN cache) and fall back to the public gviz
+ * CSV endpoint.
  *
  * GET /.netlify/functions/prop-feed?sheet=propedge-main
  * GET /.netlify/functions/prop-feed?sheet=meta
  * GET /.netlify/functions/prop-feed?sheet=Prop_Hits
  */
-
-const { google } = require("googleapis");
-const path = require("path");
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -20,33 +22,8 @@ const SHEET_ID = "1e53GcCS9alxJhzDQPqkH55mpllEjVUShPKyP63R-BeY";
 const DEFAULT_SHEET = "propedge-main";
 const ALLOWED_SHEETS = new Set(["propedge-main", "Prop_Hits", "meta"]);
 
-// Sheets fetched via authenticated API (bypasses Google CDN cache)
-const API_SHEETS = new Set(["propedge-main"]);
-
-// One-time auth init per cold start
-let _sheetsClient = null;
-async function getSheetsClient() {
-  if (_sheetsClient) return _sheetsClient;
-
-  let auth;
-  if (process.env.GOOGLE_CREDENTIALS_JSON) {
-    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
-    auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-    });
-  } else {
-    const keyFile = path.join(__dirname, "..", "..", "credentials.json");
-    auth = new google.auth.GoogleAuth({
-      keyFile,
-      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-    });
-  }
-
-  const client = await auth.getClient();
-  _sheetsClient = google.sheets({ version: "v4", auth: client });
-  return _sheetsClient;
-}
+// Sheets that must always be fresh (no CDN cache) — served no-store.
+const FRESH_SHEETS = new Set(["propedge-main"]);
 
 // Convert a 2D array of values to CSV string
 function valuesToCsv(rows) {
@@ -64,19 +41,6 @@ function valuesToCsv(rows) {
     .join("\n");
 }
 
-// Fetch via service account (full API access)
-async function fetchViaApi(sheetName) {
-  const sheets = await getSheetsClient();
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: SHEET_ID,
-    range: `${sheetName}!A:Z`,
-    valueRenderOption: "FORMATTED_VALUE",
-  });
-  const rows = res.data.values || [];
-  if (rows.length === 0) return null;
-  return valuesToCsv(rows);
-}
-
 // Fetch via Google API key — works for public sheets, key fits in Netlify env var
 async function fetchViaApiKey(sheetName) {
   const apiKey = process.env.GOOGLE_API_KEY;
@@ -90,9 +54,10 @@ async function fetchViaApiKey(sheetName) {
   return valuesToCsv(rows);
 }
 
-// Last resort: gviz public URL
-async function fetchViaGviz(sheetName) {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+// Public gviz CSV endpoint — no auth required for a public sheet.
+async function fetchViaGviz(sheetName, bustCache) {
+  const cacheBust = bustCache ? `&_=${Date.now()}` : "";
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}${cacheBust}`;
   const res = await fetch(url, { headers: { "User-Agent": "PropEdge-prop-feed/1.0" } });
   if (!res.ok) return null;
   const text = await res.text();
@@ -110,21 +75,12 @@ exports.handler = async (event) => {
 
   const params = event.queryStringParameters || {};
   const sheet = ALLOWED_SHEETS.has(params.sheet) ? params.sheet : DEFAULT_SHEET;
+  const fresh = FRESH_SHEETS.has(sheet);
 
   try {
-    let csv = null;
-
-    if (API_SHEETS.has(sheet)) {
-      try {
-        csv = await fetchViaApi(sheet);
-      } catch (_) {
-        csv = await fetchViaApiKey(sheet);
-        if (!csv) csv = await fetchViaGviz(sheet);
-      }
-    } else {
-      csv = await fetchViaApiKey(sheet);
-      if (!csv) csv = await fetchViaGviz(sheet);
-    }
+    // Prefer API key (always fresh); fall back to public gviz.
+    let csv = await fetchViaApiKey(sheet);
+    if (!csv) csv = await fetchViaGviz(sheet, fresh);
 
     if (!csv) {
       return {
@@ -139,7 +95,7 @@ exports.handler = async (event) => {
       headers: {
         ...CORS_HEADERS,
         "Content-Type": "text/csv; charset=utf-8",
-        "Cache-Control": API_SHEETS.has(sheet)
+        "Cache-Control": fresh
           ? "no-store"
           : "public, max-age=60, stale-while-revalidate=120",
       },
