@@ -20923,10 +20923,28 @@ nav.tabs > button,
       }
     }
 
+    // Fetch today's pitcher ERA/xERA from the Netlify function and cache by team abbreviation
+    async function prefetchPitcherERA() {
+      try {
+        const res = await fetch('/.netlify/functions/pitcher-era');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!json.data) return;
+        window.pitcherERACache = {};
+        for (const p of json.data) {
+          if (p.team) window.pitcherERACache[p.team.toUpperCase()] = { era: p.era, xera: p.xera, name: p.name };
+        }
+        console.log(`[PropEdge] Pitcher ERA cache loaded: ${Object.keys(window.pitcherERACache).length} teams`);
+      } catch(e) {
+        console.warn('[PropEdge] Pitcher ERA prefetch failed:', e.message);
+      }
+    }
+
     async function loadData() {
       const renderedCache = renderCachedPropFeed();
       if (!renderedCache) showLoading();
       window.clearTimeout(window.__propLoadWatchdog);
+      prefetchPitcherERA(); // fire-and-forget, populates window.pitcherERACache
       window.__propLoadWatchdog = window.setTimeout(() => {
         const cards = document.querySelectorAll('.prop-card').length;
         const loading = document.querySelector('#propsContainer .loading');
@@ -21448,10 +21466,12 @@ nav.tabs > button,
               }
             }
 
-            // ── Pitcher ERA context (from pitcher_era column) ────────────
-            // Read ERA directly from enriched pitcher_era column (populated by scraper/ESPN/Statcast)
+            // ── Pitcher ERA context ──────────────────────────────────────
+            // Primary: pitcher_era CSV column. Fallback: live pitcher-era function cache (keyed by team).
             const pitcherERAStr = getValue(cols.pitcher_era);
-            const pitcherERA = pitcherERAStr ? parseFloat(pitcherERAStr) : null;
+            const pitcherERACache = (window.pitcherERACache || {})[teamAbbr?.toUpperCase()] || null;
+            const pitcherERA = pitcherERAStr ? parseFloat(pitcherERAStr) : (pitcherERACache?.era ?? null);
+            const pitcherXERA = pitcherERACache?.xera ?? null;
             if (pitcherERA !== null && pitcherERA > 0) {
               if (pitcherERA < 3.0) {
                 const pen = isTBProp ? -12 : -8;
@@ -21469,6 +21489,23 @@ nav.tabs > button,
                 const boost = isTBProp ? 6 : 3;
                 modelScore += boost;
                 propFactors.push(`📈 Hittable Pitcher (ERA ${pitcherERA.toFixed(2)})`);
+              }
+            }
+
+            // ── xERA signal (expected ERA from Statcast — filters out luck) ──
+            // When xERA diverges significantly from ERA, it predicts regression.
+            if (pitcherXERA !== null && pitcherERA !== null) {
+              const diff = pitcherXERA - pitcherERA; // positive = pitcher due for regression (worse)
+              if (diff > 1.5) {
+                // ERA looks good but xERA says they've been lucky — expect regression
+                const boost = isTBProp ? 5 : 3;
+                modelScore += boost;
+                propFactors.push(`📊 Pitcher Regression Risk (xERA ${pitcherXERA.toFixed(2)} vs ERA ${pitcherERA.toFixed(2)})`);
+              } else if (diff < -1.5) {
+                // ERA looks bad but xERA says they've been unlucky — tougher than stats show
+                const pen = isTBProp ? -5 : -3;
+                modelScore += pen;
+                propFactors.push(`🛡️ Pitcher Outperforming xERA (xERA ${pitcherXERA.toFixed(2)} vs ERA ${pitcherERA.toFixed(2)})`);
               }
             }
 
