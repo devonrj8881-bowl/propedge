@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.167 — Always-on 15-min background sync: silent loadData refreshes prop counts + slate filtering live (default auto-refresh ON, no spinner flash, stat-bar updates after off-slate filter) — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.168 — Fix PropAI featured-pick headshot: merge headshot cache stores (iOS localStorage staleness/quota no longer hides fresh lookups) + featured re-render safety net once ESPN lookup resolves — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.167">
+  <meta name="app-version" content="v7.168">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -27478,17 +27478,21 @@ nav.tabs > button,
     }
 
     function readPlayerHeadshotCache() {
-      try { return JSON.parse(window.localStorage?.getItem(PLAYER_HEADSHOT_CACHE_KEY) || propEdgeStorage.getItem(PLAYER_HEADSHOT_CACHE_KEY) || '{}') || {}; }
-      catch (_) { return {}; }
+      // Merge both stores so a stale or quota-failed localStorage doesn't hide
+      // freshly-fetched entries that only landed in the in-memory store.
+      const parse = (raw) => { try { return JSON.parse(raw || '{}') || {}; } catch (_) { return {}; } };
+      let ls = {};
+      try { ls = parse(window.localStorage?.getItem(PLAYER_HEADSHOT_CACHE_KEY)); } catch (_) {}
+      const mem = parse(propEdgeStorage.getItem(PLAYER_HEADSHOT_CACHE_KEY));
+      return { ...ls, ...mem }; // in-memory (last write) wins
     }
 
     function writePlayerHeadshotCache(cache) {
-      try {
-        const serialized = JSON.stringify(cache || {});
-        if (window.localStorage) window.localStorage.setItem(PLAYER_HEADSHOT_CACHE_KEY, serialized);
-        propEdgeStorage.setItem(PLAYER_HEADSHOT_CACHE_KEY, serialized);
-      }
-      catch (_) {}
+      const serialized = (() => { try { return JSON.stringify(cache || {}); } catch (_) { return '{}'; } })();
+      // Write in-memory first and independently — localStorage may throw (iOS
+      // private mode / quota), but the in-memory store must always update.
+      try { propEdgeStorage.setItem(PLAYER_HEADSHOT_CACHE_KEY, serialized); } catch (_) {}
+      try { if (window.localStorage) window.localStorage.setItem(PLAYER_HEADSHOT_CACHE_KEY, serialized); } catch (_) {}
     }
 
     function espnHeadshotLeagueSlug(league) {
@@ -39225,7 +39229,23 @@ nav.tabs > button,
       cardEl.innerHTML = buildHomeFeaturedHTML(hydratedBest);
       if (topPicksEl) topPicksEl.innerHTML = buildPropAITopPicksStrip(ranked, best);
       updatePropAISlateDateBadge();
+
+      // Headshot safety net: if the featured pick rendered with a placeholder
+      // (ESPN lookup not cached yet), schedule the lookup and re-render once it
+      // resolves so the hero shows the real headshot instead of initials.
+      if (!getPlayerHeadshot(best.player, best.league)) {
+        schedulePlayerHeadshotLookup(best.player, best.league);
+        clearTimeout(_featuredHeadshotRetry);
+        _featuredHeadshotRetry = setTimeout(() => {
+          const stillEmpty = !getPlayerHeadshot(best.player, best.league);
+          const card = document.getElementById('propAIFeaturedPick');
+          if (!stillEmpty && card && card.querySelector('.prop-headshot-fallback')) {
+            card.innerHTML = buildHomeFeaturedHTML(hydratedBest);
+          }
+        }, 1400);
+      }
     }
+    let _featuredHeadshotRetry = null;
 
     async function prefetchAnalystNarration(question = '', picks = []) {
       const q = String(question || '').trim();
