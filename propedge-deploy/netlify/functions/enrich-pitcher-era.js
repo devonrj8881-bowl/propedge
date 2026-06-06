@@ -205,25 +205,28 @@ async function fetchStartingPitchers(games) {
       const utcDate = new Date().toISOString().split('T')[0];
       const estDate = new Date(new Date().getTime() - 4*60*60*1000).toISOString().split('T')[0];
 
-      // Try EST date first (more likely for US games), then UTC
-      const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${estDate}`;
+      // Fetch schedules for both dates to catch games that span midnight
+      const datesToCheck = [estDate, utcDate];
+      let allScheduleGames = [];
 
-      console.log(`  📅 Fetching MLB schedule for ${estDate}...`);
-      const scheduleData = await fetchJSON(url, { timeout: 5000 });
+      for (const dateToCheck of datesToCheck) {
+        console.log(`  📅 Fetching MLB schedule for ${dateToCheck}...`);
+        const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateToCheck}`;
+        const scheduleData = await fetchJSON(url, { timeout: 5000 });
 
-      if (!scheduleData.games || scheduleData.games.length === 0) {
-        console.warn(`  ❌ No games in MLB schedule for ${estDate}`);
-      } else {
-        console.log(`  ✅ MLB schedule has ${scheduleData.games.length} games`);
-        const sample = scheduleData.games.slice(0, 2).map(g =>
-          `${g.awayTeam?.team?.abbreviation}@${g.homeTeam?.team?.abbreviation}`
-        ).join(', ');
-        console.log(`  📝 Sample: ${sample}`);
+        if (scheduleData.games && scheduleData.games.length > 0) {
+          console.log(`  ✅ Found ${scheduleData.games.length} games on ${dateToCheck}`);
+          allScheduleGames = allScheduleGames.concat(scheduleData.games);
+        }
+      }
+
+      if (allScheduleGames.length === 0) {
+        console.warn(`  ❌ No games in MLB schedule for ${estDate} or ${utcDate}`);
       }
 
       // Find game matching away/home teams
       // MLB schedule endpoint uses: awayTeam.team.name, homeTeam.team.name, and probablePitchers
-      const matchedGame = (scheduleData.games || []).find(g => {
+      const matchedGame = allScheduleGames.find(g => {
         const awayAbbr = g.awayTeam?.team?.abbreviation || g.awayTeam?.team?.teamCode || '';
         const homeAbbr = g.homeTeam?.team?.abbreviation || g.homeTeam?.team?.teamCode || '';
         const awayName = g.awayTeam?.team?.name || '';
