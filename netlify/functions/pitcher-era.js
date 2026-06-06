@@ -120,17 +120,113 @@ async function fetchStatcastLeaderboard() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Google Sheets placeholder
+// Google Sheets: write pitcher_era + pitcher_xera columns
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function updateGoogleSheet(pitcherData) {
   const sheetId = process.env.PROPEDGE_SHEET_ID;
-  if (!sheetId) {
-    console.warn('⚠️ PROPEDGE_SHEET_ID not configured — skipping sheet update');
+  const serviceAccountRaw = process.env.GOOGLE_SERVICE_ACCOUNT;
+
+  if (!sheetId || !serviceAccountRaw) {
+    console.warn('⚠️ PROPEDGE_SHEET_ID or GOOGLE_SERVICE_ACCOUNT not configured — skipping sheet update');
     return false;
   }
-  console.log('📝 Sheet update placeholder:', { count: pitcherData.length, sample: pitcherData[0] });
+
+  const { google } = require('googleapis');
+  const credentials = JSON.parse(serviceAccountRaw);
+
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  // Build team → ERA/xERA lookup
+  const byTeam = {};
+  for (const p of pitcherData) {
+    if (p.team) byTeam[p.team.toUpperCase()] = { era: p.era, xera: p.xera, name: p.name };
+  }
+
+  // Read current headers
+  const headerRes = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: 'A1:ZZ1',
+  });
+  let headers = headerRes.data.values?.[0] || [];
+
+  // Add pitcher_era and pitcher_xera columns if missing
+  const updates = [];
+  let eraColIdx = headers.indexOf('pitcher_era');
+  let xeraColIdx = headers.indexOf('pitcher_xera');
+
+  if (eraColIdx === -1) {
+    eraColIdx = headers.length;
+    headers.push('pitcher_era');
+    updates.push(sheets.spreadsheets.values.update({
+      spreadsheetId: sheetId,
+      range: `${colLetter(eraColIdx)}1`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [['pitcher_era']] },
+    }));
+    console.log(`  Added pitcher_era column at ${colLetter(eraColIdx)}`);
+  }
+  if (xeraColIdx === -1) {
+    xeraColIdx = headers.length;
+    headers.push('pitcher_xera');
+    updates.push(sheets.spreadsheets.values.update({
+      spreadsheetId: sheetId,
+      range: `${colLetter(xeraColIdx)}1`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [['pitcher_xera']] },
+    }));
+    console.log(`  Added pitcher_xera column at ${colLetter(xeraColIdx)}`);
+  }
+
+  await Promise.all(updates);
+
+  // Read all team values (column B)
+  const teamRes = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: 'B:B',
+  });
+  const teamCol = teamRes.data.values || [];
+
+  // Build batch update for matching rows
+  const eraLetter = colLetter(eraColIdx);
+  const xeraLetter = colLetter(xeraColIdx);
+  const batchData = [];
+  let rowsUpdated = 0;
+
+  for (let i = 1; i < teamCol.length; i++) {
+    const team = teamCol[i]?.[0]?.trim().toUpperCase();
+    if (!team || !byTeam[team]) continue;
+    const rowNum = i + 1; // 1-indexed
+    batchData.push({ range: `${eraLetter}${rowNum}`, values: [[byTeam[team].era ?? '']] });
+    batchData.push({ range: `${xeraLetter}${rowNum}`, values: [[byTeam[team].xera ?? '']] });
+    rowsUpdated++;
+  }
+
+  if (batchData.length > 0) {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: sheetId,
+      requestBody: { valueInputOption: 'RAW', data: batchData },
+    });
+  }
+
+  console.log(`  ✅ Sheet updated: ${rowsUpdated} rows written`);
   return true;
+}
+
+// Convert 0-based column index to letter(s): 0→A, 25→Z, 26→AA
+function colLetter(idx) {
+  let result = '';
+  idx++;
+  while (idx > 0) {
+    idx--;
+    result = String.fromCharCode(65 + (idx % 26)) + result;
+    idx = Math.floor(idx / 26);
+  }
+  return result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
