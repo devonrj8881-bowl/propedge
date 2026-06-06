@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.164 — Integrate ERA/Statcast into computeBetScore for all leagues (MLB pitcher ERA, NHL goalie SV%, NBA B2B fatigue) — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.165 — Mobile fixes: markets game-select scroll/freeze, Full Analysis modal scroll, live scores + 2nd-tap live modal in markets chips, tab-switch dirty-check perf — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.164">
+  <meta name="app-version" content="v7.165">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -8146,6 +8146,30 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       color: #7dd3fc;
     }
 
+    .markets-game-chip-score {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 6px;
+      border-radius: 6px;
+      background: rgba(0,240,160,0.14);
+      color: var(--accent-green, #00f0a0);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      vertical-align: middle;
+    }
+
+    .markets-game-chip-hint {
+      display: block;
+      margin-top: 3px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-green, #00f0a0);
+      opacity: 0.85;
+    }
+
     .markets-game-board-empty {
       padding: 10px 2px 4px;
       font-size: 13px;
@@ -15486,6 +15510,8 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       transition: opacity 0.3s ease;
       pointer-events: none;
       backdrop-filter: blur(4px);
+      touch-action: none;
+      overscroll-behavior: contain;
     }
     .game-overlay.open { opacity: 1; pointer-events: all; }
 
@@ -15502,6 +15528,8 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       z-index: 5001;
       overflow-y: auto;
       overflow-x: hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
       display: flex; flex-direction: column;
       box-shadow: 0 32px 80px rgba(0,0,0,0.6);
       transition: transform 0.32s cubic-bezier(0.32,0.72,0,1), opacity 0.28s ease;
@@ -28571,6 +28599,10 @@ nav.tabs > button,
         const scoreCard = document.querySelector(`.live-game-card[data-gameid="${gameId}"] .live-game-score`);
         if (scoreCard) scoreCard.textContent = `${awayScore}-${homeScore}`;
 
+        // Update markets game-filter chip score (live games)
+        const marketsChipScore = document.querySelector(`#marketsGameBoard .markets-game-chip[data-gameid="${gameId}"] .markets-game-chip-score`);
+        if (marketsChipScore) marketsChipScore.textContent = `${awayScore}–${homeScore}`;
+
         // Update modal if open — use String() on both sides to avoid type mismatch
         if (_modalState.game && String(_modalState.game.id) === String(gameId)) {
           const clockLabel = _svgClockLabel(league, period, displayClock);
@@ -38025,6 +38057,11 @@ nav.tabs > button,
           ? '<span class="markets-game-chip-badge">Final</span>'
           : '';
       const countLabel = `${Number(propCount || 0).toLocaleString()} prop${propCount === 1 ? '' : 's'}`;
+      const showScore = isLive || isFinal;
+      const scoreHtml = showScore
+        ? `<span class="markets-game-chip-score">${escapeHTML(String(game.awayScore ?? 0))}–${escapeHTML(String(game.homeScore ?? 0))}</span>`
+        : '';
+      const tapHint = isActive ? '<span class="markets-game-chip-hint">tap again → live view</span>' : '';
       return `
         <button class="markets-game-chip ${isActive ? 'active' : ''}" type="button"
           data-gameid="${escapeHTML(String(game.id))}" data-league="${escapeHTML(game.league || '')}"
@@ -38034,8 +38071,9 @@ nav.tabs > button,
             <span class="markets-game-chip-matchup">@</span>
             <span title="${escapeHTML(game.homeTeam)}">${homeLogo}</span>
           </div>
-          <div class="markets-game-chip-matchup">${escapeHTML(game.awayTeam)} @ ${escapeHTML(game.homeTeam)}</div>
+          <div class="markets-game-chip-matchup">${escapeHTML(game.awayTeam)} @ ${escapeHTML(game.homeTeam)}${scoreHtml}</div>
           <div class="markets-game-chip-meta">${badge}${escapeHTML(timeLabel)} · ${escapeHTML(countLabel)}</div>
+          ${tapHint}
         </button>`;
     }
 
@@ -38069,11 +38107,25 @@ nav.tabs > button,
       const game = games.find(g => String(g.id) === String(gameId));
       if (!game) return;
       if (String(state.marketsGameFilter?.id) === String(game.id)) {
-        clearMarketsGameFilter(evt);
+        // Second tap on the already-active chip → open the live game modal
+        // (green field / pitcher counts / outs — same modal as Home "Preview").
+        openGameModal(game);
         return;
       }
       state.marketsGameFilter = game;
-      renderMarketsView({ force: true });
+      // Preserve scroll — full board rebuild recomputes prop counts for every chip
+      // (O(games × props)) and shifts layout, causing the mobile jump + multi-second freeze.
+      // Toggle chip active state in place and re-render only the prop list instead.
+      const savedY = window.scrollY;
+      document.querySelectorAll('#marketsGameBoard .markets-game-chip').forEach(chip => {
+        if (chip.classList.contains('markets-game-chip--all')) { chip.classList.remove('active'); return; }
+        chip.classList.toggle('active', chip.dataset.gameid === String(gameId));
+      });
+      const clearBtn = document.getElementById('marketsClearGameFilterBtn');
+      if (clearBtn) clearBtn.style.display = '';
+      renderMarketsBoard('marketsBrowserList');
+      _lastMarketsRenderSig = marketsRenderSignature();
+      requestAnimationFrame(() => window.scrollTo(window.scrollX, savedY));
       showToast(`Showing props for ${game.awayTeam} @ ${game.homeTeam}`);
     }
 
@@ -38081,7 +38133,16 @@ nav.tabs > button,
       if (evt && evt.stopPropagation) evt.stopPropagation();
       if (!state.marketsGameFilter) return;
       state.marketsGameFilter = null;
-      renderMarketsView({ force: true });
+      // Preserve scroll position; re-render list, reset chip active states in place.
+      const savedY = window.scrollY;
+      document.querySelectorAll('#marketsGameBoard .markets-game-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.classList.contains('markets-game-chip--all'));
+      });
+      const clearBtn = document.getElementById('marketsClearGameFilterBtn');
+      if (clearBtn) clearBtn.style.display = 'none';
+      renderMarketsBoard('marketsBrowserList');
+      _lastMarketsRenderSig = marketsRenderSignature();
+      requestAnimationFrame(() => window.scrollTo(window.scrollX, savedY));
     }
 
     function getPropAIBrowserFiltered(question = '') {
@@ -38489,12 +38550,40 @@ nav.tabs > button,
       });
     }
 
+    // Cheap signature of every input that changes the markets board output.
+    // Lets tab switches skip the expensive board + chip rebuild when nothing changed.
+    function marketsRenderSignature() {
+      return [
+        Array.isArray(state.props) ? state.props.length : 0,
+        state.lastUpdated ? state.lastUpdated.getTime() : 0,
+        (state.marketsLeagues || []).join(','),
+        state.league || '',
+        state.marketsGameFilter?.id || '',
+        (state.marketsMarketTypes || []).join(','),
+        (state.marketsDirections || []).join(','),
+        normalizeLiveOddsText(state.propAIMarketSearch || ''),
+        _marketsDisplayCap
+      ].join('|');
+    }
+    let _lastMarketsRenderSig = null;
+
     function renderMarketsView(opts) {
       const force = !!(opts && opts.force);
       syncMarketsFilterUI();
+      // Dirty-check: if signature unchanged and board already populated, skip the
+      // heavy renderMarketsGameBoard (O(games×props)) + full board rebuild. Background
+      // sync patches live scores/clocks in place, so the static content stays correct.
+      const sig = marketsRenderSignature();
+      const boardEl = document.getElementById('marketsBrowserList');
+      const alreadyRendered = boardEl && boardEl.children.length > 0;
+      if (!force && sig === _lastMarketsRenderSig && alreadyRendered) {
+        if (isPropAIMarketsBoardVisible()) renderMarketsBoard('propAIMarketBrowserList', 24);
+        return;
+      }
       if (force || isMarketsTabActive()) {
         renderMarketsGameBoard();
         renderMarketsBoard('marketsBrowserList');
+        _lastMarketsRenderSig = sig;
       }
       if (force || isPropAIMarketsBoardVisible()) renderMarketsBoard('propAIMarketBrowserList', 24);
     }
@@ -38786,7 +38875,27 @@ nav.tabs > button,
       initPropAICommandCenter();
     }
 
-    async function initPropAICommandCenter() {
+    // Cheap signature of inputs that change the PropAI command-center output.
+    function propAIRenderSignature() {
+      return [
+        state.league || '',
+        Array.isArray(state.props) ? state.props.length : 0,
+        state.lastUpdated ? state.lastUpdated.getTime() : 0,
+        state.gameFilter?.id || '',
+        state.aiFastMode ? '1' : '0'
+      ].join('|');
+    }
+    let _lastPropAISig = null;
+
+    async function initPropAICommandCenter(opts) {
+      const force = !!(opts && opts.force);
+      // Dirty-check: re-opening PropAI with unchanged data skips the network re-fetch
+      // + full dashboard rebuild (the main source of the tab-switch spin/freeze).
+      const sig = propAIRenderSignature();
+      const shellEl = document.getElementById('propAIFeaturedPick');
+      const alreadyRendered = shellEl && shellEl.children.length > 0;
+      if (!force && sig === _lastPropAISig && alreadyRendered) return;
+
       try {
         await loadApiSportsBundle(false);
         if (state.league && state.league !== 'ALL') state.leagueNewsFilter = state.league;
@@ -38798,6 +38907,7 @@ nav.tabs > button,
       const slate = getTodaySlateGames(state.league);
       const picks = getSlateScopedProps({ limit: 8 });
       renderPropAIDashboard('', picks, { mode: 'command-center', slateGames: slate });
+      _lastPropAISig = sig;
     }
 
     function runPropAIGamePrompt() {
