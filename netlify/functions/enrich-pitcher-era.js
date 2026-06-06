@@ -113,13 +113,17 @@ async function fetchESPNGames() {
         const comp = event.competitions?.[0] || {};
         const competitors = comp.competitors || [];
 
+        // ESPN competitors[0] = home, competitors[1] = away (use homeAway field to be safe)
+        const homeComp = competitors.find(c => c.homeAway === 'home') || competitors[0];
+        const awayComp = competitors.find(c => c.homeAway === 'away') || competitors[1];
+
         return {
           id: event.id,
           date: event.date,
-          awayTeam: competitors[0]?.team?.abbreviation,
-          homeTeam: competitors[1]?.team?.abbreviation,
-          awayTeamName: competitors[0]?.team?.displayName,
-          homeTeamName: competitors[1]?.team?.displayName,
+          awayTeam: awayComp?.team?.abbreviation,
+          homeTeam: homeComp?.team?.abbreviation,
+          awayTeamName: awayComp?.team?.displayName,
+          homeTeamName: homeComp?.team?.displayName,
           status: event.status?.type?.name
         };
       });
@@ -138,10 +142,10 @@ async function fetchESPNGames() {
 
 async function fetchPitcherERA(pitcherId, season = 2026) {
   try {
-    const url = `https://statsapi.mlb.com/api/v1/people/${pitcherId}/stat/season/${season}?group=pitching`;
+    const url = `https://statsapi.mlb.com/api/v1/people/${pitcherId}/stats?stats=season&season=${season}&group=pitching`;
     const data = await fetchJSON(url, { timeout: 5000 });
 
-    const stats = data.stats?.[0]?.stats || {};
+    const stats = data.stats?.[0]?.splits?.[0]?.stat || {};
 
     return {
       playerId: pitcherId,
@@ -226,16 +230,17 @@ async function fetchStartingPitchers(games) {
       }
 
       // Find game matching away/home teams
-      // MLB schedule endpoint uses: teams.away.team.abbreviation / teams.home.team.abbreviation
+      // MLB schedule endpoint only returns team name (not abbreviation), so match by name
       const matchedGame = allScheduleGames.find(g => {
-        const awayAbbr = g.teams?.away?.team?.abbreviation || '';
-        const homeAbbr = g.teams?.home?.team?.abbreviation || '';
-        return awayAbbr === game.awayTeam && homeAbbr === game.homeTeam;
+        const awayName = g.teams?.away?.team?.name || '';
+        const homeName = g.teams?.home?.team?.name || '';
+        // ESPN awayTeamName e.g. "Houston Astros", MLB name e.g. "Houston Astros"
+        return awayName === game.awayTeamName && homeName === game.homeTeamName;
       });
 
       if (!matchedGame) {
-        console.warn(`⚠️  Could not match ${game.awayTeam} @ ${game.homeTeam} in schedule`);
-        console.warn(`   Available: ${allScheduleGames?.map(g => `${g.teams?.away?.team?.abbreviation}@${g.teams?.home?.team?.abbreviation}`).join(', ')}`);
+        console.warn(`⚠️  Could not match ${game.awayTeamName} @ ${game.homeTeamName} in schedule`);
+        console.warn(`   Available: ${allScheduleGames?.map(g => `${g.teams?.away?.team?.name}@${g.teams?.home?.team?.name}`).join(' | ')}`);
         continue;
       }
 
