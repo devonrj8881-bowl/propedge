@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.162 — Scoring: fix dead-code block, NBA rest days signal, NHL goalie prop-type filter — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.163 — Fix market category display: add Earned Runs/RBIs/HR/Shots/etc, show prop name instead of ALL — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -37839,6 +37839,16 @@ nav.tabs > button,
       if (market.includes('assists')) return 'Assists';
       if (market.includes('hits')) return 'Hits';
       if (market.includes('goals')) return 'Goals';
+      if (market.includes('shots')) return 'Shots';
+      if (market.includes('earned runs') || market.includes('er ')) return 'Earned Runs';
+      if (market.includes('innings')) return 'Innings';
+      if (market.includes('walks') || market.includes('bb')) return 'Walks';
+      if (market.includes('home run') || /\bhr\b/.test(market)) return 'HR';
+      if (market.includes('rbis') || market.includes('rbi')) return 'RBIs';
+      if (market.includes('runs') || market.includes(' r ')) return 'Runs';
+      if (market.includes('saves')) return 'Saves';
+      if (market.includes('blocks')) return 'Blocks';
+      if (market.includes('steals')) return 'Steals';
       return 'ALL';
     }
 
@@ -38123,7 +38133,7 @@ nav.tabs > button,
                 ${headshot ? `<img src="${escapeHTML(headshot)}" alt="${escapeHTML(prop.player || '')}" data-player-headshot-key="${escapeHTML(playerHeadshotKey(prop.player || '', prop.league || ''))}" data-player="${escapeHTML(prop.player || '')}" data-league="${escapeHTML(prop.league || '')}" onerror="handlePlayerHeadshotError(this)">` : headshotPlaceholderHTML(prop.player || 'Player', prop.league || '', 'prop')}
                 <div>
                   <div class="propai-market-name">${leagueBadge}${leagueBadge ? ' ' : ''}${escapeHTML(prop.player || 'Player')}</div>
-                  <div class="propai-market-sub">${escapeHTML(`${prop.team || ''} · ${market} · ${propLineText(prop)}`)}</div>
+                  <div class="propai-market-sub">${escapeHTML(`${prop.team || ''} · ${market === 'ALL' ? (prop.prop || prop.stat || 'Prop') : market} · ${propLineText(prop)}`)}</div>
                 </div>
               </div>
               <div class="propai-deck-hero-row">
