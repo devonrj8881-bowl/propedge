@@ -12,20 +12,34 @@
  */
 
 const https = require('https');
-const { google } = require('googleapis');
+const crypto = require('crypto');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HTTP util
 // ─────────────────────────────────────────────────────────────────────────────
 
-function fetchText(url) {
+function fetchText(url, options = {}) {
   return new Promise((resolve, reject) => {
-    const opts = { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } };
-    https.get(url, opts, (res) => {
+    const isPost = options.method === 'POST';
+    const bodyStr = options.body || null;
+    const opts = {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        ...(isPost ? { 'Content-Type': options.contentType || 'application/json' } : {}),
+        ...(bodyStr ? { 'Content-Length': Buffer.byteLength(bodyStr) } : {}),
+      },
+      method: options.method || 'GET',
+    };
+    const req = https.request(url, opts, (res) => {
       let data = '';
       res.on('data', c => data += c);
       res.on('end', () => resolve(data));
-    }).on('error', reject).on('timeout', function() { this.destroy(); reject(new Error('timeout')); });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+    if (bodyStr) req.write(bodyStr);
+    req.end();
   });
 }
 
@@ -121,96 +135,120 @@ async function fetchStatcastLeaderboard() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Google Sheets: write pitcher_era + pitcher_xera columns
+// Google Sheets — pure Node.js implementation (no googleapis package)
+// Uses crypto (built-in) to sign JWT, then raw HTTPS for Sheets API calls.
 // ─────────────────────────────────────────────────────────────────────────────
+
+async function getGoogleAccessToken(credentials) {
+  const now = Math.floor(Date.now() / 1000);
+  const claim = {
+    iss: credentials.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now,
+  };
+  const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify(claim)).toString('base64url');
+  const unsigned = `${header}.${payload}`;
+  const sign = crypto.createSign('RSA-SHA256');
+  sign.update(unsigned);
+  const sig = sign.sign(credentials.private_key, 'base64url');
+  const jwt = `${unsigned}.${sig}`;
+
+  const body = `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`;
+  const res = await fetchText('https://oauth2.googleapis.com/token', { method: 'POST', body, contentType: 'application/x-www-form-urlencoded' });
+  return JSON.parse(res).access_token;
+}
+
+function sheetsRequest(token, method, path, body) {
+  return new Promise((resolve, reject) => {
+    const bodyStr = body ? JSON.stringify(body) : null;
+    const opts = {
+      hostname: 'sheets.googleapis.com',
+      path,
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...(bodyStr ? { 'Content-Length': Buffer.byteLength(bodyStr) } : {}),
+      },
+      timeout: 10000,
+    };
+    const req = https.request(opts, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { resolve(data); } });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Sheets request timeout')); });
+    if (bodyStr) req.write(bodyStr);
+    req.end();
+  });
+}
 
 async function updateGoogleSheet(pitcherData) {
   const sheetId = process.env.PROPEDGE_SHEET_ID;
   const serviceAccountRaw = process.env.GOOGLE_SERVICE_ACCOUNT;
 
   if (!sheetId || !serviceAccountRaw) {
-    console.warn('⚠️ PROPEDGE_SHEET_ID or GOOGLE_SERVICE_ACCOUNT not configured — skipping sheet update');
+    console.warn('⚠️ PROPEDGE_SHEET_ID or GOOGLE_SERVICE_ACCOUNT not configured — skipping');
     return false;
   }
 
   const credentials = JSON.parse(serviceAccountRaw);
-
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-  const sheets = google.sheets({ version: 'v4', auth });
+  const token = await getGoogleAccessToken(credentials);
 
   // Build team → ERA/xERA lookup
   const byTeam = {};
   for (const p of pitcherData) {
-    if (p.team) byTeam[p.team.toUpperCase()] = { era: p.era, xera: p.xera, name: p.name };
+    if (p.team) byTeam[p.team.toUpperCase()] = { era: p.era, xera: p.xera };
   }
 
-  // Read current headers
-  const headerRes = await sheets.spreadsheets.values.get({
-    spreadsheetId: sheetId,
-    range: 'A1:ZZ1',
-  });
-  let headers = headerRes.data.values?.[0] || [];
+  const base = `/v4/spreadsheets/${sheetId}/values`;
 
-  // Add pitcher_era and pitcher_xera columns if missing
-  const updates = [];
-  let eraColIdx = headers.indexOf('pitcher_era');
+  // Read current headers
+  const headerRes = await sheetsRequest(token, 'GET', `${base}/A1:ZZ1`);
+  let headers = headerRes.values?.[0] || [];
+
+  // Add pitcher_era / pitcher_xera columns if missing
+  let eraColIdx  = headers.indexOf('pitcher_era');
   let xeraColIdx = headers.indexOf('pitcher_xera');
 
   if (eraColIdx === -1) {
     eraColIdx = headers.length;
     headers.push('pitcher_era');
-    updates.push(sheets.spreadsheets.values.update({
-      spreadsheetId: sheetId,
-      range: `${colLetter(eraColIdx)}1`,
-      valueInputOption: 'RAW',
-      requestBody: { values: [['pitcher_era']] },
-    }));
-    console.log(`  Added pitcher_era column at ${colLetter(eraColIdx)}`);
+    await sheetsRequest(token, 'PUT', `${base}/${colLetter(eraColIdx)}1?valueInputOption=RAW`, { values: [['pitcher_era']] });
+    console.log(`  Added pitcher_era at col ${colLetter(eraColIdx)}`);
   }
   if (xeraColIdx === -1) {
     xeraColIdx = headers.length;
     headers.push('pitcher_xera');
-    updates.push(sheets.spreadsheets.values.update({
-      spreadsheetId: sheetId,
-      range: `${colLetter(xeraColIdx)}1`,
-      valueInputOption: 'RAW',
-      requestBody: { values: [['pitcher_xera']] },
-    }));
-    console.log(`  Added pitcher_xera column at ${colLetter(xeraColIdx)}`);
+    await sheetsRequest(token, 'PUT', `${base}/${colLetter(xeraColIdx)}1?valueInputOption=RAW`, { values: [['pitcher_xera']] });
+    console.log(`  Added pitcher_xera at col ${colLetter(xeraColIdx)}`);
   }
 
-  await Promise.all(updates);
+  // Read team column (B)
+  const teamRes = await sheetsRequest(token, 'GET', `${base}/B:B`);
+  const teamCol = teamRes.values || [];
 
-  // Read all team values (column B)
-  const teamRes = await sheets.spreadsheets.values.get({
-    spreadsheetId: sheetId,
-    range: 'B:B',
-  });
-  const teamCol = teamRes.data.values || [];
-
-  // Build batch update for matching rows
-  const eraLetter = colLetter(eraColIdx);
-  const xeraLetter = colLetter(xeraColIdx);
+  // Batch update matching rows
   const batchData = [];
   let rowsUpdated = 0;
+  const eraL = colLetter(eraColIdx);
+  const xeraL = colLetter(xeraColIdx);
 
   for (let i = 1; i < teamCol.length; i++) {
     const team = teamCol[i]?.[0]?.trim().toUpperCase();
     if (!team || !byTeam[team]) continue;
-    const rowNum = i + 1; // 1-indexed
-    batchData.push({ range: `${eraLetter}${rowNum}`, values: [[byTeam[team].era ?? '']] });
-    batchData.push({ range: `${xeraLetter}${rowNum}`, values: [[byTeam[team].xera ?? '']] });
+    const row = i + 1;
+    batchData.push({ range: `${eraL}${row}`,  values: [[byTeam[team].era  ?? '']] });
+    batchData.push({ range: `${xeraL}${row}`, values: [[byTeam[team].xera ?? '']] });
     rowsUpdated++;
   }
 
   if (batchData.length > 0) {
-    await sheets.spreadsheets.values.batchUpdate({
-      spreadsheetId: sheetId,
-      requestBody: { valueInputOption: 'RAW', data: batchData },
-    });
+    await sheetsRequest(token, 'POST', `${base}:batchUpdate`, { valueInputOption: 'RAW', data: batchData });
   }
 
   console.log(`  ✅ Sheet updated: ${rowsUpdated} rows written`);
