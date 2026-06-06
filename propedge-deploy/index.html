@@ -27526,8 +27526,9 @@ nav.tabs > button,
       const league = img.dataset.league || '';
       const kind = img.dataset.kind || 'prop';
       const tier = img.dataset.tier || '';
+      const hsKey = img.dataset.playerHeadshotKey || playerHeadshotKey(player, league);
       const fallback = document.createElement('div');
-      fallback.dataset.playerHeadshotKey = img.dataset.playerHeadshotKey || playerHeadshotKey(player, league);
+      fallback.dataset.playerHeadshotKey = hsKey;
       fallback.dataset.player = player;
       fallback.dataset.league = league;
       fallback.dataset.kind = kind;
@@ -27540,6 +27541,14 @@ nav.tabs > button,
         fallback.textContent = playerInitials(player);
       }
       img.replaceWith(fallback);
+      // Static PLAYER_IDS entry was tried and 404'd — kick off ESPN search so the
+      // correct CDN URL is found async and the placeholder gets hydrated.
+      if (player && league) {
+        const normalized = normalizePlayerLookupName(player);
+        // Clear pending flag so schedulePlayerHeadshotLookup won't skip this player
+        _pendingHeadshotLookups.delete(playerHeadshotKey(normalized, league));
+        schedulePlayerHeadshotLookup(normalized, league);
+      }
     }
 
     function hydratePlayerHeadshotPlaceholders(playerName, league, imageUrl) {
@@ -43952,13 +43961,26 @@ JSON: {"recommendations":[{"player":"EXACT_NAME","prop":"EXACT_STAT","line":0,"o
         },
         analytics: {
           hit_rate_last_10: l10 != null ? Math.round(l10) / 100 : null,
+          hit_rate_last_5: normalizePct(prop.l5Pct) != null ? Math.round(normalizePct(prop.l5Pct)) / 100 : null,
+          hit_rate_last_20: normalizePct(prop.l20Pct) != null ? Math.round(normalizePct(prop.l20Pct)) / 100 : null,
+          hit_rate_last_30: normalizePct(prop.l30Pct) != null ? Math.round(normalizePct(prop.l30Pct)) / 100 : null,
+          season_hit_rate: normalizePct(prop.seasonPct),
+          last_season_hit_rate: normalizePct(prop.lastSeasonPct ?? prop.last_season_pct) || null,
           ev_percentage: evPct,
           projected_value: prop.l10Avg ?? prop.l5Avg ?? null,
           propiq_score: Number.isFinite(parseFloat(prop.modelScore)) ? Math.round(parseFloat(prop.modelScore)) : null,
+          propiq_tier: prop.tier || null,
           confidence: normalizeConfidence(prop.confidence),
           board_edge_pct: parseFloat(prop.edge) || null,
-          l5_hit_rate: normalizePct(prop.l5Pct),
-          season_hit_rate: normalizePct(prop.seasonPct)
+          // Scoring factor signals (from computeBetScore)
+          for_factors: Array.isArray(prop.propFactors) ? prop.propFactors.slice(0, 4) : [],
+          against_factors: Array.isArray(prop.againstFactors) ? prop.againstFactors.slice(0, 3) : [],
+          // Rest/fatigue context
+          days_rest: Number.isFinite(parseInt(prop.daysRest)) ? parseInt(prop.daysRest) : null,
+          back_to_back: prop.isB2b || prop.backToBackFlag || false,
+          // MLB pitcher context
+          pitcher_era: prop.pitcherERA || null,
+          pitcher_xera: prop.pitcherXERA || null,
         },
         matchup_context: {
           defensive_rank: prop.sznMatchup || null,
