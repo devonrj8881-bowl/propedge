@@ -1,7 +1,5 @@
 [build]
-  command = "npm install"
-  # Install dependencies so netlify/functions can bundle with esbuild
-  # Git builds must commit netlify/functions (esbuild bundles them during deploy)
+  command = "npm install && cd netlify/functions && npm install"
   functions = "netlify/functions"
   publish = "propedge-deploy"
 
