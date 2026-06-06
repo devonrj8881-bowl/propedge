@@ -124,7 +124,7 @@ async function fetchESPNGames() {
         };
       });
 
-    console.log(`✅ ESPN: Found ${games.length} games for ${today}`);
+    console.log(`✅ ESPN: Found ${games.length} games for ${estDate}`);
     return games;
   } catch (err) {
     console.error('❌ ESPN fetch failed:', err.message);
