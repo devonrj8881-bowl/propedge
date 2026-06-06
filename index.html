@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.165 — Mobile fixes: markets game-select scroll/freeze, Full Analysis modal scroll, live scores + 2nd-tap live modal in markets chips, tab-switch dirty-check perf — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.166 — Markets game chips: replace bare "Live 0:00" with league-aware status (MLB inning/half, NHL/NBA/NFL period+clock via ESPN shortDetail) — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.165">
+  <meta name="app-version" content="v7.166">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -38040,6 +38040,27 @@ nav.tabs > button,
         });
     }
 
+    // League-aware live status for game chips. ESPN shortDetail is already formatted
+    // per sport ("Top 5th", "End 7th", "8:32 - 2nd"); prefer it, then build a fallback.
+    // Avoids the bare "0:00" that displayClock returns between innings/periods.
+    function marketsLiveStatusLabel(game) {
+      const league = game.league || '';
+      const detail = (game.shortDetail || '').trim();
+      if (detail && detail !== '0:00') return detail;
+      if (league === 'MLB') {
+        const half = (game.inningHalf || '').toLowerCase();
+        const halfLbl = half === 'top' ? '▲ Top' : half === 'bottom' ? '▼ Bot'
+          : half === 'middle' ? 'Mid' : half === 'end' ? 'End' : '';
+        if (game.inning) return `${halfLbl ? halfLbl + ' ' : ''}${game.inning}`.trim();
+      } else {
+        const per = _tickerPeriodLabel(league, game.period);
+        const clk = game.displayClock && game.displayClock !== '0:00' ? game.displayClock : '';
+        const lbl = [per, clk].filter(Boolean).join(' ');
+        if (lbl) return lbl;
+      }
+      return game.statusDisplay || 'Live';
+    }
+
     function buildMarketsGameChipHTML(game, propCount) {
       const isActive = String(state.marketsGameFilter?.id) === String(game.id);
       const isLive = game.status === 'live';
@@ -38047,7 +38068,7 @@ nav.tabs > button,
       const awayLogo = getTeamLogo(game.awayTeam, game.league);
       const homeLogo = getTeamLogo(game.homeTeam, game.league);
       const timeLabel = isLive
-        ? (game.displayClock || game.statusDisplay || 'Live')
+        ? marketsLiveStatusLabel(game)
         : isFinal
           ? (game.statusDisplay || 'Final')
           : (game.gameTimeDisplay || new Date(game.gameTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
