@@ -10,8 +10,8 @@
 
 # Scheduled function: Pitcher ERA enrichment
 # Runs daily at 8 AM ET to fetch pitcher data and update Google Sheet
-[[functions."enrich-pitcher-era".scheduling]]
-  cron = "0 12 * * *"  # 12 UTC = 8 AM ET (adjust for daylight savings)
+[[functions."pitcher-era".scheduling]]
+  cron = "0 12 * * *"  # 12 UTC = 8 AM ET
 
 [dev]
   framework = "none"
