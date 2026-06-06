@@ -12,6 +12,7 @@
  */
 
 const https = require('https');
+const { google } = require('googleapis');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HTTP util
@@ -132,7 +133,6 @@ async function updateGoogleSheet(pitcherData) {
     return false;
   }
 
-  const { google } = require('googleapis');
   const credentials = JSON.parse(serviceAccountRaw);
 
   const auth = new google.auth.GoogleAuth({
