@@ -88,37 +88,8 @@ async function fetchStartingPitchers(game) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Step 3: Season ERA/WHIP from ESPN player stats
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function fetchESPNStats(espnId, name) {
-  try {
-    const stats = await fetchJSON(
-      `https://site.web.api.espn.com/apis/common/v3/sports/baseball/mlb/athletes/${espnId}/stats?season=2026`
-    );
-    const pitching = stats.categories?.find(c => c.name === 'pitching');
-    if (!pitching) return null;
-
-    const labels = pitching.labels || [];
-    const totals = pitching.totals || [];
-    const get = (label) => totals[labels.indexOf(label)] ?? null;
-
-    return {
-      era: parseFloat(get('ERA')) || null,
-      whip: parseFloat(get('WHIP')) || null,
-      ip: get('IP'),
-      wins: parseInt(get('W')) || 0,
-      losses: parseInt(get('L')) || 0,
-      strikeouts: parseInt(get('K')) || 0,
-    };
-  } catch (err) {
-    console.warn(`  ⚠️ ESPN stats failed for ${name}: ${err.message}`);
-    return null;
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Step 4: xERA from Baseball Savant (one fetch, name-based lookup)
+// Step 3: Season stats from Baseball Savant — ERA, WHIP, xERA (all 2026 only)
+// ESPN stats API returns career totals so we use Statcast for all rate stats.
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function fetchStatcastLeaderboard() {
@@ -126,20 +97,24 @@ async function fetchStatcastLeaderboard() {
     'https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=pitcher&filter=&sort=4&sortDir=asc&min=0&selections=p_era,p_whip,xera&csv=true'
   );
   const lines = csv.trim().split('\n');
-  // Header: "last_name, first_name","player_id","year","p_era","p_whip","xera"
-  // After stripping quotes and splitting by comma, the name field occupies indices 0 and 1
-  // because it contains a comma: "Smith, John" → ['Smith', ' John', ...]
-  const headers = lines[0].replace(/"/g, '').split(',');
-  const xeraIdx = headers.indexOf('xera');   // e.g. 6
+  // Name field contains a comma ("Smith, John") so after split it occupies cols 0+1
+  const headers = lines[0].replace(/"/g, '').split(',').map(h => h.trim());
+  const eraIdx  = headers.indexOf('p_era');
+  const whipIdx = headers.indexOf('p_whip');
+  const xeraIdx = headers.indexOf('xera');
 
   const lookup = {};
   for (const line of lines.slice(1)) {
     const cols = line.replace(/"/g, '').split(',');
-    const last = cols[0]?.trim();
+    const last  = cols[0]?.trim();
     const first = cols[1]?.trim();
     if (!last || !first) continue;
     const key = `${first} ${last}`.toLowerCase();
-    lookup[key] = { xera: parseFloat(cols[xeraIdx]) || null };
+    lookup[key] = {
+      era:  parseFloat(cols[eraIdx])  || null,
+      whip: parseFloat(cols[whipIdx]) || null,
+      xera: parseFloat(cols[xeraIdx]) || null,
+    };
   }
   return lookup;
 }
@@ -196,21 +171,20 @@ exports.handler = async (event) => {
       return { statusCode: 200, body: JSON.stringify({ message: 'No pitcher data available', date }) };
     }
 
-    // Step 3: ERA/WHIP from ESPN + xERA from Statcast
-    console.log(`📍 Step 3: Fetching stats for ${allPitchers.length} pitchers...`);
+    // Step 3: ERA/WHIP/xERA from Statcast (season-specific, one fetch)
+    console.log(`📍 Step 3: Fetching 2026 stats from Baseball Savant...`);
 
     let statcastLookup = {};
     try {
       statcastLookup = await fetchStatcastLeaderboard();
-      console.log(`  Statcast leaderboard loaded: ${Object.keys(statcastLookup).length} pitchers`);
+      console.log(`  Statcast loaded: ${Object.keys(statcastLookup).length} pitchers`);
     } catch (err) {
       console.warn(`  ⚠️ Statcast fetch failed: ${err.message}`);
     }
 
     const enriched = [];
     for (const pitcher of allPitchers) {
-      const espnStats = await fetchESPNStats(pitcher.espnId, pitcher.name);
-      const xeraData = statcastLookup[pitcher.name.toLowerCase()] || null;
+      const stats = statcastLookup[pitcher.name.toLowerCase()] || null;
 
       const entry = {
         name: pitcher.name,
@@ -218,23 +192,17 @@ exports.handler = async (event) => {
         opponent: pitcher.opponent,
         isHome: pitcher.isHome,
         espnId: pitcher.espnId,
-        era: espnStats?.era ?? null,
-        whip: espnStats?.whip ?? null,
-        ip: espnStats?.ip ?? null,
-        wins: espnStats?.wins ?? 0,
-        losses: espnStats?.losses ?? 0,
-        strikeouts: espnStats?.strikeouts ?? 0,
-        xera: xeraData?.xera ?? null,
+        era:  stats?.era  ?? null,
+        xera: stats?.xera ?? null,
       };
 
       if (entry.era !== null) {
-        console.log(`  ✅ ${pitcher.name} (${pitcher.team}): ERA ${entry.era} | WHIP ${entry.whip} | xERA ${entry.xera}`);
+        console.log(`  ✅ ${pitcher.name} (${pitcher.team}): ERA ${entry.era} | xERA ${entry.xera}`);
       } else {
-        console.warn(`  ⚠️ ${pitcher.name}: no ERA data`);
+        console.warn(`  ⚠️ ${pitcher.name}: not in Statcast leaderboard`);
       }
 
       enriched.push(entry);
-      await new Promise(r => setTimeout(r, 150)); // rate limit
     }
 
     // Step 4: Sheet update
