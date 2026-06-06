@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.169 — Fix generative UI "Invalid prop feed response" (prop-feed.js dropped googleapis dep that crashed cold start; now pure fetch via API key/gviz) + MLB headshot fallback via pitcher-era ESPN id — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.170 — Fix desktop Markets props not rendering (initialProps/deferredProps undefined in rAF path; defines them from ranked slice) — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.169">
+  <meta name="app-version" content="v7.170">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -38508,6 +38508,8 @@ nav.tabs > button,
       }
 
       // Desktop: use rAF as before
+      const initialProps = ranked.slice(0, 30);
+      const deferredProps = ranked.slice(30);
       requestAnimationFrame(() => {
         const initialHTML = initialProps.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
         listEl.innerHTML = header + initialHTML;
