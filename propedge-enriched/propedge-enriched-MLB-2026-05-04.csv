@@ -1,0 +1,1000 @@
+Name,Prop,Line,Team,Opponent,Per_Min_Avg,Per_Min_L5,Per_Min_L10,Variance,Confidence%,Samples,Injury_Status,Injury_Multiplier,Matchup_Rank,Matchup_Scalar,Expected_Minutes
+Ozzie Albies,o0.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Mickey Moniak,o0.5 Hits,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Ozzie Albies,o0.5 Hits,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Matt Olson,o0.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Matt Olson,o0.5 Hits,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Otto Lopez,o0.5 Hits,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Kyle Tucker,o0.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Jorge Soler,o0.5 Hits + Runs + RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Janson Junk,o2.5 Strikeouts,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Bobby Witt Jr.,o0.5 Hits,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Riley Greene,o0.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Brandon Marsh,o0.5 Hits,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Brandon Marsh,o0.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Andy Pages,o0.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Liam Hicks,o0.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Jorge Soler,o0.5 Hits,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Jo Adell,o0.5 Hits,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Jo Adell,o0.5 Hits + Runs + RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Matt Olson,o1.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Miguel Andujar,o0.5 Hits,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Miguel Andujar,o0.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Daulton Varsho,o0.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Christian Walker,o0.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Mike Trout,o0.5 Hits,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Matt Olson,o1.5 Total Bases,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Vinnie Pasquantino,o0.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Ozzie Albies,o1.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Miguel Vargas,o0.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Max Muncy,o0.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Christian Walker,o0.5 Hits,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Max Muncy,o0.5 Hits,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Miguel Vargas,o0.5 Hits,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Ozzie Albies,o1.5 Total Bases,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Cam Schlittler,o5.5 Strikeouts,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Cody Bellinger,o0.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Tomoyuki Sugano,o2.5 Strikeouts,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Michael Wacha,o3.5 Strikeouts,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Colt Keith,o0.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Yandy Diaz,o0.5 Hits,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Carlos Correa,o0.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Junior Caminero,o0.5 Hits,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Nico Hoerner,o0.5 Hits,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Ivan Herrera,o0.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Chase Meidroth,o0.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Jarren Duran,o0.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Carson Kelly,o0.5 Hits,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Ivan Herrera,o0.5 Hits,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Trevor Story,o0.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Tyler Freeman,o0.5 Hits,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Andy Pages,o0.5 Hits,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Kyle Tucker,o0.5 Hits,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Chase Meidroth,o0.5 Hits,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Tanner Bibee,o3.5 Strikeouts,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+JJ Wetherholt,o0.5 Hits,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Ramon Laureano,o0.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Willson Contreras,o0.5 Hits,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Isaac Paredes,o0.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Dylan Beavers,o0.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Spencer Steer,o0.5 Hits + Runs + RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Jo Adell,o0.5 Singles,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Julio Rodriguez,o0.5 Hits,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Michael Harris II,o0.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Pete Alonso,o0.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Manny Machado,o0.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Carlos Narvaez,o0.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Otto Lopez,o0.5 Singles,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Caballero,o0.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Isaac Paredes,o0.5 Hits,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+JP Crawford,o0.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Justin Crawford,o0.5 Hits,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Justin Crawford,o0.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Matt Olson,o0.5 Runs,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Michael Harris II,o0.5 Hits,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Nathan Church,o0.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Yainer Diaz,o0.5 Hits,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Yainer Diaz,o0.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Jazz Chisholm Jr.,o0.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Salvador Perez,o0.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Pedro Pages,o0.5 Hits,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Pedro Pages,o0.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Marcelo Mayer,o0.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Spencer Steer,o0.5 Hits,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+TJ Friedl,o0.5 Hits + Runs + RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Adolis Garcia,o0.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Riley Greene,o0.5 Runs,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Matt Olson,o2.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Lane Thomas,o0.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Josh Naylor,o0.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Adolis Garcia,o0.5 Hits,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Jake Bauers,o0.5 Hits,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Tristan Peters,o0.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Marcelo Mayer,o0.5 Hits,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Samuel Basallo,o0.5 Hits,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Samuel Basallo,o0.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+TJ Friedl,o0.5 Hits,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Nathan Church,o0.5 Hits,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Christian Walker,o0.5 Singles,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Drake Baldwin,o0.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Juan Soto,o0.5 Hits,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Aaron Nola,o4.5 Strikeouts,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Michael Wacha,o4.5 Strikeouts,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Drake Baldwin,o0.5 Hits,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Ernie Clement,o0.5 Hits,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Ernie Clement,o0.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Xavier Edwards,o0.5 Hits,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Zach Neto,o0.5 Hits + Runs + RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Cole Young,o0.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Wilyer Abreu,o0.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Otto Lopez,o1.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Jordan Walker,o0.5 Hits,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Heliot Ramos,o0.5 Hits,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Heliot Ramos,o0.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Austin Hays,o0.5 Hits,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Austin Hays,o0.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Colt Keith,o0.5 Hits,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Adley Rutschman,o0.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Yordan Alvarez,o0.5 Hits,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Trea Turner,o0.5 Hits,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Cody Bellinger,o0.5 Hits,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Luis Arraez,o0.5 Hits,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Masyn Winn,o0.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Freddie Freeman,o0.5 Hits,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Xander Bogaerts,o0.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Fernando Tatis Jr.,o0.5 Hits,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Cam Schlittler,o6.5 Strikeouts,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Daniel Schneemann,o0.5 Hits + Runs + RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Randy Arozarena,o0.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Drake Baldwin,o0.5 Singles,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Maikel Garcia,o0.5 Hits,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Masyn Winn,o0.5 Hits,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Sal Frelick,o0.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Nolan Schanuel,o0.5 Hits,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Nolan Schanuel,o0.5 Hits + Runs + RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Tyler Freeman,o0.5 Singles,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Liam Hicks,o0.5 Hits,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Bryce Harper,o0.5 Hits,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Carson Kelly,o0.5 Singles,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Daniel Schneemann,o0.5 Hits,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Carlos Correa,o0.5 Hits,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Wilyer Abreu,o0.5 Hits,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Gunnar Henderson,o0.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Yoshinobu Yamamoto,o5.5 Strikeouts,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Riley Greene,o0.5 Hits,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Trevor Story,o0.5 Hits,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Pete Crow-Armstrong,o0.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Sam Antonacci,o0.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Jonny DeLuca,o0.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Gunnar Henderson,o0.5 Hits,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Gunnar Henderson,o1.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Alec Burleson,o0.5 Hits,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Jordan Walker,o0.5 Runs,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+TJ Rumfield,o0.5 Hits,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Adley Rutschman,o0.5 Hits,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Jac Caglianone,o0.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Fernando Tatis Jr.,o0.5 Singles,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Bo Bichette,o0.5 Singles,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Carlos Narvaez,o0.5 Hits,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Pete Crow-Armstrong,o0.5 Hits,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Colson Montgomery,o0.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Kazuma Okamoto,o0.5 Hits,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Kazuma Okamoto,o0.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Jazz Chisholm Jr.,o0.5 Hits,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Salvador Perez,o0.5 Hits,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Miguel Andujar,o1.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Brandon Marsh,o1.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Jose Ramirez,o0.5 Hits,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Ozzie Albies,o0.5 Singles,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Pete Alonso,o0.5 Hits,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Bobby Witt Jr.,o1.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Freddie Freeman,o0.5 Singles,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Chase Meidroth,o1.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Mark Vientos,o0.5 Hits,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Colt Keith,o0.5 Singles,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Caballero,o0.5 Hits,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Steven Kwan,o0.5 Hits,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Angel Martinez,o0.5 Hits + Runs + RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Alec Burleson,o1.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Jordan Walker,o0.5 Singles,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Tucker,o1.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Manny Machado,o0.5 Hits,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Brandon Marsh,o0.5 Singles,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Cam Schlittler,o17.5 Outs,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Eli White,o0.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Ozzie Albies,o0.5 Runs,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Spencer Torkelson,o0.5 Hits,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Spencer Torkelson,o0.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Alec Bohm,o0.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+JP Crawford,o0.5 Hits,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Trent Grisham,o0.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Isaac Collins,o0.5 Hits,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Isaac Collins,o0.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Leo Rivas,o0.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Christian Walker,o1.5 Total Bases,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Christian Walker,o1.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Yordan Alvarez,o0.5 Singles,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Yainer Diaz,o1.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Yainer Diaz,o0.5 Singles,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Pete Alonso,o1.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Josh Naylor,o0.5 Hits,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Mickey Moniak,o0.5 Singles,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Michael Busch,o0.5 Hits,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Nathaniel Lowe,o0.5 Hits,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Tristan Peters,o0.5 Hits,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Riley Greene,o1.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Bo Bichette,o1.5 Hits + Runs + RBIs,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Spencer Torkelson,o1.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Pete Alonso,o0.5 Runs,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Max Muncy,o1.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Ozzie Albies,o2.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Kazuma Okamoto,o1.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Nathaniel Lowe,o1.5 Hits + Runs + RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Vladimir Guerrero Jr.,o0.5 Runs,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Ryan McMahon,o0.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Adley Rutschman,o0.5 Singles,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Samuel Basallo,o0.5 Singles,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Matt Olson,o2.5 Total Bases,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Tristan Peters,o0.5 Singles,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+JP Crawford,o0.5 Singles,0,SEA,KC,0,0,0,0,0,0,Available,1,15,0.5,32
+Marcelo Mayer,o0.5 Singles,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Ryan McMahon,o0.5 Hits,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Kazuma Okamoto,o2.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Kazuma Okamoto,o0.5 RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Miguel Vargas,o0.5 Singles,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Bobby Witt Jr.,o0.5 Runs,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Jackson Chourio,o0.5 Hits,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Chase Petty,o2.5 Strikeouts,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Randy Vasquez,o3.5 Strikeouts,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Garrett Stubbs,o0.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Chandler Simpson,o0.5 Hits,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Elly De La Cruz,o0.5 Hits,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Juan Soto,o0.5 Singles,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Vladimir Guerrero Jr.,o0.5 Hits,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+William Contreras,o0.5 Hits,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Drake Baldwin,o1.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Drake Baldwin,o0.5 Runs,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Ceddanne Rafaela,o0.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Vladimir Guerrero Jr.,o0.5 Singles,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Dillon Dingler,o0.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Ian Happ,o0.5 Hits,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Rhys Hoskins,o0.5 Hits + Runs + RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Cole Young,o0.5 Hits,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Xavier Edwards,o0.5 Singles,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Schwarber,o0.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Aaron Judge,o0.5 Hits,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Jonathan Aranda,o0.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Jakob Marsee,o0.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Paul Goldschmidt,o0.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Paul Goldschmidt,o0.5 Runs,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Leody Taveras,o0.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+JJ Bleday,o0.5 Hits,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+JJ Bleday,o0.5 Hits + Runs + RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Nolan Gorman,o0.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Brice Turang,o0.5 Hits,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Teoscar Hernandez,o0.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Randy Vasquez,o16.5 Outs,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Roman Anthony,o0.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Randy Arozarena,o0.5 Hits,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Bobby Witt Jr.,o0.5 Singles,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Brayan Rocchio,o0.5 Hits + Runs + RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+William Contreras,o1.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Cam Smith,o0.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Luis Campusano,o0.5 Hits,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Luis Campusano,o0.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Nico Hoerner,o0.5 Singles,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Nick Loftin,o0.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+David Hamilton,o0.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Hunter Goodman,o0.5 Hits,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Daulton Varsho,o0.5 Hits,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Andrew Benintendi,o0.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Xander Bogaerts,o0.5 Hits,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Aaron Judge,o0.5 Runs,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Seiya Suzuki,o0.5 Hits,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Seiya Suzuki,o0.5 Singles,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Brayan Rocchio,o0.5 Hits,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Masyn Winn,o1.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Wilyer Abreu,o0.5 Singles,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Yandy Diaz,o0.5 Singles,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Jonathan Aranda,o1.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Chandler Simpson,o1.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Bryson Stott,o0.5 Hits,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Bryson Stott,o0.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Cody Bellinger,o1.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Nico Hoerner,o1.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Jordan Walker,o1.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Jasson Dominguez,o0.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Moisés Ballesteros,o0.5 Hits,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Jac Caglianone,o0.5 Hits,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Roman Anthony,o0.5 Hits,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Ben Williamson,o0.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Aaron Judge,o1.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Mike Trout,o1.5 Hits + Runs + RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Colson Montgomery,o0.5 Hits,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Sam Antonacci,o0.5 Hits,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Chase Meidroth,o0.5 Singles,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Karros,o0.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Willson Contreras,o0.5 Singles,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Jonathan Aranda,o0.5 Hits,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Ernie Clement,o1.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Austin Wells,o0.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Nolan Gorman,o0.5 Hits,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Hyeseong Kim,o0.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Austin Hays,o0.5 Singles,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Seiya Suzuki,o0.5 Runs,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Julio Rodriguez,o0.5 Singles,0,SEA,KC,0,0,0,0,0,0,Available,1,15,0.5,32
+Cole Young,o0.5 Singles,0,SEA,KC,0,0,0,0,0,0,Available,1,15,0.5,32
+Miguel Andujar,o0.5 Singles,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Jonny DeLuca,o0.5 Hits,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Carson Kelly,o1.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Ian Happ,o0.5 Runs,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Carter Jensen,o0.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+JJ Wetherholt,o1.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Chase Meidroth,o0.5 Runs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Francisco Alvarez,o0.5 Hits,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Carson Benge,o0.5 Hits + Runs + RBIs,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Wilyer Abreu,o1.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Jarren Duran,o0.5 Hits,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Yandy Diaz,o0.5 Runs,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Jonathan Aranda,o0.5 RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Gunnar Henderson,o0.5 Runs,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Masyn Winn,o0.5 Singles,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+William Contreras,o0.5 Runs,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Tucker,o0.5 Runs,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Riley Greene,o0.5 Singles,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Hyeseong Kim,o0.5 Hits,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Jo Adell,o1.5 Hits + Runs + RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Randy Arozarena,o1.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Matt Olson,o0.5 RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Bryce Harper,o1.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Maikel Garcia,o1.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Brayan Rocchio,o1.5 Hits + Runs + RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Ivan Herrera,o1.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Mitch Garver,o0.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Mickey Moniak,o1.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Willson Contreras,o1.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Otto Lopez,o1.5 Total Bases,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Seiya Suzuki,o1.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Alec Burleson,o2.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Alec Burleson,o0.5 RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+TJ Rumfield,o0.5 Singles,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Hao-Yu  Lee,o0.5 Hits,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Hao-Yu  Lee,o0.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Janson Junk,o3.5 Strikeouts,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Moisés Ballesteros,o1.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Vinnie Pasquantino,o0.5 Hits,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Isaac Paredes,o0.5 Singles,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Alex Freeland,o0.5 Hits,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Alex Freeland,o0.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Nolan Schanuel,o0.5 Singles,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Austin Hays,o1.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Ozzie Albies,o0.5 RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Kyle Karros,o0.5 Hits,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Jose Caballero,o0.5 Singles,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Dansby Swanson,o0.5 Hits,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Lane Thomas,o0.5 Hits,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Angel Martinez,o0.5 Hits,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Alec Burleson,o1.5 Total Bases,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Jake Bauers,o1.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Miguel Vargas,o1.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Eli White,o0.5 Hits,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Manny Machado,o1.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Miguel Andujar,o1.5 Total Bases,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Tyler Freeman,o1.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Tyler Freeman,o0.5 RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Trevor Story,o0.5 Singles,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Schwarber,o0.5 Runs,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+David Fry,o0.5 Hits + Runs + RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Colson Montgomery,o1.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Josh Naylor,o0.5 Singles,0,SEA,KC,0,0,0,0,0,0,Available,1,15,0.5,32
+Michael Harris II,o1.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Xander Bogaerts,o1.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+TJ Rumfield,o1.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Riley Greene,o1.5 Total Bases,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Samuel Basallo,o1.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Brice Matthews,o0.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Edgar Quero,o0.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Carson Benge,o0.5 Hits,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Wenceel Perez,o0.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Jakob Marsee,o0.5 Hits,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Justin Crawford,o1.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Trent Grisham,o1.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Trent Grisham,o0.5 Runs,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Isaac Collins,o0.5 Singles,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Alec Burleson,o0.5 Runs,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Masyn Winn,o1.5 Total Bases,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Jake Bauers,o0.5 Singles,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Jorge Soler,o0.5 Singles,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Manny Machado,o0.5 Singles,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Daulton Varsho,o0.5 Runs,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Bryce Harper,o0.5 Runs,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Alec Bohm,o0.5 Hits,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Aaron Judge,o0.5 RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Pete Alonso,o1.5 Total Bases,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Lane Thomas,o0.5 Singles,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+JJ Wetherholt,o2.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+JP Crawford,o0.5 Runs,0,SEA,KC,0,0,0,0,0,0,Available,1,15,0.5,32
+Brandon Marsh,o1.5 Total Bases,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Brandon Marsh,o0.5 Runs,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Seiya Suzuki,o1.5 Total Bases,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Seiya Suzuki,o1.5 Hits,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Seiya Suzuki,o2.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Tanner Bibee,o4.5 Strikeouts,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Christian Walker,o2.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Jo Adell,o0.5 RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Randy Arozarena,o1.5 Total Bases,0,SEA,KC,0,0,0,0,0,0,Available,1,15,0.5,32
+Adolis Garcia,o1.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Jazz Chisholm Jr.,o1.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Jazz Chisholm Jr.,o0.5 Singles,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Salvador Perez,o0.5 Singles,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Luis Arraez,o1.5 Total Bases,0,SF,TB,0,0,0,0,0,0,Available,1,15,0.5,32
+Mickey Moniak,o0.5 RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Bo Bichette,o0.5 Runs,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Spencer Steer,o0.5 Singles,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+Ivan Herrera,o1.5 Total Bases,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Ivan Herrera,o0.5 Runs,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Mike Trout,o0.5 Singles,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Jakob Marsee,o1.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Nathaniel Lowe,o1.5 Total Bases,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+Nathaniel Lowe,o0.5 RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Max Muncy,o1.5 Total Bases,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Eli White,o1.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Moisés Ballesteros,o1.5 Total Bases,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Christian Walker,o1.5 Hits,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Isaac Paredes,o1.5 Total Bases,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Matt Olson,o3.5 Total Bases,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Matt Olson,o3.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Ozzie Albies,o1.5 Hits,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Willson Contreras,o2.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Jose Caballero,o0.5 Runs,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+JJ Wetherholt,o1.5 Total Bases,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Vinnie Pasquantino,o0.5 Runs,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Josh Naylor,o1.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Cole Young,o0.5 RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Ozzie Albies,o2.5 Total Bases,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Xander Bogaerts,o0.5 Runs,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Michael Busch,o1.5 Total Bases,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Ke'Bryan Hayes,o0.5 Hits + Runs + RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Eli White,o0.5 Runs,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Spencer Torkelson,o1.5 Total Bases,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Spencer Torkelson,o0.5 Runs,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Pete Alonso,o2.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Ke'Bryan Hayes,o0.5 Hits,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Nathaniel Lowe,o2.5 Hits + Runs + RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Josh Naylor,o0.5 RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Justin Crawford,o0.5 RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Jazz Chisholm Jr.,o0.5 RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Jackson Chourio,o1.5 Total Bases,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Andrew Vaughn,o0.5 Hits,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Andrew Vaughn,o0.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Shane Baz,o15.5 Outs,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Christopher Morel,o0.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Sal Stewart,o0.5 Hits + Runs + RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Chandler Simpson,o0.5 Singles,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Soriano,o5.5 Strikeouts,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Munetaka Murakami,o0.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Altuve,o0.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Yandy Diaz,o1.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Jesus Sanchez,o0.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Davis Martin,o17.5 Outs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Davis Martin,o4.5 Strikeouts,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Luis Arraez,o0.5 Singles,0,SF,TB,0,0,0,0,0,0,Available,1,15,0.5,32
+Randy Vasquez,o4.5 Strikeouts,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Ceddanne Rafaela,o0.5 Hits,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Mike Yastrzemski,o0.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Andres Gimenez,o0.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Alex Bregman,o0.5 Hits,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Jesus Sanchez,o0.5 Hits,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Mauricio Dubon,o0.5 Hits,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Mauricio Dubon,o0.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Jeremiah Jackson,o0.5 Hits,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Jeremiah Jackson,o0.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Zach Neto,o0.5 Hits,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Xavier Edwards,o1.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Mike Trout,o0.5 Runs,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Rafael Devers,o0.5 Hits,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Rafael Devers,o0.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Jung Hoo Lee,o0.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Andres Gimenez,o0.5 Hits,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Mauricio Dubon,o1.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Ramon Laureano,o0.5 Hits,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Jasson Dominguez,o0.5 Hits,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Brice Turang,o0.5 Runs,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Teoscar Hernandez,o0.5 Hits,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Drake Baldwin,o2.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Taylor Walls,o0.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Kyle Schwarber,o0.5 Hits,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Leody Taveras,o0.5 Hits,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Sal Frelick,o0.5 Hits,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Jose Altuve,o0.5 Hits,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Andy Pages,o1.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Andy Pages,o0.5 Singles,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Munetaka Murakami,o0.5 Hits,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Fernando Tatis Jr.,o1.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Luis Campusano,o1.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Brenton Doyle,o0.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Colt Keith,o1.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Junior Caminero,o1.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Kyle Stowers,o0.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Carlos Correa,o0.5 Runs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+MJ Melendez,o0.5 Hits,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+MJ Melendez,o0.5 Hits + Runs + RBIs,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Austin Riley,o0.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Willi Castro,o0.5 Hits,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Myles Straw,o0.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Xavier Edwards,o0.5 Runs,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+JJ Wetherholt,o0.5 Runs,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Xander Bogaerts,o0.5 Singles,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Dillon Dingler,o0.5 Hits,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Jarren Duran,o0.5 Runs,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Junior Caminero,o0.5 Singles,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Liam Hicks,o1.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Luis Rengifo,o0.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+William Contreras,o0.5 Singles,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Carlos Correa,o1.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Julio Rodriguez,o1.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Hunter Goodman,o1.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Marcus Semien,o0.5 Hits,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Adley Rutschman,o1.5 Total Bases,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Maikel Garcia,o0.5 Singles,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Victor Scott II,o0.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Cam Smith,o0.5 Hits,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Mike Yastrzemski,o0.5 Hits,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Jung Hoo Lee,o0.5 Hits,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Luis Campusano,o0.5 RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Jackson Merrill,o0.5 Hits,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Junior Caminero,o0.5 Runs,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Owen Caissie,o0.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Liam Hicks,o0.5 Runs,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Dansby Swanson,o1.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Tyler Stephenson,o0.5 Hits + Runs + RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Luis Rengifo,o0.5 Hits,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Jorge Soler,o1.5 Hits + Runs + RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Cole Young,o1.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Austin Riley,o0.5 Hits,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Hunter Goodman,o0.5 Runs,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Vladimir Guerrero Jr.,o1.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Aaron Judge,o1.5 Total Bases,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Austin Wells,o0.5 Hits,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Shane Baz,o4.5 Strikeouts,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Edward Cabrera,o4.5 Strikeouts,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Rhys Hoskins,o0.5 Runs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Brayan Rocchio,o0.5 Singles,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+David Hamilton,o0.5 Hits,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Brice Turang,o0.5 Singles,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Teoscar Hernandez,o0.5 Singles,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Nolan Schanuel,o1.5 Hits + Runs + RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Andrew Benintendi,o0.5 Hits,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Michael Harris II,o0.5 Singles,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Randy Arozarena,o0.5 Runs,0,SEA,KC,0,0,0,0,0,0,Available,1,15,0.5,32
+Roman Anthony,o0.5 Singles,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Ben Williamson,o0.5 Hits,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Ernie Clement,o1.5 Total Bases,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Trea Turner,o1.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Trea Turner,o0.5 Runs,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Justin Crawford,o0.5 Singles,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Tyler Stephenson,o0.5 Hits,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Carlos Correa,o1.5 Total Bases,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Carlos Correa,o0.5 Singles,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Jake Cronenworth,o0.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Marcus Semien,o0.5 Singles,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Trevor Story,o1.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Aaron Judge,o2.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Adley Rutschman,o1.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Isaac Paredes,o1.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Mitch Garver,o0.5 Hits,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Drew Gilbert,o0.5 Hits,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Drew Gilbert,o0.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+David Hamilton,o0.5 Runs,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Christian Walker,o0.5 Runs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Austin Riley,o1.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Willson Contreras,o0.5 Runs,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Yandy Diaz,o2.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Jonathan Aranda,o2.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Adolis Garcia,o0.5 Singles,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Gunnar Henderson,o1.5 Total Bases,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Michael Busch,o1.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Steven Kwan,o0.5 Singles,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Nolan Gorman,o1.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Pedro Pages,o1.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Pedro Pages,o0.5 Singles,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Jake Bauers,o0.5 Runs,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Garrett Mitchell,o0.5 Hits,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Manny Machado,o0.5 Runs,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Ramon Laureano,o0.5 Singles,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Mickey Moniak,o1.5 Total Bases,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Mickey Moniak,o0.5 Runs,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Schwarber,o1.5 Total Bases,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Schwarber,o1.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Leody Taveras,o0.5 RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Max Muncy,o0.5 Runs,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Andy Pages,o0.5 Runs,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Mike Trout,o1.5 Total Bases,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Mike Yastrzemski,o0.5 Singles,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Riley Greene,o2.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Cam Schlittler,o7.5 Strikeouts,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Jac Caglianone,o1.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Daniel Schneemann,o0.5 Singles,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Alex Freeland,o0.5 Singles,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Jordan Beck,o0.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Kyle Karros,o0.5 Runs,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Karros,o0.5 Singles,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Kazuma Okamoto,o0.5 Singles,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Liam Hicks,o0.5 RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Austin Wells,o0.5 Singles,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Dansby Swanson,o2.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Angel Martinez,o1.5 Total Bases,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Jordan Walker,o0.5 RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Hyeseong Kim,o0.5 Singles,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Mauricio Dubon,o0.5 Runs,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Willi Castro,o0.5 Singles,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Ben Williamson,o0.5 Singles,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Brandon Valenzuela,o0.5 Hits,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Brandon Valenzuela,o0.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Bryce Harper,o1.5 Total Bases,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+TJ Friedl,o0.5 Singles,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+Bobby Witt Jr.,o1.5 Total Bases,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Vinnie Pasquantino,o0.5 RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Sam Antonacci,o1.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Sam Antonacci,o0.5 Runs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Chase Meidroth,o1.5 Total Bases,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Michael Harris II,o1.5 Total Bases,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Michael Harris II,o0.5 RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Jackson Merrill,o0.5 Singles,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Carson Kelly,o0.5 Runs,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Moisés Ballesteros,o0.5 Runs,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Karros,o1.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Wilyer Abreu,o1.5 Total Bases,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Wilyer Abreu,o1.5 Hits,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Kazuma Okamoto,o1.5 Total Bases,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Otto Lopez,o1.5 Hits,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Trent Grisham,o0.5 Hits,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Jose Caballero,o1.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Nolan Gorman,o0.5 Runs,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Nathan Church,o0.5 Singles,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+David Hamilton,o1.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Heliot Ramos,o1.5 Total Bases,0,SF,TB,0,0,0,0,0,0,Available,1,15,0.5,32
+Mark Vientos,o1.5 Hits + Runs + RBIs,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Jarren Duran,o0.5 Singles,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Alec Bohm,o0.5 Singles,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Seiya Suzuki,o0.5 RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Vinnie Pasquantino,o1.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Isaac Collins,o1.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Brice Matthews,o0.5 Hits,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Hyeseong Kim,o1.5 Total Bases,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Xander Bogaerts,o1.5 Total Bases,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+TJ Rumfield,o2.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Adley Rutschman,o1.5 Hits,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Adley Rutschman,o2.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+David Fry,o0.5 Hits,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Jakob Marsee,o0.5 Singles,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Trea Turner,o1.5 Total Bases,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Adolis Garcia,o1.5 Total Bases,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Bryson Stott,o1.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Marcus Semien,o1.5 Hits + Runs + RBIs,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Wenceel Perez,o0.5 Hits,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Wenceel Perez,o1.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Spencer Torkelson,o0.5 RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Dylan Beavers,o0.5 RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Rhys Hoskins,o1.5 Hits + Runs + RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Ivan Herrera,o2.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Yainer Diaz,o1.5 Total Bases,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+TJ Rumfield,o0.5 Runs,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Riley Greene,o1.5 Hits,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Vinnie Pasquantino,o1.5 Total Bases,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Julio Rodriguez,o1.5 Total Bases,0,SEA,KC,0,0,0,0,0,0,Available,1,15,0.5,32
+Michael Harris II,o2.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Mickey Moniak,o2.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Carlos Narvaez,o1.5 Total Bases,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Kazuma Okamoto,o0.5 Runs,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Brandon Marsh,o2.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Seiya Suzuki,o2.5 Total Bases,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Tucker,o1.5 Total Bases,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+JP Crawford,o1.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Eli White,o0.5 RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Pete Alonso,o0.5 RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Alex Bregman,o0.5 Runs,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+David Fry,o0.5 Runs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Pedro Pages,o1.5 Total Bases,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Nathan Church,o1.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+JJ Wetherholt,o0.5 RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Colson Montgomery,o0.5 Singles,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Alec Bohm,o1.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Ryan McMahon,o0.5 Singles,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Samuel Basallo,o1.5 Total Bases,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Samuel Basallo,o0.5 RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Masyn Winn,o1.5 Hits,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Julio Rodriguez,o1.5 Hits,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Willson Contreras,o1.5 Total Bases,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Cody Bellinger,o0.5 RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Jazz Chisholm Jr.,o0.5 Runs,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Moisés Ballesteros,o2.5 Total Bases,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Salvador Perez,o1.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Salvador Perez,o0.5 Runs,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Miguel Andujar,o0.5 RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Nathan Church,o1.5 Total Bases,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Julio Rodriguez,o2.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+TJ Friedl,o1.5 Total Bases,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+Adolis Garcia,o2.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Brice Matthews,o0.5 Singles,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Spencer Torkelson,o2.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Pete Alonso,o2.5 Total Bases,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Nathaniel Lowe,o2.5 Total Bases,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+Matt Olson,o1.5 Hits,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Kazuma Okamoto,o2.5 Total Bases,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Kazuma Okamoto,o3.5 Total Bases,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Kazuma Okamoto,o3.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Kazuma Okamoto,o0.5 Home Runs,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Salvador Perez,o0.5 RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Ryan McMahon,o1.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Nathaniel Lowe,o0.5 Runs,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+Spencer Torkelson,o2.5 Total Bases,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Jazz Chisholm Jr.,o2.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+JJ Wetherholt,o3.5 Total Bases,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+JJ Wetherholt,o2.5 Total Bases,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Tucker,o0.5 Doubles,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Spencer Torkelson,o3.5 Total Bases,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Michael Busch,o0.5 Doubles,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Jackson Chourio,o2.5 Total Bases,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Jackson Chourio,o1.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Jackson Chourio,o0.5 Singles,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Andrew Vaughn,o1.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Nick Martinez,o17.5 Outs,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Nick Martinez,o3.5 Strikeouts,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Nick Fortes,o0.5 Hits,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Nick Fortes,o0.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Eric Lauer,o2.5 Strikeouts,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Davis Martin,o5.5 Strikeouts,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Matt Chapman,o0.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Elly De La Cruz,o1.5 Hits + Runs + RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Sal Stewart,o0.5 Hits,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Ezequiel Tovar,o0.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Brice Turang,o1.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Yordan Alvarez,o1.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Ian Happ,o1.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Elly De La Cruz,o0.5 Runs,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+Will Smith,o0.5 Hits,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Ernie Clement,o0.5 Singles,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Soriano,o17.5 Outs,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Soriano,o6.5 Strikeouts,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Logan Gilbert,o5.5 Strikeouts,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Jeremiah Jackson,o0.5 Singles,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Alex Bregman,o0.5 Singles,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Freddie Freeman,o1.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Munetaka Murakami,o0.5 Runs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Trea Turner,o0.5 Singles,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Yoan Moncada,o0.5 Hits + Runs + RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Heliot Ramos,o0.5 Singles,0,SF,TB,0,0,0,0,0,0,Available,1,15,0.5,32
+Ezequiel Tovar,o0.5 Hits,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Daniel Schneemann,o1.5 Hits + Runs + RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Juan Soto,o1.5 Hits + Runs + RBIs,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Otto Lopez,o0.5 Runs,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Cody Bellinger,o0.5 Singles,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Leody Taveras,o1.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+William Contreras,o1.5 Total Bases,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Tucker,o0.5 Singles,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Dominic Canzone,o0.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Yordan Alvarez,o1.5 Total Bases,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Drake Baldwin,o1.5 Total Bases,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Tomoyuki Sugano,o3.5 Strikeouts,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Ceddanne Rafaela,o0.5 Singles,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Christopher Morel,o0.5 Hits,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Kyle Stowers,o0.5 Hits,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Kyle Stowers,o0.5 Singles,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Xavier Edwards,o1.5 Total Bases,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Graham Pauley,o0.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Aaron Nola,o5.5 Strikeouts,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Elly De La Cruz,o0.5 Singles,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Altuve,o0.5 Runs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Cam Smith,o1.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Rafael Devers,o1.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Randy Vasquez,o5.5 Strikeouts,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Brett Baty,o0.5 Hits,0,NYM,LAA,0,0,0,0,0,0,Available,1,19,0.36666666666666664,32
+Colt Keith,o0.5 Runs,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Dillon Dingler,o1.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Yandy Diaz,o1.5 Total Bases,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Jonny DeLuca,o1.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Myles Straw,o0.5 Runs,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Owen Caissie,o0.5 Hits,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Jakob Marsee,o0.5 Runs,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Jordan Walker,o1.5 Total Bases,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Jorge Soler,o0.5 RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Mauricio Dubon,o0.5 Singles,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Luis Arraez,o1.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Patrick Bailey,o0.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Andruw Monasterio,o0.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Pete Crow-Armstrong,o1.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Pete Crow-Armstrong,o0.5 Singles,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Elly De La Cruz,o1.5 Total Bases,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+Maikel Garcia,o0.5 Runs,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Carter Jensen,o0.5 Hits,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Ivan Herrera,o0.5 Singles,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+JJ Wetherholt,o0.5 Singles,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Sal Frelick,o0.5 Singles,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Altuve,o1.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Munetaka Murakami,o1.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Jung Hoo Lee,o1.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Ty France,o0.5 Hits,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Jackson Merrill,o1.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Jackson Merrill,o0.5 Runs,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Dylan Beavers,o0.5 Hits,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+David Hamilton,o0.5 Singles,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Christian Walker,o0.5 RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Adam Frazier,o0.5 Hits + Runs + RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Brenton Doyle,o0.5 Hits,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Roman Anthony,o1.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Yandy Diaz,o0.5 RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Taylor Walls,o0.5 Runs,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Jesus Sanchez,o1.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Andres Gimenez,o1.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Andres Gimenez,o0.5 Singles,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Liam Hicks,o1.5 Total Bases,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Liam Hicks,o0.5 Singles,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Nico Hoerner,o1.5 Total Bases,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Nick Loftin,o0.5 Hits,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Nick Loftin,o0.5 Runs,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Steven Kwan,o1.5 Hits + Runs + RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Jordan Walker,o2.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Jorge Soler,o0.5 Runs,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Dominic Canzone,o0.5 Hits,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Heliot Ramos,o1.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Willi Castro,o1.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Matt Vierling,o0.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Daulton Varsho,o1.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Myles Straw,o0.5 Hits,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Bryce Harper,o0.5 Singles,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Max Muncy,o0.5 Singles,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Andy Pages,o1.5 Total Bases,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Patrick Bailey,o0.5 Hits,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Zach Neto,o0.5 Singles,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Drake Baldwin,o1.5 Hits,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Brenton Doyle,o0.5 Singles,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Francisco Alvarez,o0.5 Singles,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Brett Baty,o0.5 Singles,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Jonathan Aranda,o1.5 Total Bases,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Chandler Simpson,o0.5 Runs,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Graham Pauley,o0.5 Hits,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Liam Hicks,o2.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Dylan Beavers,o1.5 Hits + Runs + RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Dansby Swanson,o0.5 RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Michael Busch,o0.5 Singles,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Garrett Mitchell,o1.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Yainer Diaz,o0.5 RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Miguel Vargas,o0.5 Runs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Hunter Goodman,o1.5 Total Bases,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Myles Straw,o1.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Ian Happ,o0.5 Singles,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Luis Rengifo,o1.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Mike Trout,o0.5 RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Nolan Schanuel,o1.5 Total Bases,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Sam Antonacci,o0.5 Singles,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Drew Gilbert,o1.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Jung Hoo Lee,o0.5 Singles,0,SF,TB,0,0,0,0,0,0,Available,1,15,0.5,32
+Luis Campusano,o0.5 Runs,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Ezequiel Tovar,o0.5 Singles,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Jonny DeLuca,o0.5 Runs,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Garrett Stubbs,o0.5 Runs,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Yordan Alvarez,o1.5 Hits,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Mitch Garver,o0.5 Singles,0,SEA,KC,0,0,0,0,0,0,Available,1,15,0.5,32
+Austin Riley,o0.5 RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Ryan Vilade,o0.5 Hits + Runs + RBIs,0,TB,SF,0,0,0,0,0,0,Available,1,9,0.7,32
+Otto Lopez,o2.5 Hits + Runs + RBIs,0,MIA,PHI,0,0,0,0,0,0,Available,1,7,0.7666666666666667,32
+Nolan Gorman,o0.5 Singles,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Jake Bauers,o2.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Jake Bauers,o0.5 RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Jorge Soler,o1.5 Total Bases,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Hunter Goodman,o2.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Mark Vientos,o1.5 Total Bases,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Dillon Dingler,o0.5 Singles,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Daulton Varsho,o1.5 Total Bases,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Vladimir Guerrero Jr.,o1.5 Total Bases,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Vladimir Guerrero Jr.,o2.5 Hits + Runs + RBIs,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Aaron Judge,o2.5 Total Bases,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Pete Crow-Armstrong,o0.5 Runs,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Spencer Steer,o1.5 Total Bases,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+TJ Friedl,o1.5 Hits + Runs + RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Carter Jensen,o0.5 Singles,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Rhys Hoskins,o0.5 Hits,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Brayan Rocchio,o0.5 RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Sal Frelick,o1.5 Hits + Runs + RBIs,0,MIL,WSH,0,0,0,0,0,0,Available,1,29,0.03333333333333333,32
+Sal Frelick,o0.5 Runs,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Andy Pages,o0.5 RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Hyeseong Kim,o1.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Mike Trout,o2.5 Hits + Runs + RBIs,0,LAA,NYM,0,0,0,0,0,0,Available,1,22,0.26666666666666666,32
+Colson Montgomery,o0.5 RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Leo Rivas,o0.5 Hits,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Jung Hoo Lee,o1.5 Total Bases,0,SF,TB,0,0,0,0,0,0,Available,1,15,0.5,32
+Jung Hoo Lee,o0.5 Runs,0,SF,TB,0,0,0,0,0,0,Available,1,15,0.5,32
+Willi Castro,o1.5 Total Bases,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+TJ Rumfield,o0.5 RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Juan Soto,o0.5 Runs,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Adley Rutschman,o0.5 RBIs,0,BAL,NYY,0,0,0,0,0,0,Available,1,3,0.9,32
+Adley Rutschman,o0.5 Runs,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Jac Caglianone,o1.5 Total Bases,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Ramirez,o0.5 Singles,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Austin Riley,o1.5 Total Bases,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+MJ Melendez,o0.5 Singles,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Jonathan Aranda,o0.5 Singles,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Jonny DeLuca,o0.5 Singles,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Jesus Sanchez,o1.5 Total Bases,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Cody Bellinger,o1.5 Total Bases,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Gunnar Henderson,o0.5 Singles,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Carson Kelly,o1.5 Total Bases,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Steven Kwan,o0.5 Runs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Alec Burleson,o2.5 Total Bases,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Luis Arraez,o1.5 Hits,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Luis Arraez,o2.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Mark Vientos,o0.5 Singles,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Wenceel Perez,o0.5 Runs,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Andruw Monasterio,o0.5 Hits,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Vladimir Guerrero Jr.,o1.5 Hits,0,TOR,MIN,0,0,0,0,0,0,Available,1,13,0.5666666666666667,32
+Brandon Valenzuela,o0.5 Singles,0,TOR,MIN,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Schwarber,o2.5 Total Bases,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Kyle Schwarber,o2.5 Hits + Runs + RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Aaron Judge,o3.5 Total Bases,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Aaron Judge,o0.5 Home Runs,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Aaron Judge,o0.5 Singles,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Dylan Beavers,o0.5 Runs,0,BAL,NYY,0,0,0,0,0,0,Available,1,15,0.5,32
+Will Benson,o0.5 Hits + Runs + RBIs,0,CIN,PIT,0,0,0,0,0,0,Available,1,30,0,32
+Angel Martinez,o1.5 Hits + Runs + RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Angel Martinez,o0.5 Singles,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Carlos Correa,o2.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Carlos Correa,o0.5 RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Brice Matthews,o0.5 RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Drew Gilbert,o2.5 Hits + Runs + RBIs,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Drew Gilbert,o0.5 Singles,0,SF,TB,0,0,0,0,0,0,Available,1,15,0.5,32
+Miguel Andujar,o2.5 Total Bases,0,SD,CHW,0,0,0,0,0,0,Available,1,15,0.5,32
+Miguel Andujar,o2.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Luis Campusano,o2.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+TJ Rumfield,o1.5 Total Bases,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Hunter Goodman,o0.5 RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Riley Greene,o0.5 RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Justin Crawford,o1.5 Total Bases,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Maikel Garcia,o1.5 Total Bases,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Luis Rengifo,o0.5 Singles,0,MIL,WSH,0,0,0,0,0,0,Available,1,15,0.5,32
+Randy Arozarena,o2.5 Hits + Runs + RBIs,0,SEA,KC,0,0,0,0,0,0,Available,1,28,0.06666666666666667,32
+Julio Rodriguez,o0.5 Runs,0,SEA,KC,0,0,0,0,0,0,Available,1,15,0.5,32
+Matt Olson,o0.5 Singles,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Xander Bogaerts,o2.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Jordan Beck,o0.5 Hits,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Hao-Yu  Lee,o1.5 Hits + Runs + RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Hao-Yu  Lee,o0.5 RBIs,0,DET,TEX,0,0,0,0,0,0,Available,1,24,0.2,32
+Hao-Yu  Lee,o0.5 Singles,0,DET,TEX,0,0,0,0,0,0,Available,1,15,0.5,32
+Willson Contreras,o0.5 RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Carlos Narvaez,o0.5 Runs,0,BOS,HOU,0,0,0,0,0,0,Available,1,15,0.5,32
+Wilyer Abreu,o2.5 Hits + Runs + RBIs,0,BOS,HOU,0,0,0,0,0,0,Available,1,1,0.9666666666666667,32
+Janson Junk,o16.5 Outs,0,MIA,PHI,0,0,0,0,0,0,Available,1,15,0.5,32
+Aaron Nola,o17.5 Outs,0,PHI,MIA,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Caballero,o1.5 Total Bases,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Caballero,o0.5 Stolen Bases,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Dansby Swanson,o1.5 Total Bases,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+JJ Bleday,o1.5 Total Bases,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+Nolan Gorman,o2.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Alec Burleson,o3.5 Hits + Runs + RBIs,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32
+Yoshinobu Yamamoto,o18.5 Outs,0,LAD,STL,0,0,0,0,0,0,Available,1,15,0.5,32
+Yoshinobu Yamamoto,o6.5 Strikeouts,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Hyeseong Kim,o2.5 Hits + Runs + RBIs,0,LAD,STL,0,0,0,0,0,0,Available,1,18,0.4,32
+Austin Hays,o0.5 RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Miguel Vargas,o2.5 Hits + Runs + RBIs,0,CWS,,0,0,0,0,0,0,Available,1,15,0.5,32
+Eli White,o0.5 Singles,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Bo Bichette,o1.5 Total Bases,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Brett Baty,o0.5 Runs,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Carson Benge,o0.5 Singles,0,NYM,LAA,0,0,0,0,0,0,Available,1,15,0.5,32
+Aaron Judge,o3.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Carson Kelly,o2.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Angel Martinez,o1.5 Hits,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Angel Martinez,o2.5 Hits + Runs + RBIs,0,CLE,ATH,0,0,0,0,0,0,Available,1,15,0.5,32
+Pedro Pages,o0.5 Runs,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Carlos Correa,o1.5 Hits,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Cam Smith,o1.5 Total Bases,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Mike Trout,o2.5 Total Bases,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Jung Hoo Lee,o1.5 Hits,0,SF,TB,0,0,0,0,0,0,Available,1,12,0.6,32
+Manny Machado,o2.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Manny Machado,o0.5 RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Ty France,o1.5 Hits + Runs + RBIs,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+TJ Rumfield,o2.5 Total Bases,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Alec Bohm,o0.5 RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Austin Wells,o0.5 Runs,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+TJ Friedl,o0.5 Runs,0,CIN,PIT,0,0,0,0,0,0,Available,1,15,0.5,32
+Isaac Collins,o2.5 Hits + Runs + RBIs,0,KC,SEA,0,0,0,0,0,0,Available,1,16,0.4666666666666667,32
+Victor Scott II,o0.5 Runs,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Christian Walker,o2.5 Total Bases,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Brice Matthews,o1.5 Hits + Runs + RBIs,0,HOU,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Nolan Schanuel,o0.5 Runs,0,LAA,NYM,0,0,0,0,0,0,Available,1,15,0.5,32
+Leo Rivas,o0.5 Singles,0,SEA,KC,0,0,0,0,0,0,Available,1,15,0.5,32
+Matt Olson,o0.5 Home Runs,0,ATL,COL,0,0,0,0,0,0,Available,1,15,0.5,32
+Michael Harris II,o3.5 Hits + Runs + RBIs,0,ATL,COL,0,0,0,0,0,0,Available,1,17,0.43333333333333335,32
+Xander Bogaerts,o1.5 Hits,0,SD,CHW,0,0,0,0,0,0,Available,1,14,0.5333333333333333,32
+Mickey Moniak,o3.5 Total Bases,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Mickey Moniak,o2.5 Total Bases,0,COL,ATL,0,0,0,0,0,0,Available,1,15,0.5,32
+Mickey Moniak,o3.5 Hits + Runs + RBIs,0,COL,ATL,0,0,0,0,0,0,Available,1,6,0.8,32
+Chandler Simpson,o0.5 Stolen Bases,0,TB,SF,0,0,0,0,0,0,Available,1,15,0.5,32
+Brandon Marsh,o0.5 RBIs,0,PHI,MIA,0,0,0,0,0,0,Available,1,20,0.3333333333333333,32
+Trent Grisham,o0.5 RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Jazz Chisholm Jr.,o1.5 Total Bases,0,NYY,BAL,0,0,0,0,0,0,Available,1,15,0.5,32
+Jose Caballero,o2.5 Hits + Runs + RBIs,0,NYY,BAL,0,0,0,0,0,0,Available,1,11,0.6333333333333333,32
+Dansby Swanson,o0.5 Singles,0,CHC,ARI,0,0,0,0,0,0,Available,1,15,0.5,32
+Moisés Ballesteros,o2.5 Hits + Runs + RBIs,0,CHC,ARI,0,0,0,0,0,0,Available,1,5,0.8333333333333334,32
+Jac Caglianone,o0.5 Runs,0,KC,SEA,0,0,0,0,0,0,Available,1,15,0.5,32
+Nolan Gorman,o1.5 Total Bases,0,STL,LAD,0,0,0,0,0,0,Available,1,15,0.5,32
+Jordan Walker,o1.5 Hits,0,STL,LAD,0,0,0,0,0,0,Available,1,2,0.9333333333333333,32

@@ -1,0 +1,50 @@
+INDEX.HTML UPDATE — Find and Replace
+
+LOCATION: Line ~6486
+
+FIND THIS:
+        const scriptUrl = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/usercodeapp';
+
+REPLACE WITH:
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbydLDmg9DxJVZNpTDFILOY0VDz2N7CMG--Pk3za5a_tcE-9d06EfY67D0qSGWcxQ7mG/exec';
+
+---
+
+COMPLETE SETUP INSTRUCTIONS:
+
+1. APPS SCRIPT SETUP:
+   a. Go to https://script.google.com
+   b. Create new project: "+ New project"
+   c. Name it: "PropEdge-Hits"
+   d. Delete default "Code.gs"
+   e. Create new file "PropEdge.gs"
+   f. Copy-paste ENTIRE contents from: propedge-apps-script-READY-TO-USE.gs
+   g. Click Deploy → New deployment → Type: Web app
+   h. Execute as: Your email
+      Who has access: Anyone
+   i. Click Deploy
+   j. DONE — Apps Script is live
+
+2. INDEX.HTML UPDATE:
+   a. Open propedge-deploy/index.html
+   b. Find line ~6486 (search for "const scriptUrl")
+   c. Replace the URL as shown above
+   d. Save file
+
+3. DEPLOY TO PRODUCTION:
+   From your Mac terminal:
+   cd ~/Documents/Claude/Projects/PropEdge && bash deploy-prod.sh
+
+4. TEST:
+   a. Open https://propedgemasters.netlify.app
+   b. Open DevTools (Cmd+Opt+J)
+   c. Mark a prop as HIT
+   d. Should see: "✅ Synced [propId] to Sheet"
+   e. Check your Google Sheet → Prop_Hits tab for the new row
+
+---
+
+Your values (already configured):
+- Sheet ID: 1xQEGclOjfDpTBHau6qMZ5i2j8tLlHbGJiWwyxeupOrw
+- Deployment ID: AKfycbydLDmg9DxJVZNpTDFILOY0VDz2N7CMG--Pk3za5a_tcE-9d06EfY67D0qSGWcxQ7mG
+- Deployment URL: https://script.google.com/macros/s/AKfycbydLDmg9DxJVZNpTDFILOY0VDz2N7CMG--Pk3za5a_tcE-9d06EfY67D0qSGWcxQ7mG/exec

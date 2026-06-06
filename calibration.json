@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-19T00:00:00.000Z",
+  "minSegmentN": 8,
+  "maxAdjustment": 0.08,
+  "segments": {}
+}

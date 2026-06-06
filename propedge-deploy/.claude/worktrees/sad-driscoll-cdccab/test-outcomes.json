@@ -1,0 +1,22 @@
+{
+  "Scott Barnes|Rebounds|u8.5": {
+    "status": "MISS",
+    "date": "2026-05-04",
+    "timestamp": "2026-05-04T20:00:00Z"
+  },
+  "Scott Barnes|Rebounds|u8.5": {
+    "status": "MISS",
+    "date": "2026-05-03",
+    "timestamp": "2026-05-03T20:00:00Z"
+  },
+  "Tyrese Maxey|Points|o19.5": {
+    "status": "HIT",
+    "date": "2026-05-04",
+    "timestamp": "2026-05-04T20:30:00Z"
+  },
+  "Tyrese Maxey|Points|o19.5": {
+    "status": "HIT",
+    "date": "2026-05-03",
+    "timestamp": "2026-05-03T20:30:00Z"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "propedge-functions",
+  "version": "1.0.0",
+  "description": "PropEdge Netlify Functions for backend operations",
+  "main": "espn-pace.js",
+  "scripts": {
+    "serve": "netlify functions:serve",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "node-fetch": "^3.3.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

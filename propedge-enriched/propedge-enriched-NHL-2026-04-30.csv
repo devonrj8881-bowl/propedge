@@ -1,0 +1,103 @@
+Name,Prop,Line,Team,Opponent,Per_Min_Avg,Per_Min_L5,Per_Min_L10,Variance,Confidence%,Samples,Injury_Status,Injury_Multiplier,Matchup_Rank,Matchup_Scalar,Expected_Minutes
+Jason Robertson,o0.5 Goals,0,DAL,MIN,0.0003,0.0003,0.0003,0,5,1,Available,1,10,0.6875,106667
+Mats Zuccarello,o0.5 Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Cutter Gauthier,o0.5 Points,0,ANA,EDM,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Miro Heiskanen,o0.5 Points,0,DAL,MIN,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Miro Heiskanen,o0.5 Powerplay Points,0,DAL,MIN,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Mikko Rantanen,o0.5 Assists,0,DAL,MIN,0.0004,0.0004,0.0004,0,5,1,Available,1,10,0.6875,80000
+Matt Boldy,o0.5 Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Wyatt Johnston,o0.5 Points,0,DAL,MIN,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Evan Bouchard,o0.5 Assists,0,EDM,ANA,0.0004,0.0004,0.0004,0,5,1,Available,1,26,0.1875,80000
+Jackson LaCombe,o0.5 Points,0,ANA,EDM,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Ryan Nugent-Hopkins,o0.5 Points,0,EDM,ANA,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Leon Draisaitl,o0.5 Assists,0,EDM,ANA,0.0004,0.0004,0.0004,0,5,1,Available,1,26,0.1875,80000
+Matt Duchene,o0.5 Points,0,DAL,MIN,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Miro Heiskanen,o0.5 Assists,0,DAL,MIN,0.0004,0.0004,0.0004,0,5,1,Available,1,10,0.6875,80000
+Joel Eriksson Ek,o0.5 Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Mason McTavish,o0.5 Points,0,ANA,EDM,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Ryan Hartman,o0.5 Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Matt Duchene,o0.5 Assists,0,DAL,MIN,0.0004,0.0004,0.0004,0,5,1,Available,1,10,0.6875,80000
+Alex Killorn,o0.5 Points,0,ANA,EDM,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Quinn Hughes,o0.5 Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Quinn Hughes,o0.5 Assists,0,MIN,DAL,0.0004,0.0004,0.0004,0,5,1,Available,1,4,0.875,80000
+Zach Hyman,o0.5 Points,0,EDM,ANA,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Leo Carlsson,o0.5 Points,0,ANA,EDM,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Jackson LaCombe,o0.5 Assists,0,ANA,EDM,0.0004,0.0004,0.0004,0,5,1,Available,1,7,0.78125,80000
+Connor McDavid,o1.5 Points,0,EDM,ANA,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Mats Zuccarello,o0.5 Assists,0,MIN,DAL,0.0004,0.0004,0.0004,0,5,1,Available,1,4,0.875,80000
+Mikael Granlund,o0.5 Points,0,ANA,EDM,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Wyatt Johnston,o0.5 Powerplay Points,0,DAL,MIN,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Matt Boldy,o0.5 Assists,0,MIN,DAL,0.0004,0.0004,0.0004,0,5,1,Available,1,4,0.875,80000
+Jason Robertson,o0.5 Powerplay Points,0,DAL,MIN,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Cutter Gauthier,o0.5 Goals,0,ANA,EDM,0.0003,0.0003,0.0003,0,5,1,Available,1,7,0.78125,106667
+Joel Eriksson Ek,o0.5 Assists,0,MIN,DAL,0.0004,0.0004,0.0004,0,5,1,Available,1,4,0.875,80000
+Troy Terry,o0.5 Points,0,ANA,EDM,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+John Carlson,o0.5 Points,0,ANA,EDM,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Matt Boldy,o0.5 Goals,0,MIN,DAL,0.0003,0.0003,0.0003,0,5,1,Available,1,4,0.875,106667
+Wyatt Johnston,o0.5 Goals,0,DAL,MIN,0.0003,0.0003,0.0003,0,5,1,Available,1,10,0.6875,106667
+Leon Draisaitl,o1.5 Points,0,EDM,ANA,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Kirill Kaprizov,o0.5 Assists,0,MIN,DAL,0.0004,0.0004,0.0004,0,5,1,Available,1,4,0.875,80000
+Jason Robertson,o1.5 Points,0,DAL,MIN,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Mats Zuccarello,o0.5 Powerplay Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Kirill Kaprizov,o1.5 Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Evan Bouchard,o1.5 Points,0,EDM,ANA,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Matt Duchene,o0.5 Powerplay Points,0,DAL,MIN,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Mikael Granlund,o0.5 Assists,0,ANA,EDM,0.0004,0.0004,0.0004,0,5,1,Available,1,7,0.78125,80000
+Mason McTavish,o0.5 Assists,0,ANA,EDM,0.0004,0.0004,0.0004,0,5,1,Available,1,7,0.78125,80000
+Ryan Hartman,o0.5 Assists,0,MIN,DAL,0.0004,0.0004,0.0004,0,5,1,Available,1,4,0.875,80000
+Alex Killorn,o0.5 Goals,0,ANA,EDM,0.0003,0.0003,0.0003,0,5,1,Available,1,7,0.78125,106667
+Troy Terry,o0.5 Assists,0,ANA,EDM,0.0004,0.0004,0.0004,0,5,1,Available,1,7,0.78125,80000
+Marcus Johansson,o0.5 Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Brock Faber,o0.5 Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Kirill Kaprizov,o0.5 Goals,0,MIN,DAL,0.0003,0.0003,0.0003,0,5,1,Available,1,4,0.875,106667
+Jason Robertson,o0.5 Assists,0,DAL,MIN,0.0004,0.0004,0.0004,0,5,1,Available,1,10,0.6875,80000
+John Carlson,o0.5 Assists,0,ANA,EDM,0.0004,0.0004,0.0004,0,5,1,Available,1,7,0.78125,80000
+Mikko Rantanen,o0.5 Powerplay Points,0,DAL,MIN,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Chris Kreider,o0.5 Points,0,ANA,EDM,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Zach Hyman,o0.5 Goals,0,EDM,ANA,0.0003,0.0003,0.0003,0,5,1,Available,1,26,0.1875,106667
+Vladimir Tarasenko,o0.5 Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Leon Draisaitl,o0.5 Goals,0,EDM,ANA,0.0003,0.0003,0.0003,0,5,1,Available,1,26,0.1875,106667
+Leo Carlsson,o0.5 Assists,0,ANA,EDM,0.0004,0.0004,0.0004,0,5,1,Available,1,7,0.78125,80000
+Connor McDavid,o0.5 Goals,0,EDM,ANA,0.0003,0.0003,0.0003,0,5,1,Available,1,26,0.1875,106667
+Wyatt Johnston,o0.5 Assists,0,DAL,MIN,0.0004,0.0004,0.0004,0,5,1,Available,1,10,0.6875,80000
+Kirill Kaprizov,o0.5 Powerplay Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Matt Boldy,o0.5 Powerplay Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Leo Carlsson,o0.5 Goals,0,ANA,EDM,0.0003,0.0003,0.0003,0,5,1,Available,1,7,0.78125,106667
+Connor McDavid,o1.5 Assists,0,EDM,ANA,0.0004,0.0004,0.0004,0,5,1,Available,1,26,0.1875,80000
+Chris Kreider,o0.5 Assists,0,ANA,EDM,0.0004,0.0004,0.0004,0,5,1,Available,1,7,0.78125,80000
+Ryan Nugent-Hopkins,o0.5 Goals,0,EDM,ANA,0.0003,0.0003,0.0003,0,5,1,Available,1,26,0.1875,106667
+Vasily Podkolzin,o0.5 Goals,0,EDM,ANA,0.0003,0.0003,0.0003,0,5,1,Available,1,26,0.1875,106667
+Ryan Nugent-Hopkins,o0.5 Assists,0,EDM,ANA,0.0004,0.0004,0.0004,0,5,1,Available,1,26,0.1875,80000
+Mikko Rantanen,o1.5 Points,0,DAL,MIN,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Brock Faber,o0.5 Assists,0,MIN,DAL,0.0004,0.0004,0.0004,0,5,1,Available,1,4,0.875,80000
+Cutter Gauthier,o0.5 Assists,0,ANA,EDM,0.0004,0.0004,0.0004,0,5,1,Available,1,7,0.78125,80000
+Esa Lindell,o0.5 Points,0,DAL,MIN,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Joel Eriksson Ek,o0.5 Goals,0,MIN,DAL,0.0003,0.0003,0.0003,0,5,1,Available,1,4,0.875,106667
+Vladimir Tarasenko,o0.5 Assists,0,MIN,DAL,0.0004,0.0004,0.0004,0,5,1,Available,1,4,0.875,80000
+Ryan Hartman,o0.5 Goals,0,MIN,DAL,0.0003,0.0003,0.0003,0,5,1,Available,1,4,0.875,106667
+Esa Lindell,o0.5 Assists,0,DAL,MIN,0.0004,0.0004,0.0004,0,5,1,Available,1,10,0.6875,80000
+Mats Zuccarello,o0.5 Goals,0,MIN,DAL,0.0003,0.0003,0.0003,0,5,1,Available,1,4,0.875,106667
+Kasperi Kapanen,o0.5 Goals,0,EDM,ANA,0.0003,0.0003,0.0003,0,5,1,Available,1,26,0.1875,106667
+Alex Killorn,o0.5 Assists,0,ANA,EDM,0.0004,0.0004,0.0004,0,5,1,Available,1,7,0.78125,80000
+Beckett Sennecke,o0.5 Points,0,ANA,EDM,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Quinn Hughes,o0.5 Powerplay Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Jacob Trouba,o0.5 Points,0,ANA,EDM,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Mikko Rantanen,o0.5 Goals,0,DAL,MIN,0.0003,0.0003,0.0003,0,5,1,Available,1,10,0.6875,106667
+Matt Duchene,o0.5 Goals,0,DAL,MIN,0.0003,0.0003,0.0003,0,5,1,Available,1,10,0.6875,106667
+Troy Terry,o0.5 Goals,0,ANA,EDM,0.0003,0.0003,0.0003,0,5,1,Available,1,7,0.78125,106667
+Mikael Granlund,o0.5 Goals,0,ANA,EDM,0.0003,0.0003,0.0003,0,5,1,Available,1,7,0.78125,106667
+Mason McTavish,o0.5 Goals,0,ANA,EDM,0.0003,0.0003,0.0003,0,5,1,Available,1,7,0.78125,106667
+Beckett Sennecke,o0.5 Goals,0,ANA,EDM,0.0003,0.0003,0.0003,0,5,1,Available,1,7,0.78125,106667
+Evan Bouchard,o0.5 Goals,0,EDM,ANA,0.0003,0.0003,0.0003,0,5,1,Available,1,26,0.1875,106667
+Joel Eriksson Ek,o0.5 Powerplay Points,0,MIN,DAL,NaN,NaN,NaN,NaN,NaN,1,Available,1,15,0.5,32
+Mikko Rantanen,u0.5 Goals,0,DAL,MIN,0.0003,0.0003,0.0003,0,5,1,Available,1,10,0.6875,106667
+Ryan Hartman,u0.5 Goals,0,MIN,DAL,0.0003,0.0003,0.0003,0,5,1,Available,1,4,0.875,106667
+Joel Eriksson Ek,u0.5 Goals,0,MIN,DAL,0.0003,0.0003,0.0003,0,5,1,Available,1,4,0.875,106667
+Leo Carlsson,u0.5 Goals,0,ANA,EDM,0.0003,0.0003,0.0003,0,5,1,Available,1,7,0.78125,106667
+Leon Draisaitl,u0.5 Goals,0,EDM,ANA,0.0003,0.0003,0.0003,0,5,1,Available,1,26,0.1875,106667
+Zach Hyman,u0.5 Goals,0,EDM,ANA,0.0003,0.0003,0.0003,0,5,1,Available,1,26,0.1875,106667
+Kirill Kaprizov,u0.5 Goals,0,MIN,DAL,0.0003,0.0003,0.0003,0,5,1,Available,1,4,0.875,106667
+Wyatt Johnston,u0.5 Goals,0,DAL,MIN,0.0003,0.0003,0.0003,0,5,1,Available,1,10,0.6875,106667
+Matt Boldy,u0.5 Goals,0,MIN,DAL,0.0003,0.0003,0.0003,0,5,1,Available,1,4,0.875,106667
+Cutter Gauthier,u0.5 Goals,0,ANA,EDM,0.0003,0.0003,0.0003,0,5,1,Available,1,7,0.78125,106667
+Jason Robertson,u0.5 Goals,0,DAL,MIN,0.0003,0.0003,0.0003,0,5,1,Available,1,10,0.6875,106667

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(node_modules/**)",
+      "Read(__pycache__/**)",
+      "Read(chrome-profile/**)",
+      "Read(dist/**)",
+      "Read(build/**)",
+      "Read(.next/**)",
+      "Read(coverage/**)"
+    ]
+  }
+}

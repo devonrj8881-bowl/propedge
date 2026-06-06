@@ -1,0 +1,4 @@
+Name,Prop,Line,Team,Opponent,Per_Min_Avg,Per_Min_L5,Per_Min_L10,Variance,Confidence%,Samples,Injury_Status,Injury_Multiplier,Matchup_Rank,Matchup_Scalar,Expected_Minutes
+Luka Doncic,Points,28.5,DAL,GSW,0,0,0,0,0,0,Available,1,15,0.5,32
+Jalen Brunson,Points,22.5,NYK,BOS,0,0,0,0,0,0,Available,1,15,0.5,32
+Jayson Tatum,Rebounds,10.5,BOS,NYK,0,0,0,0,0,0,Available,1,15,0.5,32

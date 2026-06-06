@@ -1,0 +1,36 @@
+# PropEdge Deployment - Only track production files
+propedge-deploy/MEMORY.md
+propedge-deploy/*.txt
+propedge-deploy/*.md
+propedge-deploy/*.archived-*
+propedge-deploy/index-*.html
+propedge-deploy/.DS_Store
+propedge-deploy/propedge_*
+propedge-deploy/deploy*
+propedge-deploy/deployment*
+propedge-deploy/last_deploy*
+propedge-deploy/propedge-deploy-state.json
+
+# Local dev files
+.env
+.env.local
+node_modules/
+*.log
+
+
+# Local Netlify folder
+.netlify
+
+# ⚠️ CRITICAL: Scraper configuration files — MUST NOT be Git-tracked
+# These files are environment-specific and subject to frequent fixes
+# Git checkout operations would revert critical fixes (exit code 78 prevention)
+# Standalone setup scripts handle initialization — no git dependency
+com.propedge.scraper.REAL_MAC.plist
+com.propedge.scraper.plist
+com.propedge.*.plist
+run-scraper-daemon.sh
+propedge-daily-audit.js
+scraper-v14.js
+scraper-v13.js
+logs/
+*.VERIFIED

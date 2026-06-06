@@ -1,0 +1,320 @@
+{
+  "version": "1.0.0",
+  "lastSync": "2026-04-05T22:07:13.853Z",
+  "players": [
+    {
+      "id": 1,
+      "espnId": "4396",
+      "name": "Stephen Curry",
+      "team": "GSW",
+      "position": "PG",
+      "createdAt": "2026-04-03T02:54:21.387Z"
+    },
+    {
+      "id": 2,
+      "espnId": "6442",
+      "name": "LeBron James",
+      "team": "LAL",
+      "position": "SF",
+      "createdAt": "2026-04-03T02:54:21.387Z"
+    },
+    {
+      "id": 3,
+      "espnId": "4265",
+      "name": "Luka Doncic",
+      "team": "DAL",
+      "position": "PG",
+      "createdAt": "2026-04-03T02:54:21.387Z"
+    },
+    {
+      "id": 4,
+      "espnId": "2991371",
+      "name": "Jayson Tatum",
+      "team": "BOS",
+      "position": "SF",
+      "createdAt": "2026-04-03T02:54:21.387Z"
+    },
+    {
+      "id": 5,
+      "espnId": "4047",
+      "name": "Kevin Durant",
+      "team": "PHX",
+      "position": "SF",
+      "createdAt": "2026-04-03T02:54:21.387Z"
+    }
+  ],
+  "paceData": [
+    {
+      "playerId": 1,
+      "date": "2026-04-03",
+      "pace": 96.81158859734087,
+      "possessions": 114,
+      "minutes": 31.029885714623944,
+      "source": "espn"
+    },
+    {
+      "playerId": 2,
+      "date": "2026-04-03",
+      "pace": 99.72570184586418,
+      "possessions": 108,
+      "minutes": 29.922033289062735,
+      "source": "espn"
+    },
+    {
+      "playerId": 3,
+      "date": "2026-04-03",
+      "pace": 94.59069662610288,
+      "possessions": 168,
+      "minutes": 31.931926955296273,
+      "source": "espn"
+    },
+    {
+      "playerId": 4,
+      "date": "2026-04-03",
+      "pace": 93.98242235521082,
+      "possessions": 133,
+      "minutes": 29.31024952027829,
+      "source": "espn"
+    },
+    {
+      "playerId": 5,
+      "date": "2026-04-03",
+      "pace": 97.21859000052089,
+      "possessions": 131,
+      "minutes": 30.112870820996804,
+      "source": "espn"
+    },
+    {
+      "playerId": 1,
+      "date": "2026-04-04",
+      "pace": 98.82452860633286,
+      "possessions": 146,
+      "minutes": 30.427610661467448,
+      "source": "espn"
+    },
+    {
+      "playerId": 2,
+      "date": "2026-04-04",
+      "pace": 93.8537346376356,
+      "possessions": 109,
+      "minutes": 35.01248069577065,
+      "source": "espn"
+    },
+    {
+      "playerId": 3,
+      "date": "2026-04-04",
+      "pace": 97.61658570670772,
+      "possessions": 162,
+      "minutes": 34.942812454071095,
+      "source": "espn"
+    },
+    {
+      "playerId": 4,
+      "date": "2026-04-04",
+      "pace": 99.76676407662846,
+      "possessions": 137,
+      "minutes": 38.672784750937446,
+      "source": "espn"
+    },
+    {
+      "playerId": 5,
+      "date": "2026-04-04",
+      "pace": 98.18633357963036,
+      "possessions": 162,
+      "minutes": 29.412473130985425,
+      "source": "espn"
+    },
+    {
+      "playerId": 1,
+      "date": "2026-04-05",
+      "pace": 92.71451900834812,
+      "possessions": 92,
+      "minutes": 31.09403028145397,
+      "source": "espn"
+    },
+    {
+      "playerId": 2,
+      "date": "2026-04-05",
+      "pace": 97.03543145560732,
+      "possessions": 90,
+      "minutes": 31.23055192535329,
+      "source": "espn"
+    },
+    {
+      "playerId": 3,
+      "date": "2026-04-05",
+      "pace": 94.95258943625358,
+      "possessions": 150,
+      "minutes": 35.676789960330865,
+      "source": "espn"
+    },
+    {
+      "playerId": 4,
+      "date": "2026-04-05",
+      "pace": 98.50769288413625,
+      "possessions": 115,
+      "minutes": 38.60930109949882,
+      "source": "espn"
+    },
+    {
+      "playerId": 5,
+      "date": "2026-04-05",
+      "pace": 93.28266792631163,
+      "possessions": 91,
+      "minutes": 41.37943933126565,
+      "source": "espn"
+    }
+  ],
+  "predictions": [
+    {
+      "playerId": 1,
+      "predictionDate": "2026-04-03",
+      "predictedPace": 96.81158859734087,
+      "trend": "STABLE",
+      "volatility": 0,
+      "ma7": 96.81158859734087,
+      "ma14": 96.81158859734087,
+      "confidence": 0.07142857142857142
+    },
+    {
+      "playerId": 2,
+      "predictionDate": "2026-04-03",
+      "predictedPace": 99.72570184586418,
+      "trend": "STABLE",
+      "volatility": 0,
+      "ma7": 99.72570184586418,
+      "ma14": 99.72570184586418,
+      "confidence": 0.07142857142857142
+    },
+    {
+      "playerId": 3,
+      "predictionDate": "2026-04-03",
+      "predictedPace": 94.59069662610288,
+      "trend": "STABLE",
+      "volatility": 0,
+      "ma7": 94.59069662610288,
+      "ma14": 94.59069662610288,
+      "confidence": 0.07142857142857142
+    },
+    {
+      "playerId": 4,
+      "predictionDate": "2026-04-03",
+      "predictedPace": 93.98242235521082,
+      "trend": "STABLE",
+      "volatility": 0,
+      "ma7": 93.98242235521082,
+      "ma14": 93.98242235521082,
+      "confidence": 0.07142857142857142
+    },
+    {
+      "playerId": 5,
+      "predictionDate": "2026-04-03",
+      "predictedPace": 97.21859000052089,
+      "trend": "STABLE",
+      "volatility": 0,
+      "ma7": 97.21859000052089,
+      "ma14": 97.21859000052089,
+      "confidence": 0.07142857142857142
+    },
+    {
+      "playerId": 1,
+      "predictionDate": "2026-04-04",
+      "predictedPace": 98.82452860633286,
+      "trend": "STABLE",
+      "volatility": 1.0064700044959949,
+      "ma7": 97.81805860183687,
+      "ma14": 97.81805860183687,
+      "confidence": 0.14285714285714285
+    },
+    {
+      "playerId": 2,
+      "predictionDate": "2026-04-04",
+      "predictedPace": 93.8537346376356,
+      "trend": "STABLE",
+      "volatility": 2.9359836041142917,
+      "ma7": 96.78971824174988,
+      "ma14": 96.78971824174988,
+      "confidence": 0.14285714285714285
+    },
+    {
+      "playerId": 3,
+      "predictionDate": "2026-04-04",
+      "predictedPace": 97.61658570670772,
+      "trend": "STABLE",
+      "volatility": 1.5129445403024206,
+      "ma7": 96.10364116640531,
+      "ma14": 96.10364116640531,
+      "confidence": 0.14285714285714285
+    },
+    {
+      "playerId": 4,
+      "predictionDate": "2026-04-04",
+      "predictedPace": 99.76676407662846,
+      "trend": "STABLE",
+      "volatility": 2.8921708607088235,
+      "ma7": 96.87459321591965,
+      "ma14": 96.87459321591965,
+      "confidence": 0.14285714285714285
+    },
+    {
+      "playerId": 5,
+      "predictionDate": "2026-04-04",
+      "predictedPace": 98.18633357963036,
+      "trend": "STABLE",
+      "volatility": 0.4838717895547333,
+      "ma7": 97.70246179007563,
+      "ma14": 97.70246179007563,
+      "confidence": 0.14285714285714285
+    },
+    {
+      "playerId": 1,
+      "predictionDate": "2026-04-05",
+      "predictedPace": 92.71451900834812,
+      "trend": "STABLE",
+      "volatility": 2.5423113714430023,
+      "ma7": 96.11687873734063,
+      "ma14": 96.11687873734063,
+      "confidence": 0.21428571428571427
+    },
+    {
+      "playerId": 2,
+      "predictionDate": "2026-04-05",
+      "predictedPace": 97.03543145560732,
+      "trend": "STABLE",
+      "volatility": 2.4000173218980447,
+      "ma7": 96.87162264636902,
+      "ma14": 96.87162264636902,
+      "confidence": 0.21428571428571427
+    },
+    {
+      "playerId": 3,
+      "predictionDate": "2026-04-05",
+      "predictedPace": 94.95258943625358,
+      "trend": "STABLE",
+      "volatility": 1.3492321793094022,
+      "ma7": 95.71995725635473,
+      "ma14": 95.71995725635473,
+      "confidence": 0.21428571428571427
+    },
+    {
+      "playerId": 4,
+      "predictionDate": "2026-04-05",
+      "predictedPace": 98.50769288413625,
+      "trend": "STABLE",
+      "volatility": 2.4837682567210853,
+      "ma7": 97.41895977199185,
+      "ma14": 97.41895977199185,
+      "confidence": 0.21428571428571427
+    },
+    {
+      "playerId": 5,
+      "predictionDate": "2026-04-05",
+      "predictedPace": 93.28266792631163,
+      "trend": "STABLE",
+      "volatility": 2.1206379294053392,
+      "ma7": 96.22919716882097,
+      "ma14": 96.22919716882097,
+      "confidence": 0.21428571428571427
+    }
+  ]
+}

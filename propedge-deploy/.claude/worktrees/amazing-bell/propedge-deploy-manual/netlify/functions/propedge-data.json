@@ -1,0 +1,140 @@
+{
+  "version": "1.0.0",
+  "lastSync": "2026-04-03T02:54:31.579Z",
+  "players": [
+    {
+      "id": 1,
+      "espnId": "4396",
+      "name": "Stephen Curry",
+      "team": "GSW",
+      "position": "PG",
+      "createdAt": "2026-04-03T02:54:21.387Z"
+    },
+    {
+      "id": 2,
+      "espnId": "6442",
+      "name": "LeBron James",
+      "team": "LAL",
+      "position": "SF",
+      "createdAt": "2026-04-03T02:54:21.387Z"
+    },
+    {
+      "id": 3,
+      "espnId": "4265",
+      "name": "Luka Doncic",
+      "team": "DAL",
+      "position": "PG",
+      "createdAt": "2026-04-03T02:54:21.387Z"
+    },
+    {
+      "id": 4,
+      "espnId": "2991371",
+      "name": "Jayson Tatum",
+      "team": "BOS",
+      "position": "SF",
+      "createdAt": "2026-04-03T02:54:21.387Z"
+    },
+    {
+      "id": 5,
+      "espnId": "4047",
+      "name": "Kevin Durant",
+      "team": "PHX",
+      "position": "SF",
+      "createdAt": "2026-04-03T02:54:21.387Z"
+    }
+  ],
+  "paceData": [
+    {
+      "playerId": 1,
+      "date": "2026-04-03",
+      "pace": 99.90818679519462,
+      "possessions": 161,
+      "minutes": 35.92980722939152,
+      "source": "espn"
+    },
+    {
+      "playerId": 2,
+      "date": "2026-04-03",
+      "pace": 93.96854625728076,
+      "possessions": 153,
+      "minutes": 29.46137639584525,
+      "source": "espn"
+    },
+    {
+      "playerId": 3,
+      "date": "2026-04-03",
+      "pace": 95.8000351687939,
+      "possessions": 143,
+      "minutes": 37.796509968422306,
+      "source": "espn"
+    },
+    {
+      "playerId": 4,
+      "date": "2026-04-03",
+      "pace": 95.05068819833807,
+      "possessions": 109,
+      "minutes": 34.47270177295577,
+      "source": "espn"
+    },
+    {
+      "playerId": 5,
+      "date": "2026-04-03",
+      "pace": 93.19420954079358,
+      "possessions": 115,
+      "minutes": 35.74631608868674,
+      "source": "espn"
+    }
+  ],
+  "predictions": [
+    {
+      "playerId": 1,
+      "predictionDate": "2026-04-03",
+      "predictedPace": 99.90818679519462,
+      "trend": "STABLE",
+      "volatility": 0,
+      "ma7": 99.90818679519462,
+      "ma14": 99.90818679519462,
+      "confidence": 0.07142857142857142
+    },
+    {
+      "playerId": 2,
+      "predictionDate": "2026-04-03",
+      "predictedPace": 93.96854625728076,
+      "trend": "STABLE",
+      "volatility": 0,
+      "ma7": 93.96854625728076,
+      "ma14": 93.96854625728076,
+      "confidence": 0.07142857142857142
+    },
+    {
+      "playerId": 3,
+      "predictionDate": "2026-04-03",
+      "predictedPace": 95.8000351687939,
+      "trend": "STABLE",
+      "volatility": 0,
+      "ma7": 95.8000351687939,
+      "ma14": 95.8000351687939,
+      "confidence": 0.07142857142857142
+    },
+    {
+      "playerId": 4,
+      "predictionDate": "2026-04-03",
+      "predictedPace": 95.05068819833807,
+      "trend": "STABLE",
+      "volatility": 0,
+      "ma7": 95.05068819833807,
+      "ma14": 95.05068819833807,
+      "confidence": 0.07142857142857142
+    },
+    {
+      "playerId": 5,
+      "predictionDate": "2026-04-03",
+      "predictedPace": 93.19420954079358,
+      "trend": "STABLE",
+      "volatility": 0,
+      "ma7": 93.19420954079358,
+      "ma14": 93.19420954079358,
+      "confidence": 0.07142857142857142
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+═══════════════════════════════════════════════════════════════════════════════
+  PROPEDGE SQLITE PACE PIPELINE — DEPLOYMENT INSTRUCTIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ ALL FILES ARE READY IN YOUR PROPEDGE FOLDER
+
+Files created and in place:
+  ✅ propedge-data.json (database)
+  ✅ sync-espn-pace.js (sync script)
+  ✅ init-db.js (initializer)
+  ✅ netlify/functions/pace-data.js (API endpoint)
+  ✅ test-pace-api.js (API tester)
+  ✅ Documentation files
+
+Scheduled tasks created:
+  ✅ propedge-pace-sync-morning @ 11:30 AM EST
+  ✅ propedge-pace-sync-evening @ 6:00 PM EST
+
+═══════════════════════════════════════════════════════════════════════════════
+  NEXT STEPS: DEPLOY TO NETLIFY
+═══════════════════════════════════════════════════════════════════════════════
+
+Option 1: Using the deployment script (EASIEST)
+───────────────────────────────────────────────
+From your PropEdge directory, run:
+
+  ./deploy-pace-pipeline.sh
+
+This will:
+  • Add files to git
+  • Commit with a descriptive message
+  • Push to GitHub
+  • Deploy to Netlify using ./deploy-prod.sh
+
+Option 2: Manual deployment (if script fails)
+──────────────────────────────────────────────
+$ cd /Users/devonjohnson/Documents/Claude/Projects/PropEdge
+
+$ git add propedge-data.json init-db.js sync-espn-pace.js \
+  netlify/functions/pace-data.js test-pace-api.js
+
+$ git commit -m "Add SQLite-based pace data pipeline with Netlify Function and scheduled tasks"
+
+$ git push origin main
+
+$ ./deploy-prod.sh
+
+═══════════════════════════════════════════════════════════════════════════════
+  VERIFY DEPLOYMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+After deployment, test the API:
+
+  curl "https://propedgemasters.netlify.app/.netlify/functions/pace-data?action=all"
+
+Expected response: JSON with all players and latest pace data
+
+═══════════════════════════════════════════════════════════════════════════════
+  WHAT'S RUNNING
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ Database
+   • propedge-data.json stores all pace data and predictions
+   • Auto-syncs at 11:30 AM & 6 PM EST
+
+✅ API Endpoint
+   • /.netlify/functions/pace-data
+   • Query params: action, playerId, days
+   • Ready for PropEdge UI integration
+
+✅ Scheduled Tasks
+   • Morning sync @ 11:30 AM EST
+   • Evening sync @ 6:00 PM EST
+   • Manage in Cowork sidebar → Scheduled section
+
+═══════════════════════════════════════════════════════════════════════════════
+  NEXT: INTEGRATE INTO UI
+═══════════════════════════════════════════════════════════════════════════════
+
+In your PropEdge index.html, add this to the Pace tab:
+
+  fetch('/.netlify/functions/pace-data?action=trends')
+    .then(r => r.json())
+    .then(data => {
+      // data.trends has: predictedPace, trend, ma7, ma14, volatility, confidence
+      // Display in UI
+    });
+
+See QUICK_REFERENCE.md for complete code examples.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Questions? See:
+  • COMPLETION_SUMMARY.txt — Full overview
+  • QUICK_REFERENCE.md — API reference and examples
+  • PROPEDGE_SQLITE_DEPLOYMENT.md — Detailed setup guide
+
+═══════════════════════════════════════════════════════════════════════════════

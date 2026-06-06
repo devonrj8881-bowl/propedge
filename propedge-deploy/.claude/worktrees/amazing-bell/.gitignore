@@ -1,0 +1,22 @@
+# PropEdge Deployment - Only track production files
+propedge-deploy/MEMORY.md
+propedge-deploy/*.txt
+propedge-deploy/*.md
+propedge-deploy/*.archived-*
+propedge-deploy/index-*.html
+propedge-deploy/.DS_Store
+propedge-deploy/propedge_*
+propedge-deploy/deploy*
+propedge-deploy/deployment*
+propedge-deploy/last_deploy*
+propedge-deploy/propedge-deploy-state.json
+
+# Local dev files
+.env
+.env.local
+node_modules/
+*.log
+
+
+# Local Netlify folder
+.netlify

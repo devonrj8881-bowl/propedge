@@ -1,0 +1,33 @@
+PROPEDGE AUTO-DEPLOY TRACKING
+==============================
+Last Check: 2026-03-28 (automated scheduled task)
+
+SOURCE FILE STATUS:
+- Path: /sessions/fervent-wonderful-fermi/mnt/propfinder-sync/propedge_v2.html
+- Modified: 2026-03-27 11:33:18 UTC-4
+- Size: 108 KB
+- Status: READY FOR DEPLOYMENT
+
+DEPLOYMENT STATUS:
+- ❌ Auto-deployment FAILED
+- Reason: SSH connection unavailable
+- Error: Network resolution failure - MacBook-Air.local not reachable from sandbox
+- Timestamp: 2026-03-28 (automated task)
+
+ISSUE:
+The PropEdge auto-deploy process requires direct SSH/SCP access to a local Mac machine
+(devonjohnson@MacBook-Air.local). This connection is not available from the Claude workspace
+sandbox environment due to network isolation.
+
+RESOLUTION REQUIRED:
+1. Manual Deployment Option:
+   - Download propedge_v2.html from /sessions/fervent-wonderful-fermi/mnt/propfinder-sync/
+   - Copy to Mac: /Users/devonjohnson/Documents/Claude Workspace Devon/02 Projects/PropEdge/[C] propedge_v3.html
+   - Run deploy script: bash "/Users/devonjohnson/Documents/Claude Workspace Devon/02 Projects/PropEdge/[C] deploy.sh"
+
+2. Alternative: Set up cloud-based deployment (GitHub Actions, etc.) to replace SSH dependency
+
+NOTES:
+- File is ready and unchanged since last modification
+- Config sheet thresholds: STRONG min=71, VALUE edge min=6
+- Live site: https://propedgemasters.netlify.app

@@ -1,0 +1,38 @@
+{
+  "Scott Barnes|Rebounds|8.5": {
+    "status": "MISS",
+    "date": "2026-05-04",
+    "timestamp": "2026-05-04T20:00:00Z",
+    "modelProb": null,
+    "impliedProb": null,
+    "edge": null,
+    "propIqScore": null,
+    "odds": null
+  },
+  "X|Y|Z": {
+    "status": "HIT",
+    "date": "2026-05-15",
+    "timestamp": "2026-05-15T00:00:00Z",
+    "gameId": "test",
+    "gameStatus": "final",
+    "detectionTimestamp": "2026-05-15T00:00:00Z",
+    "modelProb": null,
+    "impliedProb": null,
+    "edge": null,
+    "propIqScore": null,
+    "odds": null
+  },
+  "Test|Points|10": {
+    "status": "HIT",
+    "date": "2026-05-15",
+    "timestamp": "2026-05-15T17:12:00Z",
+    "gameId": "test_manual",
+    "gameStatus": "final",
+    "detectionTimestamp": "2026-05-15T17:12:00Z",
+    "modelProb": null,
+    "impliedProb": null,
+    "edge": null,
+    "propIqScore": null,
+    "odds": null
+  }
+}
