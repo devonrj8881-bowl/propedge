@@ -86,20 +86,25 @@ async function fetchESPNGames() {
     // Get today and yesterday/tomorrow to handle timezone issues
     const now = new Date();
     const today = now.toISOString().split('T')[0];
-    const yesterday = new Date(now.getTime() - 24*60*60*1000).toISOString().split('T')[0];
-    const tomorrow = new Date(now.getTime() + 24*60*60*1000).toISOString().split('T')[0];
 
-    console.log(`📅 Looking for games on: ${yesterday}, ${today}, or ${tomorrow}`);
+    console.log(`📅 Current UTC date: ${today}`);
     console.log(`📊 ESPN returned ${data.events?.length || 0} total events`);
+
+    // Log all games ESPN returned with their dates
+    if (data.events && data.events.length > 0) {
+      const sampleGames = data.events.slice(0, 3).map(e => ({
+        date: e.date?.substring(0, 10),
+        teams: `${e.competitions?.[0]?.competitors?.[0]?.team?.abbreviation} @ ${e.competitions?.[0]?.competitors?.[1]?.team?.abbreviation}`,
+        status: e.status?.type?.name
+      }));
+      console.log(`📝 Sample ESPN games: ${JSON.stringify(sampleGames)}`);
+    }
 
     // Filter to today's games (or nearby dates to handle timezone issues)
     const games = (data.events || [])
       .filter((event) => {
         const gameDate = new Date(event.date).toISOString().split('T')[0];
-        const isToday = gameDate === today || gameDate === yesterday || gameDate === tomorrow;
-        if (!isToday) {
-          // Silently skip games not today
-        }
+        const isToday = gameDate === today;
         return isToday;
       })
       .map((event) => {
@@ -201,9 +206,18 @@ async function fetchStartingPitchers(games) {
 
       const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${gameDate}`;
 
-      console.log(`  📅 Fetching schedule for ${gameDate}...`);
+      console.log(`  📅 Fetching MLB schedule for ${gameDate}...`);
       const scheduleData = await fetchJSON(url, { timeout: 5000 });
-      console.log(`  📊 Schedule returned ${scheduleData.games?.length || 0} games`);
+
+      if (!scheduleData.games || scheduleData.games.length === 0) {
+        console.warn(`  ❌ No games in MLB schedule for ${gameDate}`);
+      } else {
+        console.log(`  ✅ MLB schedule has ${scheduleData.games.length} games`);
+        const sample = scheduleData.games.slice(0, 2).map(g =>
+          `${g.awayTeam?.team?.abbreviation}@${g.homeTeam?.team?.abbreviation}`
+        ).join(', ');
+        console.log(`  📝 Sample: ${sample}`);
+      }
 
       // Find game matching away/home teams
       // MLB schedule endpoint uses: awayTeam.team.name, homeTeam.team.name, and probablePitchers
