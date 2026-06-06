@@ -6,8 +6,7 @@
   publish = "propedge-deploy"
 
 [functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["googleapis", "google-auth-library", "puppeteer"]
+  node_bundler = "nft"
 
 # Scheduled function: Pitcher ERA enrichment
 # Runs daily at 8 AM ET to fetch pitcher data and update Google Sheet
