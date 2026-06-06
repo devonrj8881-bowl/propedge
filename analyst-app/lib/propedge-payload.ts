@@ -106,6 +106,9 @@ export function parsePropFeedCsv(csv: string): BoardProp[] {
     pitcherXera: headers.findIndex((h) => h.includes("pitcher_xera") || h.includes("xera")),
     daysRest: headers.findIndex((h) => h.includes("days_rest") || h.includes("days rest")),
     b2b: headers.findIndex((h) => h.includes("b2b") || h.includes("back_to_back")),
+    streak: headers.findIndex((h) => h === "streak"),
+    impliedProb: headers.findIndex((h) => h.includes("implied_prob") || h.includes("implied prob")),
+    lastSeason: headers.findIndex((h) => h.includes("last_season") || h.includes("last season")),
   };
 
   const props: BoardProp[] = [];
@@ -145,6 +148,9 @@ export function parsePropFeedCsv(csv: string): BoardProp[] {
       pitcherXERA: parseFloat(get(cols.pitcherXera)) || undefined,
       daysRest: parseFloat(get(cols.daysRest)) || undefined,
       isB2b: get(cols.b2b) === '1' || get(cols.b2b).toLowerCase() === 'true' || undefined,
+      streak: parseFloat(get(cols.streak)) || undefined,
+      impliedProb: parseFloat(get(cols.impliedProb)) || undefined,
+      lastSeasonPct: get(cols.lastSeason) || undefined,
       opening: parseFloat(get(cols.opening)) || undefined,
       confidence: parseFloat(get(cols.confidence)) || undefined,
       edge: parseFloat(get(cols.edge)) || undefined,

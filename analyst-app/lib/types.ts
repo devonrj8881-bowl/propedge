@@ -83,4 +83,7 @@ export interface BoardProp {
   pitcherXERA?: number;
   daysRest?: number;
   isB2b?: boolean;
+  streak?: number;
+  impliedProb?: number;
+  lastSeasonPct?: number | string;
 }
