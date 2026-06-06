@@ -3,413 +3,263 @@
  *
  * Schedule: Daily at 8 AM ET (configured in netlify.toml)
  *
- * What it does:
- * 1. Fetches today's MLB games from ESPN
- * 2. Identifies starting pitchers for each game
- * 3. Fetches pitcher ERA from MLB StatsAPI
- * 4. Updates propedge-main Google Sheet with pitcher_era column
+ * Sources: ESPN (games + pitchers + ERA/WHIP) + Baseball Savant (xERA)
+ * No MLB StatsAPI calls — those are blocked on Netlify/AWS IP ranges.
  *
  * Environment Variables Required:
  * - PROPEDGE_SHEET_ID: Google Sheet ID
  * - GOOGLE_SERVICE_ACCOUNT: JSON string with service account credentials
- *
- * Usage:
- * - Automatically scheduled via netlify.toml
- * - Or manually triggered via: /.netlify/functions/enrich-pitcher-era
  */
 
 const https = require('https');
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Utility: Fetch from HTTPS endpoint with retry
-// ═══════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// HTTP util
+// ─────────────────────────────────────────────────────────────────────────────
 
-function fetchJSON(url, options = {}) {
+function fetchText(url) {
   return new Promise((resolve, reject) => {
-    const maxRetries = options.maxRetries || 2;
-    const timeout = options.timeout || 5000;
-
-    const attempt = (retryCount = 0) => {
-      const req = https.get(url, { timeout }, (res) => {
-        let data = '';
-
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-
-        res.on('end', () => {
-          try {
-            if (res.statusCode === 200) {
-              resolve(JSON.parse(data));
-            } else if (retryCount < maxRetries) {
-              setTimeout(() => attempt(retryCount + 1), 1000);
-            } else {
-              reject(new Error(`HTTP ${res.statusCode}`));
-            }
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
-
-      req.on('error', (err) => {
-        if (retryCount < maxRetries) {
-          setTimeout(() => attempt(retryCount + 1), 1000);
-        } else {
-          reject(err);
-        }
-      });
-
-      req.on('timeout', () => {
-        req.destroy();
-        if (retryCount < maxRetries) {
-          attempt(retryCount + 1);
-        } else {
-          reject(new Error('Request timeout'));
-        }
-      });
-    };
-
-    attempt();
+    const opts = { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } };
+    https.get(url, opts, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => resolve(data));
+    }).on('error', reject).on('timeout', function() { this.destroy(); reject(new Error('timeout')); });
   });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ESPN: Fetch today's games and starting pitchers
-// ═══════════════════════════════════════════════════════════════════════════
-
-async function fetchESPNGames() {
-  try {
-    const url = 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?limit=500';
-    const data = await fetchJSON(url, { timeout: 8000 });
-
-    // Handle timezone: check both EST (local) and UTC dates
-    const now = new Date();
-    const utcDate = now.toISOString().split('T')[0];
-    // EST is UTC-5, EDT is UTC-4. For June, use EDT (UTC-4)
-    const estDate = new Date(now.getTime() - 4*60*60*1000).toISOString().split('T')[0];
-
-    console.log(`📅 Current UTC date: ${utcDate}, EST date: ${estDate}`);
-    console.log(`📊 ESPN returned ${data.events?.length || 0} total events`);
-
-    // Log all games ESPN returned with their dates
-    if (data.events && data.events.length > 0) {
-      const sampleGames = data.events.slice(0, 3).map(e => ({
-        date: e.date?.substring(0, 10),
-        teams: `${e.competitions?.[0]?.competitors?.[0]?.team?.abbreviation} @ ${e.competitions?.[0]?.competitors?.[1]?.team?.abbreviation}`,
-        status: e.status?.type?.name
-      }));
-      console.log(`📝 Sample ESPN games: ${JSON.stringify(sampleGames)}`);
-    }
-
-    // Filter games from both EST and UTC dates (covers all timezones)
-    const games = (data.events || [])
-      .filter((event) => {
-        const gameDate = new Date(event.date).toISOString().split('T')[0];
-        const isToday = gameDate === utcDate || gameDate === estDate;
-        return isToday;
-      })
-      .map((event) => {
-        const comp = event.competitions?.[0] || {};
-        const competitors = comp.competitors || [];
-
-        // ESPN competitors[0] = home, competitors[1] = away (use homeAway field to be safe)
-        const homeComp = competitors.find(c => c.homeAway === 'home') || competitors[0];
-        const awayComp = competitors.find(c => c.homeAway === 'away') || competitors[1];
-
-        return {
-          id: event.id,
-          date: event.date,
-          awayTeam: awayComp?.team?.abbreviation,
-          homeTeam: homeComp?.team?.abbreviation,
-          awayTeamName: awayComp?.team?.displayName,
-          homeTeamName: homeComp?.team?.displayName,
-          status: event.status?.type?.name
-        };
-      });
-
-    console.log(`✅ ESPN: Found ${games.length} games for ${estDate}`);
-    return games;
-  } catch (err) {
-    console.error('❌ ESPN fetch failed:', err.message);
-    return [];
-  }
+async function fetchJSON(url) {
+  const text = await fetchText(url);
+  return JSON.parse(text);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// MLB StatsAPI: Fetch pitcher ERA by pitcher ID
-// ═══════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 1: Today's games from ESPN scoreboard
+// ─────────────────────────────────────────────────────────────────────────────
 
-async function fetchPitcherERA(pitcherId, season = 2026) {
+async function fetchESPNGames(date) {
+  const data = await fetchJSON('https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?limit=500');
+  const games = (data.events || []).filter(e => e.date.startsWith(date));
+
+  return games.map(e => {
+    const competitors = e.competitions?.[0]?.competitors || [];
+    const home = competitors.find(c => c.homeAway === 'home') || competitors[0];
+    const away = competitors.find(c => c.homeAway === 'away') || competitors[1];
+    return {
+      eventId: e.id,
+      homeTeam: home?.team?.abbreviation,
+      awayTeam: away?.team?.abbreviation,
+      homeTeamName: home?.team?.displayName,
+      awayTeamName: away?.team?.displayName,
+      status: e.status?.type?.name
+    };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 2: Starting pitchers from ESPN game summary boxscore
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function fetchStartingPitchers(game) {
+  const summary = await fetchJSON(
+    `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/summary?event=${game.eventId}`
+  );
+
+  const result = [];
+  for (const team of summary.boxscore?.players || []) {
+    const pitching = team.statistics?.find(s => s.type === 'pitching' || s.name === 'pitching');
+    if (!pitching) continue;
+
+    // First pitcher listed in boxscore = starting pitcher
+    const starter = pitching.athletes?.[0];
+    if (!starter?.athlete?.id) continue;
+
+    const isHome = team.team?.abbreviation === game.homeTeam;
+    result.push({
+      espnId: starter.athlete.id,
+      name: starter.athlete.displayName,
+      team: isHome ? game.homeTeam : game.awayTeam,
+      teamName: isHome ? game.homeTeamName : game.awayTeamName,
+      opponent: isHome ? game.awayTeam : game.homeTeam,
+      isHome
+    });
+  }
+  return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 3: Season ERA/WHIP from ESPN player stats
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function fetchESPNStats(espnId, name) {
   try {
-    const url = `https://statsapi.mlb.com/api/v1/people/${pitcherId}/stats?stats=season&season=${season}&group=pitching`;
-    const data = await fetchJSON(url, { timeout: 5000 });
+    const stats = await fetchJSON(
+      `https://site.web.api.espn.com/apis/common/v3/sports/baseball/mlb/athletes/${espnId}/stats?season=2026`
+    );
+    const pitching = stats.categories?.find(c => c.name === 'pitching');
+    if (!pitching) return null;
 
-    const stats = data.stats?.[0]?.splits?.[0]?.stat || {};
+    const labels = pitching.labels || [];
+    const totals = pitching.totals || [];
+    const get = (label) => totals[labels.indexOf(label)] ?? null;
 
     return {
-      playerId: pitcherId,
-      era: parseFloat(stats.era) || null,
-      whip: parseFloat(stats.whip) || null,
-      k9: stats.strikeOuts && stats.inningsPitched
-        ? ((parseFloat(stats.strikeOuts) / parseFloat(stats.inningsPitched)) * 9).toFixed(2)
-        : null,
-      hr9: stats.homeRuns && stats.inningsPitched
-        ? ((parseFloat(stats.homeRuns) / parseFloat(stats.inningsPitched)) * 9).toFixed(2)
-        : null,
-      wins: parseInt(stats.wins) || 0,
-      losses: parseInt(stats.losses) || 0,
-      inningsPitched: parseFloat(stats.inningsPitched) || 0
+      era: parseFloat(get('ERA')) || null,
+      whip: parseFloat(get('WHIP')) || null,
+      ip: get('IP'),
+      wins: parseInt(get('W')) || 0,
+      losses: parseInt(get('L')) || 0,
+      strikeouts: parseInt(get('K')) || 0,
     };
   } catch (err) {
-    console.warn(`⚠️ Pitcher ${pitcherId} stats fetch failed:`, err.message);
+    console.warn(`  ⚠️ ESPN stats failed for ${name}: ${err.message}`);
     return null;
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Search MLB API for pitcher ID by name
-// ═══════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 4: xERA from Baseball Savant (one fetch, name-based lookup)
+// ─────────────────────────────────────────────────────────────────────────────
 
-async function findPitcherID(pitcherName) {
-  try {
-    const url = `https://statsapi.mlb.com/api/v1/people/search?names=${encodeURIComponent(pitcherName)}`;
-    const data = await fetchJSON(url, { timeout: 5000 });
+async function fetchStatcastLeaderboard() {
+  const csv = await fetchText(
+    'https://baseballsavant.mlb.com/leaderboard/custom?year=2026&type=pitcher&filter=&sort=4&sortDir=asc&min=0&selections=p_era,p_whip,xera&csv=true'
+  );
+  const lines = csv.trim().split('\n');
+  // Header: "last_name, first_name","player_id","year","p_era","p_whip","xera"
+  // After stripping quotes and splitting by comma, the name field occupies indices 0 and 1
+  // because it contains a comma: "Smith, John" → ['Smith', ' John', ...]
+  const headers = lines[0].replace(/"/g, '').split(',');
+  const xeraIdx = headers.indexOf('xera');   // e.g. 6
 
-    const pitcher = data.people?.[0];
-    if (!pitcher) return null;
-
-    return pitcher.id;
-  } catch (err) {
-    console.warn(`⚠️ Pitcher search failed for "${pitcherName}":`, err.message);
-    return null;
+  const lookup = {};
+  for (const line of lines.slice(1)) {
+    const cols = line.replace(/"/g, '').split(',');
+    const last = cols[0]?.trim();
+    const first = cols[1]?.trim();
+    if (!last || !first) continue;
+    const key = `${first} ${last}`.toLowerCase();
+    lookup[key] = { xera: parseFloat(cols[xeraIdx]) || null };
   }
+  return lookup;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Fetch starting pitchers for today's games
-// ═══════════════════════════════════════════════════════════════════════════
-
-async function fetchStartingPitchers(games) {
-  const pitchers = [];
-
-  for (const game of games) {
-    // Skip only truly cancelled/postponed games (no pitchers assigned)
-    const skipStatuses = ['Postponed', 'Cancelled'];
-    if (skipStatuses.includes(game.status)) {
-      console.log(`⏭️  Skipping ${game.awayTeam} @ ${game.homeTeam} (${game.status})`);
-      continue;
-    }
-
-    console.log(`🔍 Looking up pitchers for ${game.awayTeam} @ ${game.homeTeam} (raw date: ${game.date})`);
-
-    try {
-      // Try both UTC and EST dates to catch all games
-      const utcDate = new Date().toISOString().split('T')[0];
-      const estDate = new Date(new Date().getTime() - 4*60*60*1000).toISOString().split('T')[0];
-
-      // Fetch schedule (includes both upcoming and in-progress games) for both dates
-      const datesToCheck = [estDate, utcDate];
-      let allScheduleGames = [];
-
-      for (const dateToCheck of datesToCheck) {
-        console.log(`  📅 Fetching MLB schedule for ${dateToCheck}...`);
-        // Schedule endpoint returns games in all states: scheduled, in-progress, final
-        const scheduleUrl = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateToCheck}&hydrate=probablePitcher`;
-        const scheduleData = await fetchJSON(scheduleUrl, { timeout: 5000 });
-
-        const dateGames = scheduleData.dates?.[0]?.games || [];
-        if (dateGames.length > 0) {
-          console.log(`  ✅ Found ${dateGames.length} games on ${dateToCheck}`);
-          allScheduleGames = allScheduleGames.concat(dateGames);
-        }
-      }
-
-      if (allScheduleGames.length === 0) {
-        console.warn(`  ❌ No games found for ${estDate} or ${utcDate}`);
-      }
-
-      // Find game matching away/home teams
-      // MLB schedule endpoint only returns team name (not abbreviation), so match by name
-      const matchedGame = allScheduleGames.find(g => {
-        const awayName = g.teams?.away?.team?.name || '';
-        const homeName = g.teams?.home?.team?.name || '';
-        // ESPN awayTeamName e.g. "Houston Astros", MLB name e.g. "Houston Astros"
-        return awayName === game.awayTeamName && homeName === game.homeTeamName;
-      });
-
-      if (!matchedGame) {
-        console.warn(`⚠️  Could not match ${game.awayTeamName} @ ${game.homeTeamName} in schedule`);
-        console.warn(`   Available: ${allScheduleGames?.map(g => `${g.teams?.away?.team?.name}@${g.teams?.home?.team?.name}`).join(' | ')}`);
-        continue;
-      }
-
-      const awayPitcher = matchedGame.teams?.away?.probablePitcher;
-      const homePitcher = matchedGame.teams?.home?.probablePitcher;
-
-      if (awayPitcher?.id) {
-        const name = awayPitcher.fullName || awayPitcher.name || 'Unknown';
-        console.log(`  ⚾ Away pitcher: ${name} (ID: ${awayPitcher.id})`);
-        pitchers.push({
-          team: game.awayTeam,
-          opponent: game.homeTeam,
-          name: name,
-          playerId: awayPitcher.id,
-          isHome: false
-        });
-      }
-
-      if (homePitcher?.id) {
-        const name = homePitcher.fullName || homePitcher.name || 'Unknown';
-        console.log(`  ⚾ Home pitcher: ${name} (ID: ${homePitcher.id})`);
-        pitchers.push({
-          team: game.homeTeam,
-          opponent: game.awayTeam,
-          name: name,
-          playerId: homePitcher.id,
-          isHome: true
-        });
-      }
-    } catch (err) {
-      console.warn(`⚠️ Failed to fetch pitchers for game ${game.id}:`, err.message);
-    }
-  }
-
-  return pitchers;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Google Sheets: Update pitcher_era column
-// ═══════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// Google Sheets placeholder
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function updateGoogleSheet(pitcherData) {
-  // Note: Full implementation requires google-auth-library
-  // For now, this is a placeholder that logs what would be updated
-
   const sheetId = process.env.PROPEDGE_SHEET_ID;
   if (!sheetId) {
-    console.warn('⚠️ PROPEDGE_SHEET_ID not configured');
+    console.warn('⚠️ PROPEDGE_SHEET_ID not configured — skipping sheet update');
     return false;
   }
-
-  // TODO: Implement Google Sheets API update
-  // This requires:
-  // 1. Authenticating with service account
-  // 2. Reading current sheet data
-  // 3. Matching pitcher names to player rows
-  // 4. Updating pitcher_era column
-  // 5. Writing back to sheet
-
-  console.log('📝 Sheet update placeholder - would update with:', {
-    pitchersCount: pitcherData.length,
-    sample: pitcherData.slice(0, 2)
-  });
-
+  console.log('📝 Sheet update placeholder:', { count: pitcherData.length, sample: pitcherData[0] });
   return true;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Main Handler
-// ═══════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// Main handler
+// ─────────────────────────────────────────────────────────────────────────────
 
 exports.handler = async (event) => {
-  const startTime = new Date().toISOString();
+  const startTime = Date.now();
+  const now = new Date();
+  const date = new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString().split('T')[0]; // ET date
 
-  console.log(`
-╔═══════════════════════════════════════════════════════════════╗
-║          🔄 Pitcher ERA Enrichment Function                   ║
-║                                                                ║
-║  Running: ${startTime}                    ║
-║  Trigger: ${event.httpMethod === 'GET' ? 'Manual' : 'Scheduled'}                                          ║
-╚═══════════════════════════════════════════════════════════════╝
-`);
+  console.log(`\n🔄 Pitcher ERA Enrichment — ${date} (trigger: ${event.httpMethod || 'scheduled'})\n`);
 
   try {
-    // Step 1: Fetch today's games
-    console.log('\n📍 Step 1: Fetching today\'s MLB games...');
-    const games = await fetchESPNGames();
+    // Step 1: Games
+    console.log('📍 Step 1: Fetching ESPN games...');
+    const games = await fetchESPNGames(date);
+    console.log(`  Found ${games.length} games for ${date}`);
 
     if (games.length === 0) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          message: 'No games scheduled for today',
-          timestamp: startTime
-        })
-      };
+      return { statusCode: 200, body: JSON.stringify({ message: 'No games today', date }) };
     }
 
-    // Step 2: Get starting pitchers
-    console.log('\n📍 Step 2: Looking up starting pitchers...');
-    const pitchers = await fetchStartingPitchers(games);
-
-    if (pitchers.length === 0) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          message: 'No pitcher data available',
-          timestamp: startTime
-        })
-      };
+    // Step 2: Starters
+    console.log('📍 Step 2: Fetching starting pitchers from ESPN boxscores...');
+    const allPitchers = [];
+    for (const game of games) {
+      try {
+        const starters = await fetchStartingPitchers(game);
+        console.log(`  ${game.awayTeam} @ ${game.homeTeam}: ${starters.map(p => p.name).join(', ') || 'none found'}`);
+        allPitchers.push(...starters);
+      } catch (err) {
+        console.warn(`  ⚠️ Failed for ${game.awayTeam} @ ${game.homeTeam}: ${err.message}`);
+      }
     }
 
-    // Step 3: Fetch ERA for each pitcher
-    console.log('\n📍 Step 3: Fetching pitcher ERA data...');
-    const pitcherERAData = [];
+    if (allPitchers.length === 0) {
+      return { statusCode: 200, body: JSON.stringify({ message: 'No pitcher data available', date }) };
+    }
 
-    for (const pitcher of pitchers) {
-      const stats = await fetchPitcherERA(pitcher.playerId);
+    // Step 3: ERA/WHIP from ESPN + xERA from Statcast
+    console.log(`📍 Step 3: Fetching stats for ${allPitchers.length} pitchers...`);
 
-      if (stats && stats.era) {
-        console.log(`  ✅ ${pitcher.name}: ERA ${stats.era.toFixed(2)}`);
-        pitcherERAData.push({
-          ...pitcher,
-          ...stats
-        });
+    let statcastLookup = {};
+    try {
+      statcastLookup = await fetchStatcastLeaderboard();
+      console.log(`  Statcast leaderboard loaded: ${Object.keys(statcastLookup).length} pitchers`);
+    } catch (err) {
+      console.warn(`  ⚠️ Statcast fetch failed: ${err.message}`);
+    }
+
+    const enriched = [];
+    for (const pitcher of allPitchers) {
+      const espnStats = await fetchESPNStats(pitcher.espnId, pitcher.name);
+      const xeraData = statcastLookup[pitcher.name.toLowerCase()] || null;
+
+      const entry = {
+        name: pitcher.name,
+        team: pitcher.team,
+        opponent: pitcher.opponent,
+        isHome: pitcher.isHome,
+        espnId: pitcher.espnId,
+        era: espnStats?.era ?? null,
+        whip: espnStats?.whip ?? null,
+        ip: espnStats?.ip ?? null,
+        wins: espnStats?.wins ?? 0,
+        losses: espnStats?.losses ?? 0,
+        strikeouts: espnStats?.strikeouts ?? 0,
+        xera: xeraData?.xera ?? null,
+      };
+
+      if (entry.era !== null) {
+        console.log(`  ✅ ${pitcher.name} (${pitcher.team}): ERA ${entry.era} | WHIP ${entry.whip} | xERA ${entry.xera}`);
       } else {
-        console.warn(`  ⚠️ ${pitcher.name}: No ERA data`);
+        console.warn(`  ⚠️ ${pitcher.name}: no ERA data`);
       }
 
-      // Rate limiting - be nice to MLB API
-      await new Promise(r => setTimeout(r, 200));
+      enriched.push(entry);
+      await new Promise(r => setTimeout(r, 150)); // rate limit
     }
 
-    // Step 4: Update Google Sheet
-    console.log('\n📍 Step 4: Updating Google Sheet...');
-    const sheetUpdated = await updateGoogleSheet(pitcherERAData);
+    // Step 4: Sheet update
+    console.log('📍 Step 4: Updating Google Sheet...');
+    await updateGoogleSheet(enriched);
 
-    const endTime = new Date().toISOString();
-    const duration = (new Date(endTime) - new Date(startTime)) / 1000;
-
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
     const result = {
       success: true,
-      message: `✅ Enriched ${pitcherERAData.length} pitchers in ${duration.toFixed(1)}s`,
+      message: `✅ Enriched ${enriched.filter(p => p.era).length}/${enriched.length} pitchers in ${duration}s`,
       stats: {
         gamesScraped: games.length,
-        pitchersFound: pitchers.length,
-        pitchersWithERA: pitcherERAData.length,
-        durationSeconds: duration
+        pitchersFound: allPitchers.length,
+        pitchersWithERA: enriched.filter(p => p.era).length,
+        durationSeconds: parseFloat(duration)
       },
-      data: pitcherERAData.slice(0, 5), // Return first 5 for logs
-      timestamp: endTime
+      data: enriched,
+      date,
     };
 
-    console.log(`\n✨ Complete!\n`, result);
+    console.log('\n✨ Complete:', result.message);
+    return { statusCode: 200, body: JSON.stringify(result) };
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(result)
-    };
-
-  } catch (error) {
-    console.error('\n❌ Enrichment failed:', error.message);
-
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: error.message,
-        timestamp: new Date().toISOString()
-      })
-    };
+  } catch (err) {
+    console.error('❌ Fatal error:', err.message);
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
