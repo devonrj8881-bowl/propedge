@@ -190,9 +190,8 @@ async function fetchStartingPitchers(games) {
   const pitchers = [];
 
   for (const game of games) {
-    // Get pitchers from Scheduled, In Progress, and Pre-Game games
-    // Skip only if Final or Postponed
-    const skipStatuses = ['Final', 'Completed', 'Postponed', 'Cancelled'];
+    // Skip only truly cancelled/postponed games (no pitchers assigned)
+    const skipStatuses = ['Postponed', 'Cancelled'];
     if (skipStatuses.includes(game.status)) {
       console.log(`⏭️  Skipping ${game.awayTeam} @ ${game.homeTeam} (${game.status})`);
       continue;
