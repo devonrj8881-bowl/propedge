@@ -83,11 +83,13 @@ async function fetchESPNGames() {
     const url = 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?limit=500';
     const data = await fetchJSON(url, { timeout: 8000 });
 
-    // Get today and yesterday/tomorrow to handle timezone issues
+    // Handle timezone: check both EST (local) and UTC dates
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
+    const utcDate = now.toISOString().split('T')[0];
+    // EST is UTC-5, EDT is UTC-4. For June, use EDT (UTC-4)
+    const estDate = new Date(now.getTime() - 4*60*60*1000).toISOString().split('T')[0];
 
-    console.log(`📅 Current UTC date: ${today}`);
+    console.log(`📅 Current UTC date: ${utcDate}, EST date: ${estDate}`);
     console.log(`📊 ESPN returned ${data.events?.length || 0} total events`);
 
     // Log all games ESPN returned with their dates
@@ -100,11 +102,11 @@ async function fetchESPNGames() {
       console.log(`📝 Sample ESPN games: ${JSON.stringify(sampleGames)}`);
     }
 
-    // Filter to today's games (or nearby dates to handle timezone issues)
+    // Filter games from both EST and UTC dates (covers all timezones)
     const games = (data.events || [])
       .filter((event) => {
         const gameDate = new Date(event.date).toISOString().split('T')[0];
-        const isToday = gameDate === today;
+        const isToday = gameDate === utcDate || gameDate === estDate;
         return isToday;
       })
       .map((event) => {
@@ -199,12 +201,12 @@ async function fetchStartingPitchers(games) {
     console.log(`🔍 Looking up pitchers for ${game.awayTeam} @ ${game.homeTeam} (raw date: ${game.date})`);
 
     try {
-      // Use today's date instead of trying to parse ESPN's date
-      // This ensures we always fetch the correct schedule
-      const today = new Date().toISOString().split('T')[0];
-      const gameDate = today;  // Always use today's date to match current games
+      // Try both UTC and EST dates to catch all games
+      const utcDate = new Date().toISOString().split('T')[0];
+      const estDate = new Date(new Date().getTime() - 4*60*60*1000).toISOString().split('T')[0];
 
-      const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${gameDate}`;
+      // Try EST date first (more likely for US games), then UTC
+      const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${estDate}`;
 
       console.log(`  📅 Fetching MLB schedule for ${gameDate}...`);
       const scheduleData = await fetchJSON(url, { timeout: 5000 });
