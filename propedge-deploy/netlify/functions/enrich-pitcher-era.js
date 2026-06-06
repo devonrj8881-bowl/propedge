@@ -208,11 +208,11 @@ async function fetchStartingPitchers(games) {
       // Try EST date first (more likely for US games), then UTC
       const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${estDate}`;
 
-      console.log(`  📅 Fetching MLB schedule for ${gameDate}...`);
+      console.log(`  📅 Fetching MLB schedule for ${estDate}...`);
       const scheduleData = await fetchJSON(url, { timeout: 5000 });
 
       if (!scheduleData.games || scheduleData.games.length === 0) {
-        console.warn(`  ❌ No games in MLB schedule for ${gameDate}`);
+        console.warn(`  ❌ No games in MLB schedule for ${estDate}`);
       } else {
         console.log(`  ✅ MLB schedule has ${scheduleData.games.length} games`);
         const sample = scheduleData.games.slice(0, 2).map(g =>
