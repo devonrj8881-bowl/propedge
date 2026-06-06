@@ -205,23 +205,34 @@ async function fetchStartingPitchers(games) {
       const utcDate = new Date().toISOString().split('T')[0];
       const estDate = new Date(new Date().getTime() - 4*60*60*1000).toISOString().split('T')[0];
 
-      // Fetch schedules for both dates to catch games that span midnight
+      // Fetch both schedule (upcoming) and scoreboard (in-progress/finished) for both dates
       const datesToCheck = [estDate, utcDate];
       let allScheduleGames = [];
 
       for (const dateToCheck of datesToCheck) {
+        // Try schedule first (upcoming games)
         console.log(`  📅 Fetching MLB schedule for ${dateToCheck}...`);
-        const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateToCheck}`;
-        const scheduleData = await fetchJSON(url, { timeout: 5000 });
+        const scheduleUrl = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateToCheck}`;
+        const scheduleData = await fetchJSON(scheduleUrl, { timeout: 5000 });
 
         if (scheduleData.games && scheduleData.games.length > 0) {
-          console.log(`  ✅ Found ${scheduleData.games.length} games on ${dateToCheck}`);
+          console.log(`  ✅ Found ${scheduleData.games.length} scheduled games on ${dateToCheck}`);
           allScheduleGames = allScheduleGames.concat(scheduleData.games);
+        }
+
+        // Also try scoreboard (in-progress/finished games)
+        console.log(`  📊 Fetching MLB scoreboard for ${dateToCheck}...`);
+        const scoreboardUrl = `https://statsapi.mlb.com/api/v1/scoreboard?sportId=1&date=${dateToCheck}`;
+        const scoreboardData = await fetchJSON(scoreboardUrl, { timeout: 5000 });
+
+        if (scoreboardData.games && scoreboardData.games.length > 0) {
+          console.log(`  ✅ Found ${scoreboardData.games.length} scoreboard games on ${dateToCheck}`);
+          allScheduleGames = allScheduleGames.concat(scoreboardData.games);
         }
       }
 
       if (allScheduleGames.length === 0) {
-        console.warn(`  ❌ No games in MLB schedule for ${estDate} or ${utcDate}`);
+        console.warn(`  ❌ No games found in MLB schedule or scoreboard for ${estDate} or ${utcDate}`);
       }
 
       // Find game matching away/home teams
@@ -243,9 +254,19 @@ async function fetchStartingPitchers(games) {
         continue;
       }
 
-      // probablePitchers is at the game level or in each team object
-      const awayPitcher = matchedGame.awayTeam?.probablePitcher || matchedGame.probablePitchers?.away;
-      const homePitcher = matchedGame.homeTeam?.probablePitcher || matchedGame.probablePitchers?.home;
+      // Try multiple pitcher fields for both scheduled and in-progress games
+      // Schedule: probablePitcher, Scoreboard: currentBatter/pitcher in live data
+      const awayPitcher =
+        matchedGame.awayTeam?.probablePitcher ||
+        matchedGame.probablePitchers?.away ||
+        matchedGame.teams?.away?.pitchers?.current ||
+        matchedGame.liveData?.linescore?.teams?.away?.pitcher;
+
+      const homePitcher =
+        matchedGame.homeTeam?.probablePitcher ||
+        matchedGame.probablePitchers?.home ||
+        matchedGame.teams?.home?.pitchers?.current ||
+        matchedGame.liveData?.linescore?.teams?.home?.pitcher;
 
       if (awayPitcher?.id) {
         const name = awayPitcher.fullName || awayPitcher.name || 'Unknown';
