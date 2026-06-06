@@ -205,34 +205,24 @@ async function fetchStartingPitchers(games) {
       const utcDate = new Date().toISOString().split('T')[0];
       const estDate = new Date(new Date().getTime() - 4*60*60*1000).toISOString().split('T')[0];
 
-      // Fetch both schedule (upcoming) and scoreboard (in-progress/finished) for both dates
+      // Fetch schedule (includes both upcoming and in-progress games) for both dates
       const datesToCheck = [estDate, utcDate];
       let allScheduleGames = [];
 
       for (const dateToCheck of datesToCheck) {
-        // Try schedule first (upcoming games)
         console.log(`  📅 Fetching MLB schedule for ${dateToCheck}...`);
+        // Schedule endpoint returns games in all states: scheduled, in-progress, final
         const scheduleUrl = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateToCheck}`;
         const scheduleData = await fetchJSON(scheduleUrl, { timeout: 5000 });
 
         if (scheduleData.games && scheduleData.games.length > 0) {
-          console.log(`  ✅ Found ${scheduleData.games.length} scheduled games on ${dateToCheck}`);
+          console.log(`  ✅ Found ${scheduleData.games.length} games on ${dateToCheck}`);
           allScheduleGames = allScheduleGames.concat(scheduleData.games);
-        }
-
-        // Also try scoreboard (in-progress/finished games)
-        console.log(`  📊 Fetching MLB scoreboard for ${dateToCheck}...`);
-        const scoreboardUrl = `https://statsapi.mlb.com/api/v1/scoreboard?sportId=1&date=${dateToCheck}`;
-        const scoreboardData = await fetchJSON(scoreboardUrl, { timeout: 5000 });
-
-        if (scoreboardData.games && scoreboardData.games.length > 0) {
-          console.log(`  ✅ Found ${scoreboardData.games.length} scoreboard games on ${dateToCheck}`);
-          allScheduleGames = allScheduleGames.concat(scoreboardData.games);
         }
       }
 
       if (allScheduleGames.length === 0) {
-        console.warn(`  ❌ No games found in MLB schedule or scoreboard for ${estDate} or ${utcDate}`);
+        console.warn(`  ❌ No games found for ${estDate} or ${utcDate}`);
       }
 
       // Find game matching away/home teams
