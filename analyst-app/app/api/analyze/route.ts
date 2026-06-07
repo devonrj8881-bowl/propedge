@@ -43,7 +43,14 @@ async function fetchProps(): Promise<Record<string, string>[]> {
   const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
   return lines.slice(1).map((line) => {
     const values = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
-    return Object.fromEntries(headers.map((h, i) => [h, values[i] ?? ""]));
+    // Use first-wins for duplicate headers (e.g. propedge-main has two "League" columns;
+    // the first one at index 24 is authoritative — set by the scraper's consolidation).
+    const row: Record<string, string> = {};
+    for (let i = 0; i < headers.length; i++) {
+      const h = headers[i];
+      if (h && !(h in row)) row[h] = values[i] ?? "";
+    }
+    return row;
   });
 }
 
