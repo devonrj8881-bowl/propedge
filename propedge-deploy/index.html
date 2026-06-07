@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.186 — Kill nav transition + isolate sidebar layer to stop flicker on cursor approach — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.189 — Fix scoring direction bugs: B2B/injury trueProb, triple-alignment UNDER, reversion both directions — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.186">
+  <meta name="app-version" content="v7.189">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -22007,15 +22007,23 @@ nav.tabs > button,
           trueProb *= injuryMultiplier;
         }
 
-        // ── P2.2: Injury Impact Modifier — reduce trueProb if player's team missing starters ────────
+        // ── P2.2: Injury Impact Modifier — direction-aware ────────
+        // Teammate out → this player gets more usage/shots.
+        // OVER: more usage = more likely to hit OVER → boost trueProb
+        // UNDER: more usage = harder to go under → cut trueProb
         const teamImpactInjuries = getImpactInjuries(teamAbbr, actualLeague);
         if (teamImpactInjuries && teamImpactInjuries.length > 0) {
-          trueProb *= 0.90; // 10% reduction when key teammates are out
+          trueProb = direction === 'OVER'
+            ? Math.min(0.88, trueProb * 1.10)
+            : Math.max(0.12, trueProb * 0.90);
         }
 
-        // ── P2.3: Back-to-back Fatigue — applied BEFORE edge calc ────────
+        // ── P2.3: Back-to-back Fatigue — direction-aware ────────
+        // Fatigue → player underperforms vs normal: bad for OVER, good for UNDER
         if (backToBackFlag && league === 'NBA') {
-          trueProb *= 0.92; // 8% reduction for fatigued players
+          trueProb = direction === 'OVER'
+            ? Math.max(0.12, trueProb * 0.92)
+            : Math.min(0.88, trueProb * 1.08);
         }
 
         // ── Base edge calculation ──
@@ -22832,6 +22840,17 @@ nav.tabs > button,
         if (TEAM_ALIASES[twoWord]) return TEAM_ALIASES[twoWord];
       }
       return upper;
+    }
+
+    // Reverse lookup: abbreviation → full team name for search (e.g. "SEA" → "Seattle Mariners")
+    function teamAbbrToSearchText(abbr) {
+      if (!abbr) return '';
+      const upper = abbr.toUpperCase().trim();
+      for (const lg of Object.values(TEAM_ALIASES)) {
+        const found = lg.find(([a]) => a === upper);
+        if (found) return found[1];
+      }
+      return '';
     }
 
     const ESPN_BASE = 'https://a.espncdn.com/i/teamlogos';
@@ -34008,10 +34027,17 @@ nav.tabs > button,
       }
 
       // ── 15. SENTINEL: ALIGNMENT BONUS (±8 pts) ───────────────────
-      // Bonus when Vegas, Model, and Momentum all align.
-      if (_edge >= 6 && l10 >= 65 && opening > 0 && current >= opening && p.direction === 'OVER') {
-        score += 8;
-        forFactors.push('🎯 Triple-Alignment: Vegas, Model & Momentum converged');
+      // Bonus when Vegas, Model, and Momentum all align (direction-aware).
+      // OVER: line moved up (opening → current) — sharps pricing it higher
+      // UNDER: line moved down (opening → current) — sharps pricing it lower
+      if (_edge >= 6 && l10 >= 65 && opening > 0) {
+        if (p.direction === 'OVER' && current >= opening) {
+          score += 8;
+          forFactors.push('🎯 Triple-Alignment: Vegas, Model & Momentum converged (OVER)');
+        } else if (p.direction === 'UNDER' && current <= opening) {
+          score += 8;
+          forFactors.push('🎯 Triple-Alignment: Vegas, Model & Momentum converged (UNDER)');
+        }
       }
 
       // ── 16. PROPIQ REALISM GATE — restore older conservative calibration ─────
@@ -34355,20 +34381,22 @@ nav.tabs > button,
       if (baseline === 0) return { score: 0, label: null };
       const delta = l10 - baseline;
 
+      // Reversion applies to both OVER and UNDER — hit rates are direction-specific,
+      // so the same thresholds are valid regardless of bet direction.
       // Tier 1 — Extreme outlier: strong regression risk, only bet with high edge
-      if (l10 >= 85 && delta > 25 && edge < 4 && p.direction === 'OVER') {
+      if (l10 >= 85 && delta > 25 && edge < 4) {
         return { score: -10, label: `⚖️ Mean Reversion Alert: Extreme L10 (${l10}%) vs baseline (${baseline}%)` };
       }
-      // Tier 2 — Elevated: meaningful overperformance gap, flag if edge is thin (delta lowered 20→15)
-      if (l10 >= 75 && delta > 15 && edge < 5 && p.direction === 'OVER') {
+      // Tier 2 — Elevated: meaningful overperformance gap, flag if edge is thin
+      if (l10 >= 75 && delta > 15 && edge < 5) {
         return { score: -6, label: `⚠️ Regression Risk: Hot L10 (${l10}%) well above baseline (${baseline}%)` };
       }
-      // Tier 3 — Moderate: L10 significantly outpacing baseline (delta lowered 30→20 — catches mid-range overperformers)
-      if (l10 >= 65 && delta > 20 && p.direction === 'OVER') {
+      // Tier 3 — Moderate: L10 significantly outpacing baseline
+      if (l10 >= 65 && delta > 20) {
         return { score: -3, label: `📊 Trend Gap: L10 (${l10}%) significantly exceeds baseline (${baseline}%)` };
       }
-      // Buy-low signal: cold spell but model sees genuine edge (delta 20→15, edge 6→5)
-      if (l10 <= 35 && (baseline - l10) > 15 && edge >= 5 && p.direction === 'OVER') {
+      // Buy-low signal: cold spell but model sees genuine edge
+      if (l10 <= 35 && (baseline - l10) > 15 && edge >= 5) {
         return { score: 6, label: `💎 Sentinel Buy-Low: Model edge on underperforming player (${l10}% L10 vs ${baseline}% baseline)` };
       }
       return { score: 0, label: null };
@@ -38258,7 +38286,9 @@ nav.tabs > button,
           const blob = [
             p.player,
             p.team,
+            teamAbbrToSearchText(p.team),
             p.opponent,
+            teamAbbrToSearchText(p.opponent),
             propMarketText(p),
             propLineText(p),
             p.league
@@ -38424,7 +38454,9 @@ nav.tabs > button,
           const blob = [
             p.player,
             p.team,
+            teamAbbrToSearchText(p.team),
             p.opponent,
+            teamAbbrToSearchText(p.opponent),
             propMarketText(p),
             propLineText(p),
             p.league
@@ -47110,27 +47142,10 @@ Return a single raw JSON object (no code fences) matching the system schema. In 
     }
 
     function getOverUnderRecommendation(prop) {
-      const edge = parseFloat(prop?.edge) || 0;
-      const l10Pct = parseFloat(prop?.l10Pct) || 50;
-      const l5Pct = parseFloat(prop?.l5Pct) || 50;
-      const confidence = parseFloat(prop?.confidence) || 0;
-
-      // Primary: edge signal (positive = OVER, negative = UNDER)
-      if (Math.abs(edge) > 2) {
-        return edge > 0 ? 'OVER' : 'UNDER';
-      }
-
-      // Secondary: L5 trend direction (more recent = more weight)
-      const recent = (l5Pct * 0.7 + l10Pct * 0.3) / 100;
-      if (recent > 0.55) return 'OVER';
-      if (recent < 0.45) return 'UNDER';
-
-      // Tertiary: confidence as tiebreaker (high conf = go with trend)
-      if (confidence > 65) {
-        return l5Pct > 50 ? 'OVER' : 'UNDER';
-      }
-
-      // Default: neutral case
+      // Use the prop's stored direction (parsed from PropFinder prop string — "o..." = OVER, "u..." = UNDER).
+      // Do NOT recompute from edge/l5Pct — edge is relative to the listed direction, not absolute OVER/UNDER.
+      const stored = String(prop?.direction || '').toUpperCase();
+      if (stored === 'OVER' || stored === 'UNDER') return stored;
       return 'OVER';
     }
 
