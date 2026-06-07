@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.202 — PropIQ L10 hit-rate gate: sub-40% L10 caps score at 55 — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.203 — Game-bet parlay: add id field, fix slip display for ML/total/alt rows — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.202">
+  <meta name="app-version" content="v7.203">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -35980,12 +35980,12 @@ nav.tabs > button,
           return `
             <div class="parlay-leg" style="border-left: 3px solid ${propColor};">
               <div class="parlay-leg-info">
-                <div class="parlay-leg-player">${p.player}</div>
+                <div class="parlay-leg-player">${p.isGameBet ? (p.gameLabel || `${p.team} @ ${p.opponent}`) : p.player}</div>
                 <div class="site-parlay-leg-meta">
                   <span class="site-parlay-leg-chip" style="color: ${propColor}; border-color: rgba(${parseInt(propColor.slice(1,3),16)},${parseInt(propColor.slice(3,5),16)},${parseInt(propColor.slice(5,7),16)},0.28); background: rgba(${parseInt(propColor.slice(1,3),16)},${parseInt(propColor.slice(3,5),16)},${parseInt(propColor.slice(5,7),16)},0.12);">${propType}</span>
                   <span class="site-parlay-leg-chip">${p.league}</span>
                 </div>
-                <div class="parlay-leg-prop">${p.direction} ${p.line} ${p.prop} vs ${p.team}</div>
+                <div class="parlay-leg-prop">${p.isGameBet ? `${p.prop}${p.line != null ? ' ' + p.line : ''} · ${p.direction}` : `${p.direction} ${p.line} ${p.prop} vs ${p.team}`}</div>
               </div>
               <div class="parlay-leg-odds" style="color: ${(p.edge || 0) > 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${p.oddsStr || (p.odds > 0 ? '+' + p.odds : p.odds)}</div>
               <button class="parlay-leg-remove" onclick="removeFromParlay('${p.id}')">×</button>
@@ -36003,8 +36003,9 @@ nav.tabs > button,
         const dkParlayBtn = document.getElementById('parlayBtnDk');
         if (state.parlay.length > 0) {
           const p = state.parlay[0];
-          if (fdParlayBtn) fdParlayBtn.href = `https://sportsbook.fanduel.com/search?q=${encodeURIComponent(p.player)}`;
-          if (dkParlayBtn) dkParlayBtn.href = `https://sportsbook.draftkings.com/search?q=${encodeURIComponent(p.player)}`;
+          const searchQ = p.isGameBet ? (p.gameLabel || p.team || '') : (p.player || '');
+          if (fdParlayBtn) fdParlayBtn.href = `https://sportsbook.fanduel.com/search?q=${encodeURIComponent(searchQ)}`;
+          if (dkParlayBtn) dkParlayBtn.href = `https://sportsbook.draftkings.com/search?q=${encodeURIComponent(searchQ)}`;
         }
       }
 
