@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.193 — WNBA headshots, gamelog, injuries, situational context, all ESPN sport paths — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.194 — WNBA games feed: ESPN_APIS, fetchGames, allGames spreads, abbr fixes, TOR/PDX teams — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.193">
+  <meta name="app-version" content="v7.194">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -439,16 +439,18 @@ const TEAM_ALIASES = {
     WNBA: [
       ['ATL', 'Atlanta Dream',           ['atlanta', 'dream', 'atl']],
       ['CHI', 'Chicago Sky',             ['chicago', 'sky', 'chi']],
-      ['CON', 'Connecticut Sun',         ['connecticut', 'sun', 'con', 'ct']],
+      ['CON', 'Connecticut Sun',         ['connecticut', 'sun', 'con', 'ct', 'conn']],
       ['DAL', 'Dallas Wings',            ['dallas', 'wings', 'dal']],
       ['GSV', 'Golden State Valkyries',  ['golden state', 'valkyries', 'gsv', 'gs']],
       ['IND', 'Indiana Fever',           ['indiana', 'fever', 'ind']],
       ['LV',  'Las Vegas Aces',          ['las vegas', 'aces', 'lv', 'lva']],
-      ['LA',  'Los Angeles Sparks',      ['los angeles', 'la sparks', 'sparks', 'la']],
+      ['LAS', 'Los Angeles Sparks',      ['los angeles', 'la sparks', 'sparks', 'la', 'las']],
       ['MIN', 'Minnesota Lynx',          ['minnesota', 'lynx', 'min']],
       ['NY',  'New York Liberty',        ['new york', 'liberty', 'ny', 'nyl']],
+      ['PDX', 'Portland Fire',           ['portland', 'fire', 'pdx', 'por']],
       ['PHX', 'Phoenix Mercury',         ['phoenix', 'mercury', 'phx']],
       ['SEA', 'Seattle Storm',           ['seattle', 'storm', 'sea']],
+      ['TOR', 'Toronto Tempo',           ['toronto', 'tempo', 'tor']],
       ['WAS', 'Washington Mystics',      ['washington', 'mystics', 'wsh', 'was']]
     ]
   };
@@ -19421,10 +19423,11 @@ nav.tabs > button,
     const THRESHOLDS = { prime: 70, strong: 55, solid: 40, spec: 0 }; // v5: unified 0-100 scale, aligned with computeBetScore() action thresholds
 
     const ESPN_APIS = {
-      NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-      NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-      MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
-      NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
+      NBA:  'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+      NHL:  'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+      MLB:  'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
+      NFL:  'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+      WNBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard'
     };
 
     // Live team stats APIs — used for pace ranking + opponent defense context
@@ -28151,7 +28154,7 @@ nav.tabs > button,
     function applyLocalGameStatusFilter() {
       const allGames = [
         ...(state.games.NBA || []), ...(state.games.NHL || []),
-        ...(state.games.MLB || []), ...(state.games.NFL || [])
+        ...(state.games.MLB || []), ...(state.games.NFL || []), ...(state.games.WNBA || [])
       ];
       if (!allGames.length || !Array.isArray(state.props) || !state.props.length) return;
 
@@ -28280,7 +28283,7 @@ nav.tabs > button,
         ticker.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
       }
 
-      const leagues = ['NBA', 'NHL', 'MLB', 'NFL'];
+      const leagues = ['NBA', 'NHL', 'MLB', 'NFL', 'WNBA'];
       let allGames = [];
 
       // Force today-only by passing dates=YYYYMMDD to ESPN
@@ -28325,7 +28328,7 @@ nav.tabs > button,
       }));
       allGames = leagueResults.flatMap(result => result.status === 'fulfilled' ? result.value : []);
       if (state.apiSportsBundle) mergeApiSportsGamesIfNeeded(state.apiSportsBundle);
-      allGames = ['NBA', 'NHL', 'MLB', 'NFL'].flatMap((league) => state.games[league] || []);
+      allGames = ['NBA', 'NHL', 'MLB', 'NFL', 'WNBA'].flatMap((league) => state.games[league] || []);
       console.log(`[PropEdge] FINAL: state.games =`, state.games);
 
       // ── ALWAYS render ticker with all games (live + upcoming)
@@ -28468,6 +28471,7 @@ nav.tabs > button,
         ...(state.games.NBA || []),
         ...(state.games.NHL || []),
         ...(state.games.MLB || []),
+        ...(state.games.WNBA || []),
       ];
 
       console.log(`[Auto-Track] Checking ${allGames.length} games for final transitions`);
@@ -28680,6 +28684,7 @@ nav.tabs > button,
         ...(state.games.NHL || []),
         ...(state.games.MLB || []),
         ...(state.games.NFL || []),
+        ...(state.games.WNBA || []),
       ];
       const liveGames = allGames.filter(g => g.status === 'live' && g.league !== 'MLB');
 

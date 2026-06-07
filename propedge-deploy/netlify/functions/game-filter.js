@@ -34,9 +34,18 @@ const ABBR_MAP = {
   LAR: "LAR",
 };
 
-function normalizeAbbr(abbr) {
+// WNBA uses different abbreviations than NBA — keep separate to avoid cross-league remapping
+// ESPN WNBA abbr → PropFinder abbr
+const WNBA_ABBR_MAP = {
+  LA:   "LAS",  // LA Sparks → LAS (PropFinder)
+  GS:   "GSV",  // Golden State Valkyries → GSV (PropFinder)
+  CONN: "CON",  // Connecticut Sun alternate
+};
+
+function normalizeAbbr(abbr, league) {
   if (!abbr) return abbr;
   const up = String(abbr).toUpperCase();
+  if (league === "WNBA") return WNBA_ABBR_MAP[up] || up;
   return ABBR_MAP[up] || up;
 }
 
@@ -84,8 +93,8 @@ async function fetchLeague(league, url, espnDate) {
 
       const homeTeam = comp.competitors?.find((c) => c.homeAway === "home");
       const awayTeam = comp.competitors?.find((c) => c.homeAway === "away");
-      const homeAbbr = normalizeAbbr(homeTeam?.team?.abbreviation);
-      const awayAbbr = normalizeAbbr(awayTeam?.team?.abbreviation);
+      const homeAbbr = normalizeAbbr(homeTeam?.team?.abbreviation, league);
+      const awayAbbr = normalizeAbbr(awayTeam?.team?.abbreviation, league);
 
       const seriesNote = comp.series?.summary || null;
       const isSeries = !!comp.series;
