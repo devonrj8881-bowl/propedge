@@ -218,6 +218,10 @@ exports.handler = async (event) => {
   }
 
   const params = event.queryStringParameters || {};
+  // alt=false → bulk-only (ML/spread/total). alt=true → also fetch per-event alt/period markets.
+  // Client defaults to alt=false on page load; switches to alt=true only when user selects
+  // Alt Total / 1Q / 1H chips — saves ~50% of API credits on normal browsing.
+  const wantAlt = params.alt === "true";
 
   const requestedLeagues = params.leagues
     ? params.leagues.toUpperCase().split(",").filter((l) => SPORT_KEYS[l])
@@ -228,7 +232,7 @@ exports.handler = async (event) => {
   // Per-event endpoint: alternate totals, 1H total, 1Q total (1 call per event)
   const ALT_MARKETS  = "alternate_totals,totals_h1,totals_q1";
 
-  const cacheKey = requestedLeagues.sort().join(",");
+  const cacheKey = requestedLeagues.sort().join(",") + "|alt=" + wantAlt;
   const now = Date.now();
   if (_cache[cacheKey] && now - _cache[cacheKey].ts < CACHE_MS) {
     return {
@@ -248,17 +252,17 @@ exports.handler = async (event) => {
         // Step 1: bulk fetch for main markets + event list
         const events = await fetchOddsApi(sportKey, MAIN_MARKETS, apiKey);
 
-        // Step 2: per-event fetch for alt/period markets (parallel across events)
-        const altResults = await Promise.all(
-          events.map((ev) =>
-            fetchEventOdds(sportKey, ev.id, ALT_MARKETS, apiKey).catch(() => null)
-          )
-        );
-
-        // Build altEventMap: eventId → bookmakers from per-event response
+        // Step 2: per-event alt/period markets — only when explicitly requested
         const altEventMap = {};
-        for (const altEv of altResults) {
-          if (altEv?.id) altEventMap[altEv.id] = altEv.bookmakers || [];
+        if (wantAlt) {
+          const altResults = await Promise.all(
+            events.map((ev) =>
+              fetchEventOdds(sportKey, ev.id, ALT_MARKETS, apiKey).catch(() => null)
+            )
+          );
+          for (const altEv of altResults) {
+            if (altEv?.id) altEventMap[altEv.id] = altEv.bookmakers || [];
+          }
         }
 
         const leagueProps = normEvents(events, league, altEventMap);

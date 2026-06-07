@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.197 — WNBA abbr normalization: POR→PDX/WSH→WAS in game-filter+parseGame, scraper consolidated — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.201 — Team logos on game-bet cards replace dice icon — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.197">
+  <meta name="app-version" content="v7.201">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -6095,6 +6095,45 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       min-width: 0;
       box-sizing: border-box;
     }
+
+    /* ── Game-Bet card styles ─────────────────────────── */
+    .game-bet-logos {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      width: 56px;
+      flex-shrink: 0;
+      justify-content: center;
+    }
+    .game-bet-logos img,
+    .game-bet-logos .team-logo-fallback {
+      width: 22px !important;
+      height: 22px !important;
+      min-width: 22px;
+      border-radius: 3px;
+      object-fit: contain;
+      font-size: 0.55rem;
+    }
+    .game-bet-logo-vs {
+      font-size: 0.55rem;
+      color: #64748b;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .game-bet-odds-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      padding: 6px 14px;
+      min-width: 56px;
+    }
+    .game-bet-odds-badge.game-bet-juice--sharp  { background: rgba(52,211,153,0.18); border: 1px solid rgba(52,211,153,0.4); }
+    .game-bet-odds-badge.game-bet-juice--fair   { background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.35); }
+    .game-bet-odds-badge.game-bet-juice--heavy  { background: rgba(239,68,68,0.12);  border: 1px solid rgba(239,68,68,0.3); }
+    .game-bet-odds-num   { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; }
+    .game-bet-odds-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
 
     @media (max-width: 1023px) {
       body.markets-mode .propai-league-tabs,
@@ -19078,6 +19117,12 @@ nav.tabs > button,
           <button class="propai-market-tab" type="button" data-market="TB" onclick="setPropAIMarketFilter('TB')">Tot. Bases</button>
           <button class="propai-market-tab" type="button" data-market="Strikeouts" onclick="setPropAIMarketFilter('Strikeouts')">Strikeouts</button>
           <button class="propai-market-tab" type="button" data-market="Goals" onclick="setPropAIMarketFilter('Goals')">Goals</button>
+          <button class="propai-market-tab" type="button" data-market="Moneyline" onclick="setPropAIMarketFilter('Moneyline')">ML</button>
+          <button class="propai-market-tab" type="button" data-market="Spread" onclick="setPropAIMarketFilter('Spread')">Spread</button>
+          <button class="propai-market-tab" type="button" data-market="Total" onclick="setPropAIMarketFilter('Total')">Total</button>
+          <button class="propai-market-tab" type="button" data-market="Alt Total" onclick="setPropAIMarketFilter('Alt Total')">Alt Total</button>
+          <button class="propai-market-tab" type="button" data-market="1Q" onclick="setPropAIMarketFilter('1Q')">1Q</button>
+          <button class="propai-market-tab" type="button" data-market="1H" onclick="setPropAIMarketFilter('1H')">1H</button>
           </div>
         </div>
       </div>
@@ -21160,6 +21205,8 @@ nav.tabs > button,
         applyEspnGameFilter().catch(e => console.warn('[game-filter] ESPN filter failed silently:', e.message));
         // Also apply local game-status filter (uses state.games, works offline/instantly)
         applyLocalGameStatusFilter();
+        // Async game-odds: load game-level bets (ML/spread/total/alt/1Q) from Odds API
+        loadGameOdds().catch(e => console.warn('[game-odds] fetch failed silently:', e.message));
         if (typeof renderMarketsView === 'function') renderMarketsView();
         window.clearTimeout(window.__propLoadWatchdog);
         window.__propLoadRetryCount = 0;
@@ -22883,9 +22930,15 @@ nav.tabs > button,
     }
 
     // Reverse lookup: abbreviation → full team name for search (e.g. "SEA" → "Seattle Mariners")
-    function teamAbbrToSearchText(abbr) {
+    function teamAbbrToSearchText(abbr, league) {
       if (!abbr) return '';
       const upper = abbr.toUpperCase().trim();
+      // Check the prop's own league first so shared abbrs (CHI, IND, MIN, TOR…)
+      // resolve to the correct team name (e.g. CHI+WNBA → "Chicago Sky", not "Chicago Bulls")
+      if (league && TEAM_ALIASES[league.toUpperCase()]) {
+        const found = TEAM_ALIASES[league.toUpperCase()].find(([a]) => a === upper);
+        if (found) return found[1];
+      }
       for (const lg of Object.values(TEAM_ALIASES)) {
         const found = lg.find(([a]) => a === upper);
         if (found) return found[1];
@@ -28258,6 +28311,62 @@ nav.tabs > button,
         }
       } catch (e) {
         console.warn('[game-filter] ESPN fetch failed:', e.message);
+      }
+    }
+
+    // ── Game-Odds: load game-level bets (ML/spread/total/alt/1Q) from Odds API ──
+    async function loadGameOdds() {
+      try {
+        // Only request leagues that have games today (from propEdgeActiveTeams)
+        const activeLeagues = window.propEdgeActiveTeams
+          ? Object.keys(window.propEdgeActiveTeams).filter(l => (window.propEdgeActiveTeams[l] || []).length > 0)
+          : ['NBA', 'WNBA', 'MLB', 'NHL', 'NFL'];
+        if (!activeLeagues.length) return;
+
+        // alt=false: bulk only (ML/spread/total) — saves ~50% API credits on page load
+        const url = `/.netlify/functions/game-odds?leagues=${activeLeagues.join(',')}&alt=false`;
+        const res = await propEdgeNativeFetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok || !Array.isArray(data.props) || !data.props.length) return;
+
+        state.props = state.props.filter(p => !p.isGameBet);
+        state.props.push(...data.props);
+        state.gameOddsAltLoaded = false; // reset — alt not loaded yet
+        console.log(`[game-odds] ✅ Loaded ${data.props.length} game bets (ML/spread/total)`);
+
+        delete state.props._cachedScore;
+        state.props.forEach(p => { delete p._cachedScore; });
+        if (typeof renderMarketsView === 'function') renderMarketsView();
+      } catch (e) {
+        console.warn('[game-odds] fetch failed:', e.message);
+      }
+    }
+
+    // Lazy-loads alt/period markets (Alt Total, 1H, 1Q) only when user requests them.
+    // Called by toggleMarketsMarket when an alt-market chip is selected.
+    async function loadGameOddsAlt() {
+      if (state.gameOddsAltLoaded) return; // already loaded this session
+      try {
+        const activeLeagues = window.propEdgeActiveTeams
+          ? Object.keys(window.propEdgeActiveTeams).filter(l => (window.propEdgeActiveTeams[l] || []).length > 0)
+          : ['NBA', 'WNBA', 'MLB', 'NHL', 'NFL'];
+        if (!activeLeagues.length) return;
+        const url = `/.netlify/functions/game-odds?leagues=${activeLeagues.join(',')}&alt=true`;
+        const res = await propEdgeNativeFetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok || !Array.isArray(data.props)) return;
+        // Replace all game bets with the full set (includes alt markets)
+        state.props = state.props.filter(p => !p.isGameBet);
+        state.props.push(...data.props);
+        state.gameOddsAltLoaded = true;
+        console.log(`[game-odds-alt] ✅ Loaded ${data.props.length} game bets incl. alt/period markets`);
+        delete state.props._cachedScore;
+        state.props.forEach(p => { delete p._cachedScore; });
+        if (typeof renderMarketsView === 'function') renderMarketsView();
+      } catch (e) {
+        console.warn('[game-odds-alt] fetch failed:', e.message);
       }
     }
 
@@ -38290,6 +38399,18 @@ nav.tabs > button,
     }
 
     function propAIMarketCategory(prop) {
+      // Game-level bets get their own category based on market type
+      if (prop.isGameBet) {
+        const p = (prop.prop || '').toLowerCase();
+        if (p.includes('moneyline') || p.includes('ml')) return 'Moneyline';
+        if (p.includes('1q') || p.includes('1st quarter')) return '1Q';
+        if (p.includes('1h') || p.includes('1st half')) return '1H';
+        if (p.includes('alt total')) return 'Alt Total';
+        if (p.includes('alt spread')) return 'Alt Spread';
+        if (p.includes('spread')) return 'Spread';
+        if (p.includes('total')) return 'Total';
+        return 'Game';
+      }
       const market = normalizeLiveOddsText(propMarketText(prop));
       if (market.includes('points rebounds assists') || market.includes('pts reb ast') || market.includes('pra')) return 'PRA';
       if (market.includes('3 pointers') || market.includes('three') || market.includes('3pt')) return '3PM';
@@ -38320,7 +38441,8 @@ nav.tabs > button,
       // Remove props for teams whose game is already final/completed
       const allGames = [
         ...(state.games.NBA || []), ...(state.games.NHL || []),
-        ...(state.games.MLB || []), ...(state.games.NFL || [])
+        ...(state.games.MLB || []), ...(state.games.NFL || []),
+        ...(state.games.WNBA || [])
       ];
       if (allGames.length) {
         const normalizeT = t => String(t || '').toUpperCase().trim();
@@ -38358,9 +38480,9 @@ nav.tabs > button,
           const blob = [
             p.player,
             p.team,
-            teamAbbrToSearchText(p.team),
+            teamAbbrToSearchText(p.team, p.league),
             p.opponent,
-            teamAbbrToSearchText(p.opponent),
+            teamAbbrToSearchText(p.opponent, p.league),
             propMarketText(p),
             propLineText(p),
             p.league
@@ -38375,7 +38497,7 @@ nav.tabs > button,
       // Use marketsLeagues multi-select; fall back to global state.league
       const leagues = state.marketsLeagues.length
         ? state.marketsLeagues
-        : (state.league && state.league !== 'ALL' ? [state.league] : ['NBA', 'NHL', 'MLB', 'NFL']);
+        : (state.league && state.league !== 'ALL' ? [state.league] : ['NBA', 'NHL', 'MLB', 'NFL', 'WNBA']);
       // ESPN API already fetches ?dates=TODAY — no date re-filter needed
       const allGames = leagues.flatMap(l => (state.games[l.toUpperCase()] || []).filter(Boolean));
       const sorted = allGames
@@ -38533,9 +38655,9 @@ nav.tabs > button,
           const blob = [
             p.player,
             p.team,
-            teamAbbrToSearchText(p.team),
+            teamAbbrToSearchText(p.team, p.league),
             p.opponent,
-            teamAbbrToSearchText(p.opponent),
+            teamAbbrToSearchText(p.opponent, p.league),
             propMarketText(p),
             propLineText(p),
             p.league
@@ -38631,7 +38753,51 @@ nav.tabs > button,
                 </div>`;
     }
 
+    function buildGameBetRowHTML(prop) {
+      const market = prop.prop || 'Game Bet';
+      const leagueBadge = prop.league ? `<span class="propai-market-league">${escapeHTML(prop.league)}</span>` : '';
+      const lineStr = prop.line !== undefined && prop.line !== null
+        ? (prop.direction === 'COVER' ? (prop.line >= 0 ? '+' + prop.line : String(prop.line)) : prop.direction + ' ' + prop.line)
+        : prop.direction;
+      const oddsDisplay = prop.odds ? (prop.odds > 0 ? '+' + prop.odds : String(prop.odds)) : 'n/a';
+      // Juice indicator: if absolute odds < 115 on a side bet, it's well-priced
+      const juice = prop.odds ? Math.abs(prop.odds) : 110;
+      const juiceClass = juice <= 108 ? 'game-bet-juice--sharp' : juice <= 115 ? 'game-bet-juice--fair' : 'game-bet-juice--heavy';
+      return `
+        <div class="propai-market-row propai-market-row--deck propai-market-row--game-bet tier-1">
+          <div class="propai-deck-spine" aria-hidden="true"></div>
+          <div class="propai-deck-inner">
+            <div class="propai-market-player">
+              <div class="game-bet-logos" aria-hidden="true">
+                ${getTeamLogo(prop.team, prop.league)}
+                <span class="game-bet-logo-vs">@</span>
+                ${getTeamLogo(prop.opponent, prop.league)}
+              </div>
+              <div>
+                <div class="propai-market-name">${leagueBadge}${leagueBadge ? ' ' : ''}${escapeHTML(prop.gameLabel || `${prop.team} vs ${prop.opponent}`)}</div>
+                <div class="propai-market-sub">${escapeHTML(market)} · ${escapeHTML(lineStr)} · ${escapeHTML(prop.bookSource || 'DraftKings')}</div>
+              </div>
+            </div>
+            <div class="propai-deck-hero-row">
+              <div class="propai-market-iq-block">
+                <div class="game-bet-odds-badge ${juiceClass}">
+                  <span class="game-bet-odds-num">${escapeHTML(oddsDisplay)}</span>
+                  <span class="game-bet-odds-label">odds</span>
+                </div>
+              </div>
+            </div>
+            <div class="propai-deck-odds-strip propai-market-odds-callout">
+              <span class="propai-market-odds-num">${escapeHTML(oddsDisplay)}</span>
+              <span class="propai-market-odds-book-tag">${escapeHTML(prop.bookSource || 'DraftKings')}</span>
+              <span class="propai-deck-odds-caption">Game Line</span>
+            </div>
+            ${buildMarketRowActionsHTML(prop)}
+          </div>
+        </div>`;
+    }
+
     function buildPropAIMarketRowHTML(prop) {
+      if (prop.isGameBet) return buildGameBetRowHTML(prop);
       const headshot = getPlayerHeadshot(prop.player, prop.league);
       const market = propAIMarketCategory(prop);
       const iq = propIQValue(prop);
@@ -39173,10 +39339,16 @@ nav.tabs > button,
       debouncedRenderMarketsView();
     }
 
+    const ALT_MARKET_CHIPS = new Set(['Alt Total', '1Q', '1H']);
+
     function toggleMarketsMarket(market) {
       state.marketsMarketTypes = _toggleMultiFilter(state.marketsMarketTypes, market);
       _marketsDisplayCap = getMarketsBoardRenderCap();
       syncMarketsFilterUI();
+      // Lazy-load alt/period markets on first request — avoids Odds API calls on normal page load
+      if (ALT_MARKET_CHIPS.has(market) && !state.gameOddsAltLoaded) {
+        loadGameOddsAlt().catch(e => console.warn('[game-odds-alt]', e.message));
+      }
       debouncedRenderMarketsView();
       renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
     }
