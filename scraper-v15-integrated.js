@@ -55,7 +55,7 @@ const CONFIG = {
   password:        process.env.PROPFINDER_PASSWORD,
   spreadsheetId:   process.env.GOOGLE_SHEET_ID,
   archiveSheetId:  process.env.GOOGLE_ARCHIVE_SHEET_ID,
-  leagues:         ['NBA', 'NHL', 'MLB'],
+  leagues:         ['NBA', 'NHL', 'MLB', 'WNBA'],
   downloadPath:    path.join(process.env.HOME, 'Downloads'),
   headless:        !process.argv.includes('--visible') && !CAPTURE_MODE,
   viewport:        { width: 1400, height: 900 }

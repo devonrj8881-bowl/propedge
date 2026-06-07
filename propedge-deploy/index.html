@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.189 — Fix scoring direction bugs: B2B/injury trueProb, triple-alignment UNDER, reversion both directions — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.190 — WNBA support: scraper, game-filter, TEAM_ALIASES, league filters, analyst UI — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.189">
+  <meta name="app-version" content="v7.190">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -435,6 +435,21 @@ const TEAM_ALIASES = {
       ['TB', 'Tampa Bay Buccaneers',['tampa bay','tampa','buccaneers','bucs','tb','tbb']],
       ['TEN','Tennessee Titans',['tennessee','titans','ten']],
       ['WAS','Washington Commanders',['washington','commanders','wsh','was']]
+    ],
+    WNBA: [
+      ['ATL', 'Atlanta Dream',           ['atlanta', 'dream', 'atl']],
+      ['CHI', 'Chicago Sky',             ['chicago', 'sky', 'chi']],
+      ['CON', 'Connecticut Sun',         ['connecticut', 'sun', 'con', 'ct']],
+      ['DAL', 'Dallas Wings',            ['dallas', 'wings', 'dal']],
+      ['GSV', 'Golden State Valkyries',  ['golden state', 'valkyries', 'gsv', 'gs']],
+      ['IND', 'Indiana Fever',           ['indiana', 'fever', 'ind']],
+      ['LV',  'Las Vegas Aces',          ['las vegas', 'aces', 'lv', 'lva']],
+      ['LA',  'Los Angeles Sparks',      ['los angeles', 'la sparks', 'sparks', 'la']],
+      ['MIN', 'Minnesota Lynx',          ['minnesota', 'lynx', 'min']],
+      ['NY',  'New York Liberty',        ['new york', 'liberty', 'ny', 'nyl']],
+      ['PHX', 'Phoenix Mercury',         ['phoenix', 'mercury', 'phx']],
+      ['SEA', 'Seattle Storm',           ['seattle', 'storm', 'sea']],
+      ['WAS', 'Washington Mystics',      ['washington', 'mystics', 'wsh', 'was']]
     ]
   };
 
@@ -18311,6 +18326,7 @@ nav.tabs > button,
             <button class="site-league-chip" data-shell-league="NHL" onclick="triggerShellLeague('NHL', this)">NHL</button>
             <button class="site-league-chip" data-shell-league="MLB" onclick="triggerShellLeague('MLB', this)">MLB</button>
             <button class="site-league-chip" data-shell-league="NFL" onclick="triggerShellLeague('NFL', this)">NFL</button>
+            <button class="site-league-chip" data-shell-league="WNBA" onclick="triggerShellLeague('WNBA', this)">WNBA</button>
           </div>
           <div class="site-quick-actions">
             <button class="site-quick-chip" type="button" onclick="runShellPrompt('Best props on tonight\'s slate by matchup and PropIQ')">Tonight's Best Props</button>
@@ -18559,6 +18575,7 @@ nav.tabs > button,
               <button class="league-news-pill" data-league-news="NHL" onclick="setLeagueNewsFilter('NHL')">🏒 NHL</button>
               <button class="league-news-pill" data-league-news="MLB" onclick="setLeagueNewsFilter('MLB')">⚾ MLB</button>
               <button class="league-news-pill" data-league-news="NFL" onclick="setLeagueNewsFilter('NFL')">🏈 NFL</button>
+              <button class="league-news-pill" data-league-news="WNBA" onclick="setLeagueNewsFilter('WNBA')">🏀 WNBA</button>
             </div>
             <button class="league-news-refresh" onclick="refreshLeagueNews(true)">Refresh News</button>
           </div>
@@ -18891,6 +18908,7 @@ nav.tabs > button,
                   <button class="propai-league-tab" type="button" data-league="NHL" onclick="toggleMarketsLeague('NHL')">🏒 NHL</button>
                   <button class="propai-league-tab" type="button" data-league="MLB" onclick="toggleMarketsLeague('MLB')">⚾ MLB</button>
                   <button class="propai-league-tab" type="button" data-league="NFL" onclick="toggleMarketsLeague('NFL')">🏈 NFL</button>
+                  <button class="propai-league-tab" type="button" data-league="WNBA" onclick="toggleMarketsLeague('WNBA')">🏀 WNBA</button>
                 </div>
               </div>
               <div class="propai-browser-search">
@@ -18986,6 +19004,7 @@ nav.tabs > button,
                   <button type="button" class="propai-gen-league-btn" data-gen-league="NBA" onclick="setGenLeague('NBA')">NBA</button>
                   <button type="button" class="propai-gen-league-btn" data-gen-league="NHL" onclick="setGenLeague('NHL')">NHL</button>
                   <button type="button" class="propai-gen-league-btn" data-gen-league="NFL" onclick="setGenLeague('NFL')">NFL</button>
+                  <button type="button" class="propai-gen-league-btn" data-gen-league="WNBA" onclick="setGenLeague('WNBA')">WNBA</button>
                 </div>
                 <div class="propai-gen-search-row">
                   <input id="propedgeGenQuestion" class="propai-gen-question" type="text"

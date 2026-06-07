@@ -12,10 +12,11 @@ const CORS = {
 const SLATE_TIMEZONE = "America/New_York";
 
 const ESPN_ENDPOINTS = {
-  NBA: "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
-  MLB: "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard",
-  NHL: "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard",
-  NFL: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
+  NBA:  "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
+  MLB:  "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard",
+  NHL:  "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard",
+  NFL:  "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
+  WNBA: "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard",
 };
 
 const ABBR_MAP = {

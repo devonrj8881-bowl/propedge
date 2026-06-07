@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-const LEAGUES = ["ALL", "MLB", "NBA", "NHL", "NFL"];
+const LEAGUES = ["ALL", "MLB", "NBA", "NHL", "NFL", "WNBA"];
 
 interface Analysis {
   article_title: string;
