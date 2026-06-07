@@ -538,7 +538,12 @@ export async function POST(req: NextRequest) {
       fetchProps(),
       fetchActiveSlate(league),
     ]);
-    const slateRows = filterRowsToActiveSlate(rows, slate, league);
+    let slateRows = filterRowsToActiveSlate(rows, slate, league);
+    // Guard: if slate filter is too aggressive (stale scraper data), fall back to full board
+    const MIN_SLATE_PROPS = 15;
+    const rawSlateCount = slateRows.length;
+    const usedFullBoard = rawSlateCount < MIN_SLATE_PROPS && rows.length >= MIN_SLATE_PROPS;
+    if (usedFullBoard) slateRows = rows;
     const topRows = buildTopProps(slateRows, league, question || "");
 
     if (!topRows.length) {
@@ -641,7 +646,7 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       propCount: topRows.length,
       fallback: usedFallback,
       slateDate: slate?.dateDisplay || slate?.date,
-      filteredOut: rows.length - slateRows.length,
+      filteredOut: usedFullBoard ? rows.length - rawSlateCount : rows.length - slateRows.length,
     }, { headers: CORS_HEADERS });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

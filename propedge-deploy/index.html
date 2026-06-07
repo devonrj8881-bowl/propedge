@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.184 — Fix sidebar flicker: fixed-height iframe, remove sticky+transform — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.186 — Kill nav transition + isolate sidebar layer to stop flicker on cursor approach — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.184">
+  <meta name="app-version" content="v7.186">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -1496,6 +1496,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       position: sticky;
       top: 18px;
       align-self: start;
+      isolation: isolate;
       width: 100%;
       min-height: calc(100vh - 36px);
       min-height: calc(100dvh - 36px);
@@ -1610,7 +1611,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       text-align: left;
       cursor: pointer;
       position: relative;
-      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.14s ease;
+      transition: none;
     }
 
     .propai-tool-nav {
@@ -2326,14 +2327,12 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       background: linear-gradient(180deg, #7dff98, #39d98a);
       opacity: 0;
       transform: scaleY(0.45);
-      transition: opacity 0.18s ease, transform 0.18s ease;
     }
 
     .site-shell-nav:hover {
       color: var(--text-primary);
       background: rgba(34, 197, 94, 0.08);
       border-color: rgba(34, 197, 94, 0.12);
-      transform: translateX(2px);
     }
 
     .site-shell-nav:hover .site-shell-nav-icon,
