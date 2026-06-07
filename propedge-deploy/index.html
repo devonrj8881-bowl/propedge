@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.201 — Team logos on game-bet cards replace dice icon — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.202 — PropIQ L10 hit-rate gate: sub-40% L10 caps score at 55 — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.201">
+  <meta name="app-version" content="v7.202">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -34252,6 +34252,12 @@ nav.tabs > button,
 
       if (l5Gate !== null && l10Gate !== null && l5Gate <= 60 && l10Gate <= 40) {
         capScore(58, `📉 Hit-Rate Gate: L5 ${l5Gate.toFixed(0)}% / L10 ${l10Gate.toFixed(0)}% is not premium form`);
+      }
+
+      // Standalone L10 gate: sub-40% L10 hit rate blocks premium scoring regardless of edge or L5.
+      // e.g. Brunson O32.5 @ 2/10 L10 (20%) → should never score 83+.
+      if (l10Gate !== null && l10Gate < 40) {
+        capScore(55, `🥶 L10 Hit-Rate Gate: ${l10Gate.toFixed(0)}% L10 hit rate — below threshold for premium grade`);
       }
 
       if (confidenceGate !== null && confidenceGate < 45) {
