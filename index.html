@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.182 — Fix iframe jitter + tab flicker from ResizeObserver loop — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.183 — Isolate sidebar + iframe on GPU layers to stop flicker — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.182">
+  <meta name="app-version" content="v7.183">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -1496,6 +1496,8 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       position: sticky;
       top: 18px;
       align-self: start;
+      /* Own GPU layer — prevents iframe repaints from invalidating sidebar paint region */
+      transform: translateZ(0);
       width: 100%;
       min-height: calc(100vh - 36px);
       min-height: calc(100dvh - 36px);
@@ -9294,6 +9296,9 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       border: 0;
       border-radius: 12px;
       background: var(--bg-primary, #1a1d2e);
+      /* Isolate iframe paint so height changes don't repaint the sidebar */
+      contain: layout;
+      transform: translateZ(0);
     }
     .propai-gen-native { display: none; }
 
