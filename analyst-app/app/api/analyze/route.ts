@@ -431,6 +431,7 @@ function rowToBoardProp(row: Record<string, string>, league: string): BoardProp 
     l10Pct: row["L10"] || undefined,
     l20Pct: row["L20"] || undefined,
     seasonPct: row["'25-'26"] || row["Season"] || undefined,
+    lastSeasonPct: row["'24-'25"] || undefined,
     l5Avg: parseFloat(row["L5 Avg"]) || undefined,
     l10Avg: parseFloat(row["L10 Avg"]) || undefined,
     confidence: parseFloat(row["Confidence %"]) || undefined,
@@ -465,6 +466,8 @@ function enrichRow(
     ...(a.propiq_for_factors?.length && { propiq_signals: a.propiq_for_factors.slice(0, 3) }),
     ...(a.propiq_against_factors?.length && { propiq_risks: a.propiq_against_factors.slice(0, 2) }),
     ...(payload.matchup_context.defensive_rank != null && { matchup: payload.matchup_context.defensive_rank }),
+    ...(payload.matchup_context.h2h_history != null && { h2h: payload.matchup_context.h2h_history }),
+    ...(bp.lastSeasonPct != null && { last_season_pct: bp.lastSeasonPct }),
     ...(a.pitcher_era != null && { pitcher_era: a.pitcher_era }),
     ...(m.opening_line != null && { opening_line: m.opening_line }),
     ...(m.book_delta != null && { line_delta: m.book_delta }),
@@ -573,6 +576,8 @@ propiq_score: composite 0-100 signal. ≥80 = elite, 65-79 = strong, <65 = value
 propiq_signals: top scoring factors — lead with 1-2 strongest in your pick paragraph.
 propiq_risks: capping factors — note the primary risk if present.
 l5_pct / l20_pct: supplement l10 hit rate. Hot L5 vs cold L20 = trending up. Cold L5 = cooling.
+h2h: player's hit rate vs this specific opponent this season (e.g. "3/5" = 3 for 5). Strong or weak matchup history — always cite when present.
+last_season_pct: prior season hit rate for this prop type. Compare to current season — divergence signals regression or breakout.
 line_delta: line movement since open. Negative = movement toward under (steam indicator).
 ev_pct: edge above fair value — positive = value, cite if > 3%.`;
 

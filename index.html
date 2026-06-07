@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.179 — Wire PropIQ scoring to Generative Analyst; iframe auto-height via postMessage — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.180 — Markets tab Hide Final game filter checkbox — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.179">
+  <meta name="app-version" content="v7.180">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -19097,7 +19097,13 @@ nav.tabs > button,
       <div class="markets-game-board-section">
         <div class="markets-game-board-head">
           <div class="propai-board-meta-label">Filter by Game</div>
-          <button id="marketsClearGameFilterBtn" class="markets-game-board-clear" type="button" onclick="clearMarketsGameFilter(event)" style="display:none;">Clear Game Filter</button>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <label class="hide-final-toggle">
+              <input type="checkbox" id="marketsHideFinalsChk" onchange="toggleMarketsHideFinals()">
+              Hide Final
+            </label>
+            <button id="marketsClearGameFilterBtn" class="markets-game-board-clear" type="button" onclick="clearMarketsGameFilter(event)" style="display:none;">Clear Game Filter</button>
+          </div>
         </div>
         <div id="marketsGameBoard" class="markets-game-board">
           <div class="markets-game-board-empty">Today&apos;s slate will appear here once games are loaded.</div>
@@ -19627,7 +19633,8 @@ nav.tabs > button,
       propAIDirectionFilter: 'ALL', // 'ALL' | 'OVER' | 'UNDER'
       marketsLeagues:     [],  // [] = All leagues; otherwise e.g. ['NBA','MLB']
       marketsMarketTypes: [],  // [] = All types;   otherwise e.g. ['Hits','TB']
-      marketsDirections:  []   // [] = All directions; otherwise e.g. ['OVER']
+      marketsDirections:  [],  // [] = All directions; otherwise e.g. ['OVER']
+      marketsHideFinals:  false
     };
 
     let _propsRenderTimer = null;
@@ -20674,6 +20681,9 @@ nav.tabs > button,
 
       const hideCompletedEl = document.getElementById('hideCompleted');
       if (hideCompletedEl) hideCompletedEl.checked = state.hideCompleted;
+      state.marketsHideFinals = propEdgeStorage.getItem('propedge_marketsHideFinals') === '1';
+      const marketsHideFinalsChk = document.getElementById('marketsHideFinalsChk');
+      if (marketsHideFinalsChk) marketsHideFinalsChk.checked = state.marketsHideFinals;
       const parlayOnlyEl = document.getElementById('parlayOnlyMode');
       if (parlayOnlyEl) parlayOnlyEl.checked = state.parlayOnlyMode;
       const autoToggleEl = document.getElementById('autoToggleDot');
@@ -38266,13 +38276,15 @@ nav.tabs > button,
         : (state.league && state.league !== 'ALL' ? [state.league] : ['NBA', 'NHL', 'MLB', 'NFL']);
       // ESPN API already fetches ?dates=TODAY — no date re-filter needed
       const allGames = leagues.flatMap(l => (state.games[l.toUpperCase()] || []).filter(Boolean));
-      return allGames
+      const sorted = allGames
         .slice()
         .sort((a, b) => {
           const aTime = new Date(a?.gameTime || a?.date || a?.startTime || 0).getTime() || 0;
           const bTime = new Date(b?.gameTime || b?.date || b?.startTime || 0).getTime() || 0;
           return aTime - bTime;
         });
+      if (state.marketsHideFinals) return sorted.filter(g => g.status !== 'final');
+      return sorted;
     }
 
     // League-aware live status for game chips. ESPN shortDetail is already formatted
@@ -38875,6 +38887,10 @@ nav.tabs > button,
 
       // On mobile (<1024px), native UI handles analysis — no iframe needed.
       if (window.innerWidth < 1024) return;
+
+      // Remove placeholder if present
+      const placeholder = document.getElementById('propedgeGenerativeLaunchPlaceholder');
+      if (placeholder) placeholder.remove();
 
       frame.dataset.srcLoaded = url;
       frame.src = url;
@@ -40856,6 +40872,17 @@ nav.tabs > button,
       state.hideCompleted = document.getElementById('hideCompleted').checked;
       propEdgeStorage.setItem('propedge_hideCompleted', state.hideCompleted);
       renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL]);
+    }
+
+    function toggleMarketsHideFinals() {
+      const chk = document.getElementById('marketsHideFinalsChk');
+      state.marketsHideFinals = chk ? chk.checked : !state.marketsHideFinals;
+      propEdgeStorage.setItem('propedge_marketsHideFinals', state.marketsHideFinals ? '1' : '');
+      // Clear game filter if the selected game is now hidden
+      if (state.marketsHideFinals && state.marketsGameFilter && state.marketsGameFilter.status === 'final') {
+        state.marketsGameFilter = null;
+      }
+      renderMarketsGameBoard();
     }
 
 
