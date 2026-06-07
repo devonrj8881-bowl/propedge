@@ -453,7 +453,9 @@ function enrichRow(
     ...(a.hit_rate_last_5 != null && { l5_pct: `${Math.round(a.hit_rate_last_5 * 100)}%` }),
     ...(a.hit_rate_last_20 != null && { l20_pct: `${Math.round(a.hit_rate_last_20 * 100)}%` }),
     ...(a.ev_percentage != null && { ev_pct: `${(Math.round(a.ev_percentage * 10) / 10).toFixed(1)}%` }),
-    ...(a.propiq_score != null && { propiq_score: a.propiq_score }),
+    // Use board's PF Rating as canonical score — matches what the board shows.
+    // computePortablePropIq score is kept only for factor/signal text generation.
+    ...(parseFloat(row["PF Rating"]) > 0 && { propiq_score: parseFloat(row["PF Rating"]) }),
     ...(a.propiq_for_factors?.length && { propiq_signals: a.propiq_for_factors.slice(0, 3) }),
     ...(a.propiq_against_factors?.length && { propiq_risks: a.propiq_against_factors.slice(0, 2) }),
     ...(payload.matchup_context.defensive_rank != null && { matchup: payload.matchup_context.defensive_rank }),
