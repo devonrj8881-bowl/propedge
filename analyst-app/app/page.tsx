@@ -80,16 +80,22 @@ export default function Home() {
   const [error, setError] = useState("");
 
   // Notify parent frame of content height so iframe auto-resizes.
-  // ResizeObserver fires on every DOM resize; 150ms initial delay lets React commit layout.
+  // Debounced + deduplicated: only fires if height changed by >20px, at most once per 300ms.
+  // Without this, ResizeObserver fires on every parent height-set → loop → iframe jitter.
   useEffect(() => {
-    const report = () => {
+    let lastH = 0;
+    let debounceTimer: ReturnType<typeof setTimeout>;
+    const send = () => {
       const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+      if (Math.abs(h - lastH) < 20) return;
+      lastH = h;
       try { window.parent.postMessage({ type: "propedge-frame-height", height: h }, "*"); } catch (_) {}
     };
-    const timer = setTimeout(report, 150);
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(report) : null;
+    const debounced = () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(send, 300); };
+    const initial = setTimeout(send, 200);
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(debounced) : null;
     if (ro) ro.observe(document.body);
-    return () => { clearTimeout(timer); ro?.disconnect(); };
+    return () => { clearTimeout(debounceTimer); clearTimeout(initial); ro?.disconnect(); };
   }, [result, loading, error]);
 
   async function run(retryCount = 0) {
