@@ -181,8 +181,9 @@ function normEvents(events, league, altEventMap) {
           }
 
           props.push({
-            // id must be unique per prop row so toggleParlay / state.parlay can find it
-            id:         `gameBet|${ev.id}|${mkt.key}|${outName}`.replace(/[^a-zA-Z0-9|_.-]/g, "_").slice(0, 80),
+            // id must be unique per prop row — include point so alt-total lines at different
+            // values (194.5 vs 195.5 etc.) each get a distinct id and don't cross-select.
+            id:         `gameBet|${ev.id}|${mkt.key}|${outName}|${point ?? ""}`.replace(/[^a-zA-Z0-9|_.-]/g, "_").slice(0, 80),
             league,
             player:     "",
             team,
