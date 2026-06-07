@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.192 — WNBA full logic wiring: Markets filter, B2B multiplier, pace/fatigue/correlation/detail panel — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.193 — WNBA headshots, gamelog, injuries, situational context, all ESPN sport paths — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.192">
+  <meta name="app-version" content="v7.193">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -19532,10 +19532,11 @@ nav.tabs > button,
     }
 
     const INJURY_APIS = {
-      NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries',
-      NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/injuries',
-      MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/injuries',
-      NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries'
+      NBA:  'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries',
+      NHL:  'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/injuries',
+      MLB:  'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/injuries',
+      NFL:  'https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries',
+      WNBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/injuries'
     };
 
     /**
@@ -19616,8 +19617,8 @@ nav.tabs > button,
       props: [],
       filteredProps: [],
       parlay: [],
-      injuries: { NBA: [], NHL: [], MLB: [], NFL: [] },
-      games: { NBA: [], NHL: [], MLB: [], NFL: [] },
+      injuries: { NBA: [], NHL: [], MLB: [], NFL: [], WNBA: [] },
+      games: { NBA: [], NHL: [], MLB: [], NFL: [], WNBA: [] },
       leagueNews: { league: 'ALL', games: [], articles: [], sources: [], updated_at: null, loaded: false },
       leagueNewsFilter: 'ALL',
       propAIMatchupNews: {},
@@ -19627,8 +19628,8 @@ nav.tabs > button,
       fdLinesByLastName: {},
       fdLinesSource: 'sheet', // 'sheet' | 'live'
       propBookLines: {}, // player|market → { fanduel, draftkings, ... } per side
-      teamSituational: { NBA: {}, NHL: {}, MLB: {} }, // abbr → { daysRest, isB2b, restPlus, revengeVs }
-      matchupMatrix: { NBA: {}, NHL: {}, MLB: {} }, // opp|statBucket → { rank, paceRank, score }
+      teamSituational: { NBA: {}, NHL: {}, MLB: {}, WNBA: {} }, // abbr → { daysRest, isB2b, restPlus, revengeVs }
+      matchupMatrix: { NBA: {}, NHL: {}, MLB: {}, WNBA: {} }, // opp|statBucket → { rank, paceRank, score }
       propLineHistory: {}, // player|market|side → { open, current, pinnacle }
       lineMovements: {}, // Sharp money / line movement data from Line_History
       teamStatus: {}, // Game status from sheet (fallback)
@@ -19968,7 +19969,7 @@ nav.tabs > button,
     async function fetchTeamRoster(team, league) {
       try {
         // Map league to ESPN sport/league path
-        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : 'baseball/mlb';
+        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : league === 'WNBA' ? 'basketball/wnba' : 'baseball/mlb';
         const url = `https://site.api.espn.com/apis/site/v2/sports/${leaguePath}/teams/${team.toLowerCase()}`;
         const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) return null;
@@ -19985,7 +19986,7 @@ nav.tabs > button,
     async function fetchRecentGames(team, league, limit = 5) {
       try {
         // Map league to ESPN sport/league path
-        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : 'baseball/mlb';
+        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : league === 'WNBA' ? 'basketball/wnba' : 'baseball/mlb';
         const url = `https://site.api.espn.com/apis/site/v2/sports/${leaguePath}/teams/${team.toLowerCase()}/schedule`;
         const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) return null;
@@ -20100,7 +20101,7 @@ nav.tabs > button,
           return state.rotowireCache[cacheKey];
         }
 
-        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : 'baseball/mlb';
+        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : league === 'WNBA' ? 'basketball/wnba' : 'baseball/mlb';
         const rotoUrl = `https://www.rotowire.com/${leaguePath}/depth-chart`;
 
         // Note: Full RotoWire scraping requires browser rendering; using API alternative
@@ -27649,7 +27650,7 @@ nav.tabs > button,
 
     function espnHeadshotLeagueSlug(league) {
       const lg = String(league || '').toUpperCase();
-      return lg === 'MLB' ? 'mlb' : lg === 'NHL' ? 'nhl' : lg === 'NFL' ? 'nfl' : 'nba';
+      return lg === 'MLB' ? 'mlb' : lg === 'NHL' ? 'nhl' : lg === 'NFL' ? 'nfl' : lg === 'WNBA' ? 'wnba' : 'nba';
     }
 
     function playerInitials(playerName) {
@@ -27767,9 +27768,10 @@ nav.tabs > button,
     }
 
     const ESPN_SCOREBOARD_BY_LEAGUE = {
-      NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-      NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-      MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'
+      NBA:  'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+      NHL:  'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+      MLB:  'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
+      WNBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard'
     };
 
     function _espnDateParam(d) {
@@ -27780,9 +27782,9 @@ nav.tabs > button,
     }
 
     async function refreshTeamSituationalContext() {
-      const leagues = ['NBA', 'NHL', 'MLB'];
-      const teamLastGame = { NBA: {}, NHL: {}, MLB: {} };
-      const teamLastVsOpp = { NBA: {}, NHL: {}, MLB: {} };
+      const leagues = ['NBA', 'NHL', 'MLB', 'WNBA'];
+      const teamLastGame = { NBA: {}, NHL: {}, MLB: {}, WNBA: {} };
+      const teamLastVsOpp = { NBA: {}, NHL: {}, MLB: {}, WNBA: {} };
 
       for (const league of leagues) {
         const recentGames = [];
@@ -28542,7 +28544,7 @@ nav.tabs > button,
     async function _fetchFinalGameStats(game) {
       try {
         const sport = game.league.toLowerCase();
-        const url = `https://site.api.espn.com/apis/site/v2/sports/${sport === 'nhl' ? 'hockey/nhl' : sport === 'mlb' ? 'baseball/mlb' : 'basketball/nba'}/scoreboard?_=${Date.now()}`;
+        const url = `https://site.api.espn.com/apis/site/v2/sports/${sport === 'nhl' ? 'hockey/nhl' : sport === 'mlb' ? 'baseball/mlb' : sport === 'wnba' ? 'basketball/wnba' : 'basketball/nba'}/scoreboard?_=${Date.now()}`;
         const r = await fetch(url).catch(() => null);
         if (!r || !r.ok) return null;
 
@@ -31875,10 +31877,11 @@ nav.tabs > button,
     };
 
     const ESPN_SPORT_MAP = {
-      NBA: { sport:'basketball', league:'nba', season:2026 },
-      NHL: { sport:'hockey',     league:'nhl', season:2026 },
-      MLB: { sport:'baseball',   league:'mlb', season:2026 },
-      NFL: { sport:'football',   league:'nfl', season:2025 },
+      NBA:  { sport:'basketball', league:'nba',  season:2026 },
+      NHL:  { sport:'hockey',     league:'nhl',  season:2026 },
+      MLB:  { sport:'baseball',   league:'mlb',  season:2026 },
+      NFL:  { sport:'football',   league:'nfl',  season:2025 },
+      WNBA: { sport:'basketball', league:'wnba', season:2026 },
     };
 
     // ── Sub-tab switching ───────────────────────
@@ -47506,7 +47509,7 @@ Keep it concise, cite real numbers.`;
 
     async function fetchESPNDFSByLeague(league) {
       try {
-        const sportPath = league === 'nba' ? 'basketball/nba' : league === 'nhl' ? 'hockey/nhl' : 'baseball/mlb';
+        const sportPath = league === 'nba' ? 'basketball/nba' : league === 'nhl' ? 'hockey/nhl' : league === 'wnba' ? 'basketball/wnba' : 'baseball/mlb';
 
         // Fetch scoreboard (CORS-enabled, works from browser)
         const scoreboardData = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${sportPath}/scoreboard`).then(r => r.json()).catch(() => ({}));
