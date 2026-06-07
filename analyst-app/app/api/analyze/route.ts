@@ -133,7 +133,7 @@ async function fetchGameOdds(leagueFilter: string): Promise<GameBetProp[]> {
   }
 }
 
-const GAME_ODDS_CORE_MARKETS = new Set(["Moneyline", "Spread", "Total", "1Q Total", "1H Total"]);
+const GAME_ODDS_CORE_MARKETS = new Set(["Moneyline", "Spread", "Total", "Alt Total", "1H Total", "1Q Total"]);
 
 function formatGameLinesContext(gameBets: GameBetProp[]): string {
   if (!gameBets.length) return "";
@@ -156,8 +156,12 @@ function formatGameLinesContext(gameBets: GameBetProp[]): string {
     const ml  = get("Moneyline").map((b) => `${b.team} ${fmtOdds(b.odds)}`).join("/");
     const sp  = get("Spread").map((b) => `${b.team}${fmtLine(b.line)} (${fmtOdds(b.odds)})`).join("/");
     const tot = get("Total").map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
+    // Alt totals: show up to 3 lines nearest to -110 (best value lines)
+    const altTotNear110 = get("Alt Total").sort((a, b) => Math.abs(Math.abs(a.odds ?? 110) - 110) - Math.abs(Math.abs(b.odds ?? 110) - 110)).slice(0, 3);
+    const altTot = altTotNear110.map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
+    const h1  = get("1H Total").map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
     const q1  = get("1Q Total").map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
-    const parts = [ml && `ML: ${ml}`, sp && `Spread: ${sp}`, tot && `Total: ${tot}`, q1 && `1Q: ${q1}`].filter(Boolean);
+    const parts = [ml && `ML: ${ml}`, sp && `Spread: ${sp}`, tot && `Total: ${tot}`, altTot && `AltTot: ${altTot}`, h1 && `1H: ${h1}`, q1 && `1Q: ${q1}`].filter(Boolean);
     if (parts.length) lines.push(`[${league}] ${label}: ${parts.join(" | ")}`);
   }
   return lines.length > 1 ? lines.join("\n") : "";
