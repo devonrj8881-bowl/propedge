@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.204 — Game-bet parlay: include line in id so alt totals don't cross-select — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.205 — Parlay tab: hide main-content on mobile so Your Parlay shows at top — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.204">
+  <meta name="app-version" content="v7.205">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -40910,6 +40910,14 @@ nav.tabs > button,
       setDisplay('filterSection', showPropsSurface ? 'block' : 'none');
       setDisplay('sortBar', showPropsSurface ? 'flex' : 'none');
       setDisplay('propiqGradingGuide', showPropsSurface ? 'block' : 'none');
+
+      // On mobile parlay tab, hide .main-content entirely so #parlayContainer
+      // floats to the top instead of rendering below the empty content area.
+      // On desktop (≥1024px), showPropsSurface is true for parlay, so main-content stays.
+      const mainContentEl = document.querySelector('.main-content');
+      if (mainContentEl) {
+        mainContentEl.style.display = (view === 'parlay' && !showPropsSurface) ? 'none' : '';
+      }
 
       const liveGamesEl = document.querySelector('.live-games');
       if (liveGamesEl) {
