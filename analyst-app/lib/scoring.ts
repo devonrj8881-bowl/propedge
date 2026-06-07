@@ -69,7 +69,14 @@ function getSauceProfile(league: string, propTypeLower: string): { hit: number }
 // ── HELPERS ─────────────────────────────────────────────────────────────────
 function pct(value: unknown): number | null {
   if (value == null || value === "") return null;
-  const n = parseFloat(String(value).replace("%", "").trim());
+  const s = String(value).replace("%", "").trim();
+  // Handle fraction format like "(5/5)" or "7/10"
+  const frac = s.match(/\(?\s*(\d+)\s*\/\s*(\d+)\s*\)?/);
+  if (frac) {
+    const den = parseFloat(frac[2]);
+    return den > 0 ? Math.round((parseFloat(frac[1]) / den) * 100) : null;
+  }
+  const n = parseFloat(s);
   if (!Number.isFinite(n)) return null;
   return n <= 1 ? n * 100 : n;
 }

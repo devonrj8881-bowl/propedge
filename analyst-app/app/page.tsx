@@ -79,10 +79,17 @@ export default function Home() {
   const [result, setResult] = useState<{ analysis: Analysis; model: string; propCount: number; fallback?: boolean; slateDate?: string; filteredOut?: number } | null>(null);
   const [error, setError] = useState("");
 
-  // Notify parent frame of content height so iframe auto-resizes
+  // Notify parent frame of content height so iframe auto-resizes.
+  // ResizeObserver fires on every DOM resize; 150ms initial delay lets React commit layout.
   useEffect(() => {
-    const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
-    try { window.parent.postMessage({ type: "propedge-frame-height", height: h }, "*"); } catch (_) {}
+    const report = () => {
+      const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+      try { window.parent.postMessage({ type: "propedge-frame-height", height: h }, "*"); } catch (_) {}
+    };
+    const timer = setTimeout(report, 150);
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(report) : null;
+    if (ro) ro.observe(document.body);
+    return () => { clearTimeout(timer); ro?.disconnect(); };
   }, [result, loading, error]);
 
   async function run(retryCount = 0) {

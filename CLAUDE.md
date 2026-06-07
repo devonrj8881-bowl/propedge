@@ -38,5 +38,29 @@ Tradeoff: these rules bias toward caution over speed. For trivial tasks, apply j
 - For multi-step work, keep a short plan with step-level verification.
 - Loop until the requested behavior is confirmed, not just "looks correct."
 
+### 5) Verify Locally Before Deploying
+**REQUIRED before every commit/push/deploy — no exceptions.**
+
+#### analyst-app (Vercel) changes
+```bash
+cd analyst-app && npx tsc --noEmit   # must pass with 0 errors
+npm run build                         # must complete successfully
+```
+Open `http://localhost:3000` and exercise the changed feature before pushing.
+
+#### index.html (Netlify) changes
+```bash
+# Preflight marker check
+grep -q "PropEdge May 2026 Fix Pack" propedge-deploy/index.html && echo "OK"
+grep -q "PROPEDGE_NEWS_PROXY" propedge-deploy/index.html && echo "OK"
+grep -q "/favicon.svg" propedge-deploy/index.html && echo "OK"
+# Open propedge-deploy/index.html in browser — navigate to changed tab/feature
+```
+
+#### Rule
+- No `git push` or `./deploy-prod.sh` until local verification passes.
+- If a local dev server is not running, start it (`cd analyst-app && npm run dev` or open index.html directly).
+- Report verification result ("tsc clean, tested locally on mobile sim") before requesting deploy approval.
+
 ### Practical quality signal
 - These rules are working when diffs are smaller, fewer rewrites are needed, and clarifying questions happen before implementation mistakes.

@@ -31,8 +31,14 @@ function parseCSVLine(line: string): string[] {
 
 function parsePct(value: unknown): number | null {
   if (value == null || value === "") return null;
-  const raw = String(value).replace("%", "").trim();
-  const n = parseFloat(raw);
+  const s = String(value).replace("%", "").trim();
+  // Handle fraction format like "(5/5)" or "7/10"
+  const frac = s.match(/\(?\s*(\d+)\s*\/\s*(\d+)\s*\)?/);
+  if (frac) {
+    const den = parseFloat(frac[2]);
+    return den > 0 ? Math.round((parseFloat(frac[1]) / den) * 100) : null;
+  }
+  const n = parseFloat(s);
   if (!Number.isFinite(n)) return null;
   return n <= 1 ? n * 100 : n;
 }

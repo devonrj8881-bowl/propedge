@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parsePropFeedCsv, buildPropEdgeLlmPayload } from "../../../lib/propedge-payload";
+import { buildPropEdgeLlmPayload } from "../../../lib/propedge-payload";
 import type { BoardProp } from "../../../lib/types";
 
 const PROP_FEED_URL =
@@ -27,7 +27,7 @@ const MODEL_CHAIN = Array.from(new Set([PRIMARY_MODEL, ...GEMINI_MODEL_FALLBACKS
 const MAX_PROPS = 4;
 const MAX_GEMINI_ATTEMPTS = 3;
 
-async function fetchProps(): Promise<{ rows: Record<string, string>[]; csv: string }> {
+async function fetchProps(): Promise<Record<string, string>[]> {
   const res = await fetch(PROP_FEED_URL, { cache: "no-store" });
   const csv = await res.text();
   if (!csv.includes("Player") && !csv.includes("PF Rating")) {
@@ -35,11 +35,10 @@ async function fetchProps(): Promise<{ rows: Record<string, string>[]; csv: stri
   }
   const lines = csv.trim().split("\n");
   const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
-  const rows = lines.slice(1).map((line) => {
+  return lines.slice(1).map((line) => {
     const values = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
     return Object.fromEntries(headers.map((h, i) => [h, values[i] ?? ""]));
   });
-  return { rows, csv };
 }
 
 const SLATE_TIMEZONE = "America/New_York";
@@ -400,15 +399,51 @@ function csvRowToAnalystProp(row: Record<string, string>, league: string) {
   };
 }
 
+// Build a BoardProp directly from a raw CSV row using known column names.
+// Bypasses parsePropFeedCsv to avoid "L5 Avg" / "L5" index-collision bug
+// and strips the leading apostrophe in Odds like "'-333".
+function rowToBoardProp(row: Record<string, string>, league: string): BoardProp {
+  const propStr = row["Prop"] || row["Market"] || "";
+  const lineMatch = propStr.match(/[ou]?\s*([\d.]+)/i);
+  const line = lineMatch ? parseFloat(lineMatch[1]) : 0;
+  const propType = propStr.replace(/^[ou]?\s*[\d.]+\s*/i, "").trim();
+  const direction = propStr.toLowerCase().trimStart().startsWith("u") ? "UNDER" : "OVER";
+  const rawOdds = (row["Odds"] || "").replace(/'/g, "").trim();
+  return {
+    league: row["League"] || league || undefined,
+    player: row["Player"] || "",
+    team: row["Team"] || undefined,
+    opponent: row["opponent_est"] || undefined,
+    pos: row["Pos"] || undefined,
+    prop: propType || propStr,
+    stat: propType || propStr,
+    line: Number.isFinite(line) ? line : undefined,
+    direction,
+    odds: rawOdds || undefined,
+    // Use exact column names — L5/L10/L20 are "(N/M)" fraction hit rates
+    l5Pct: row["L5"] || undefined,
+    l10Pct: row["L10"] || undefined,
+    l20Pct: row["L20"] || undefined,
+    seasonPct: row["'25-'26"] || row["Season"] || undefined,
+    l5Avg: parseFloat(row["L5 Avg"]) || undefined,
+    l10Avg: parseFloat(row["L10 Avg"]) || undefined,
+    confidence: parseFloat(row["Confidence %"]) || undefined,
+    modelScore: parseFloat(row["PF Rating"]) || undefined,
+    matchup_scalar: parseFloat(row["Matchup Scalar"]) || undefined,
+    sznMatchup: row["SZN Matchup"] || undefined,
+    h2h: row["H2H"] || undefined,
+    pitcherERA: parseFloat(row["pitcher_era"]) || undefined,
+    pitcherXERA: parseFloat(row["pitcher_xera"]) || undefined,
+    streak: parseFloat(row["Streak"]) || undefined,
+  };
+}
+
 function enrichRow(
   row: Record<string, string>,
-  boardProps: BoardProp[],
   league: string,
 ): Record<string, unknown> {
   const base = csvRowToAnalystProp(row, league);
-  const playerLower = base.player.toLowerCase();
-  const bp = boardProps.find((p) => String(p.player || "").toLowerCase() === playerLower);
-  if (!bp) return base;
+  const bp = rowToBoardProp(row, league);
   const payload = buildPropEdgeLlmPayload(bp);
   if (!payload) return base;
   const a = payload.analytics;
@@ -423,7 +458,6 @@ function enrichRow(
     ...(a.propiq_against_factors?.length && { propiq_risks: a.propiq_against_factors.slice(0, 2) }),
     ...(payload.matchup_context.defensive_rank != null && { matchup: payload.matchup_context.defensive_rank }),
     ...(a.pitcher_era != null && { pitcher_era: a.pitcher_era }),
-    ...(a.back_to_back != null && { back_to_back: a.back_to_back }),
     ...(m.opening_line != null && { opening_line: m.opening_line }),
     ...(m.book_delta != null && { line_delta: m.book_delta }),
   };
@@ -485,7 +519,7 @@ export async function POST(req: NextRequest) {
 
     if (!GEMINI_API_KEY) throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not set");
 
-    const [{ rows, csv }, slate] = await Promise.all([
+    const [rows, slate] = await Promise.all([
       fetchProps(),
       fetchActiveSlate(league),
     ]);
@@ -504,8 +538,7 @@ export async function POST(req: NextRequest) {
     const slateContext = formatSlateContext(slate, league);
 
     // Enrich top props with full PropIQ scoring signals
-    const boardProps = parsePropFeedCsv(csv);
-    const topProps = topRows.map((row) => enrichRow(row, boardProps, league));
+    const topProps = topRows.map((row) => enrichRow(row, league));
 
     const systemPrompt = `You are a sharp sports betting analyst writing a premium prop report.
 

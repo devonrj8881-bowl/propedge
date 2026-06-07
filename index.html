@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.175 — Wire PropIQ scoring to Generative Analyst; iframe auto-height via postMessage — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.176 — Wire PropIQ scoring to Generative Analyst; iframe auto-height via postMessage — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.175">
+  <meta name="app-version" content="v7.176">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -38818,11 +38818,12 @@ nav.tabs > button,
       };
     }
 
-    // Auto-resize generative analyst iframe when content height changes
+    // Auto-resize generative analyst iframe when content height changes.
+    // Never shrink below 720px (avoids flash-collapse during loading state).
     window.addEventListener('message', function(e) {
       if (e.data && e.data.type === 'propedge-frame-height' && typeof e.data.height === 'number') {
         var frame = document.getElementById('propedgeGenerativeAnalystFrame');
-        if (frame) frame.style.height = (e.data.height + 48) + 'px';
+        if (frame) frame.style.height = Math.max(720, e.data.height + 48) + 'px';
       }
     });
 
