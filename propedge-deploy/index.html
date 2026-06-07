@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.194 — WNBA games feed: ESPN_APIS, fetchGames, allGames spreads, abbr fixes, TOR/PDX teams — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.195 — WNBA logos: TEAM_LOGOS_BY_LEAGUE.WNBA, WNBA sport path, chip full names — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.194">
+  <meta name="app-version" content="v7.195">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -23151,6 +23151,29 @@ nav.tabs > button,
         OTT: `${ESPN_BASE}/nhl/500/ott.png`,
         MIA: `${ESPN_BASE}/nhl/500/fla.png`,
       },
+      WNBA: {
+        // Keyed by both ESPN raw abbr (from parseGame) and PropFinder canonical (from prop cards)
+        ATL: `${ESPN_BASE}/wnba/500/atl.png`,
+        CHI: `${ESPN_BASE}/wnba/500/chi.png`,
+        CON: `${ESPN_BASE}/wnba/500/conn.png`,   // PropFinder canonical
+        CONN:`${ESPN_BASE}/wnba/500/conn.png`,   // ESPN raw
+        DAL: `${ESPN_BASE}/wnba/500/dal.png`,
+        GSV: `${ESPN_BASE}/wnba/500/gs.png`,     // PropFinder canonical
+        GS:  `${ESPN_BASE}/wnba/500/gs.png`,     // ESPN raw
+        IND: `${ESPN_BASE}/wnba/500/ind.png`,
+        LV:  `${ESPN_BASE}/wnba/500/lv.png`,
+        LAS: `${ESPN_BASE}/wnba/500/la.png`,     // PropFinder canonical
+        LA:  `${ESPN_BASE}/wnba/500/la.png`,     // ESPN raw
+        MIN: `${ESPN_BASE}/wnba/500/min.png`,
+        NY:  `${ESPN_BASE}/wnba/500/ny.png`,
+        PDX: `${ESPN_BASE}/wnba/500/por.png`,    // PropFinder canonical (Portland Fire)
+        POR: `${ESPN_BASE}/wnba/500/por.png`,    // ESPN raw (Portland Fire)
+        PHX: `${ESPN_BASE}/wnba/500/phx.png`,
+        SEA: `${ESPN_BASE}/wnba/500/sea.png`,
+        TOR: `${ESPN_BASE}/wnba/500/tor.png`,
+        WAS: `${ESPN_BASE}/wnba/500/wsh.png`,    // PropFinder canonical
+        WSH: `${ESPN_BASE}/wnba/500/wsh.png`,    // ESPN raw
+      },
     };
 
     const TEAM_LOGO_SPORT_BY_LEAGUE = {
@@ -23158,6 +23181,7 @@ nav.tabs > button,
       NFL: 'nfl',
       MLB: 'mlb',
       NHL: 'nhl',
+      WNBA: 'wnba',
     };
 
     const TEAM_LOGO_SLUG_OVERRIDES = {
@@ -38403,16 +38427,23 @@ nav.tabs > button,
         ? `<span class="markets-game-chip-score">${escapeHTML(String(game.awayScore ?? 0))}–${escapeHTML(String(game.homeScore ?? 0))}</span>`
         : '';
       const tapHint = isActive ? '<span class="markets-game-chip-hint">tap again → live view</span>' : '';
+      // WNBA: use short team name (first word) to distinguish from NBA teams with same abbreviation
+      const awayLabel = game.league === 'WNBA'
+        ? (game.awayName ? game.awayName.split(' ').slice(-1)[0] : game.awayTeam)
+        : game.awayTeam;
+      const homeLabel = game.league === 'WNBA'
+        ? (game.homeName ? game.homeName.split(' ').slice(-1)[0] : game.homeTeam)
+        : game.homeTeam;
       return `
         <button class="markets-game-chip ${isActive ? 'active' : ''}" type="button"
           data-gameid="${escapeHTML(String(game.id))}" data-league="${escapeHTML(game.league || '')}"
           onclick="selectMarketsGame(this.dataset.gameid, this.dataset.league, event)">
           <div class="markets-game-chip-logos">
-            <span title="${escapeHTML(game.awayTeam)}">${awayLogo}</span>
+            <span title="${escapeHTML(game.awayName || game.awayTeam)}">${awayLogo}</span>
             <span class="markets-game-chip-matchup">@</span>
-            <span title="${escapeHTML(game.homeTeam)}">${homeLogo}</span>
+            <span title="${escapeHTML(game.homeName || game.homeTeam)}">${homeLogo}</span>
           </div>
-          <div class="markets-game-chip-matchup">${escapeHTML(game.awayTeam)} @ ${escapeHTML(game.homeTeam)}${scoreHtml}</div>
+          <div class="markets-game-chip-matchup">${escapeHTML(awayLabel)} @ ${escapeHTML(homeLabel)}${scoreHtml}</div>
           <div class="markets-game-chip-meta">${badge}${escapeHTML(timeLabel)} · ${escapeHTML(countLabel)}</div>
           ${tapHint}
         </button>`;
