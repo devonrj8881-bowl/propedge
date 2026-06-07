@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.191 — WNBA: ESPN team stats/game-locations feed, B2B scoring branch, Gemini system prompt — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.192 — WNBA full logic wiring: Markets filter, B2B multiplier, pace/fatigue/correlation/detail panel — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.191">
+  <meta name="app-version" content="v7.192">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -19048,6 +19048,7 @@ nav.tabs > button,
             <button class="propai-league-tab" type="button" data-league="NHL" onclick="toggleMarketsLeague('NHL')">🏒 NHL</button>
             <button class="propai-league-tab" type="button" data-league="MLB" onclick="toggleMarketsLeague('MLB')">⚾ MLB</button>
             <button class="propai-league-tab" type="button" data-league="NFL" onclick="toggleMarketsLeague('NFL')">🏈 NFL</button>
+            <button class="propai-league-tab" type="button" data-league="WNBA" onclick="toggleMarketsLeague('WNBA')">🏀 WNBA</button>
           </div>
         </div>
         <div class="propai-browser-search">
@@ -33517,7 +33518,7 @@ nav.tabs > button,
       const restPlus = p.restPlus === true || teamCtx.restPlus;
       const revengeFlag = p.revengeFlag === true || teamCtx.revengeVs?.[normalizeTeam(p.opponent || p.opp)?.toUpperCase()];
 
-      if (isB2b && (p.league === 'NBA' || p.league === 'NHL')) {
+      if (isB2b && (p.league === 'NBA' || p.league === 'NHL' || p.league === 'WNBA')) {
         if (direction === 'OVER') {
           multiplier *= 0.88;
           againstFactors.push('🕰️ Back-to-back fatigue (volume risk on OVER)');
@@ -34288,7 +34289,7 @@ nav.tabs > button,
     // ── ELITE HELPER MODULES for v3.0 SCORING ──
 
     function calculateElitePaceFactor(p) {
-      if (p.league !== 'NBA' && p.league !== 'NHL') return { score: 0, label: null };
+      if (p.league !== 'NBA' && p.league !== 'NHL' && p.league !== 'WNBA') return { score: 0, label: null };
       const teamStats = window._teamStats?.[p.league] || {};
       if (Object.keys(teamStats).length === 0) return { score: 0, label: null };
 
@@ -34359,8 +34360,8 @@ nav.tabs > button,
     // ── OMEGA INTELLIGENCE MODULES v4.0 ──
 
     function calculateOmegaFatigue(p) {
-      if (p.league !== 'NBA' && p.league !== 'NHL') return { score: 0, label: null };
-      
+      if (p.league !== 'NBA' && p.league !== 'NHL' && p.league !== 'WNBA') return { score: 0, label: null };
+
       const team = normalizeTeam(p.team)?.toUpperCase();
       const ctx = state.teamSituational?.[p.league]?.[team];
       const isB2B = p.isB2b || p.backToBackFlag || ctx?.isB2b;
@@ -34606,7 +34607,7 @@ nav.tabs > button,
         const otherOver = other.direction === 'OVER';
         if (!isOver || !otherOver) continue;
 
-        if (p.league === 'NBA') {
+        if (p.league === 'NBA' || p.league === 'WNBA') {
           const pType = p.propType?.toLowerCase() || '';
           const oType = other.propType?.toLowerCase() || '';
           if ((pType.includes('ast') && oType.includes('pts')) || (pType.includes('pts') && oType.includes('ast'))) {
@@ -35092,7 +35093,7 @@ nav.tabs > button,
           const driftIcon  = drift > 1 ? '↗' : drift < -2 ? '↘' : '→';
           // Risk flags
           const riskFlags = [];
-          if (p.league === 'NBA' && gameInfo.period >= 4) riskFlags.push('Late game — DNP risk');
+          if ((p.league === 'NBA' || p.league === 'WNBA') && gameInfo.period >= 4) riskFlags.push('Late game — DNP risk');
           if (p.league === 'MLB' && gameInfo.outs !== null && gameInfo.inning >= 7) riskFlags.push('Late innings');
           if (p.league === 'NFL' && gameInfo.isRedZone) riskFlags.push('Red zone — RB spike risk');
           valueDriftHtml = `
@@ -41168,7 +41169,7 @@ nav.tabs > button,
       const game = getGameInfo(p.team, p.league);
       if (game && game.status === 'live') {
         const diff = Math.abs(game.homeScore - game.awayScore);
-        const isLate = (p.league === 'NBA' && game.period >= 4) || (p.league === 'NHL' && game.period >= 3);
+        const isLate = (p.league === 'NBA' && game.period >= 4) || (p.league === 'WNBA' && game.period >= 4) || (p.league === 'NHL' && game.period >= 3);
         
         if (isLate) {
           if (diff <= 5) {
@@ -42437,6 +42438,23 @@ nav.tabs > button,
             if (gameInfo.outs !== null) sportCtxHtml += `<span class="detail-live-chip pace edge">${gameInfo.outs} out${gameInfo.outs !== 1 ? 's' : ''}</span>`;
             if (gameInfo.balls !== null && gameInfo.strikes !== null) sportCtxHtml += `<span class="detail-live-chip count">${gameInfo.balls}–${gameInfo.strikes} count</span>`;
 
+          } else if (prop.league === 'WNBA') {
+            const pts = getVal('points');
+            const reb = getVal('rebounds') ?? getVal('totalRebounds');
+            const ast = getVal('assists');
+            const min = getVal('minutes') ?? getVal('MIN');
+            const fg  = getVal('fieldGoalsMade') !== null ? `${getVal('fieldGoalsMade')}/${getVal('fieldGoalsAttempted')}` : null;
+            const tp  = getVal('threePointFieldGoalsMade') !== null ? `${getVal('threePointFieldGoalsMade')}/${getVal('threePointFieldGoalsAttempted')}` : null;
+            if (pts !== null) extraStats.push({ label: 'PTS', val: pts });
+            if (reb !== null) extraStats.push({ label: 'REB', val: reb });
+            if (ast !== null) extraStats.push({ label: 'AST', val: ast });
+            if (fg)           extraStats.push({ label: 'FG',  val: fg  });
+            if (tp)           extraStats.push({ label: '3PM', val: tp  });
+            if (min !== null) extraStats.push({ label: 'MIN', val: min });
+            const qLabel = gameInfo.period <= 4 ? `Q${gameInfo.period}` : `OT${gameInfo.period - 4}`;
+            sportCtxHtml = `<span class="detail-live-chip pace">${qLabel}</span>`;
+            if (gameInfo.displayClock) sportCtxHtml += `<span class="detail-live-chip pace edge" data-detail-clock>⏱ ${gameInfo.displayClock}</span>`;
+
           } else if (prop.league === 'NFL') {
             const pyds = getVal('passingYards')    ?? getVal('YDS');
             const ryds = getVal('rushingYards')    ?? getVal('YDS');
@@ -42471,6 +42489,12 @@ nav.tabs > button,
           const clockParts = (gameInfo.displayClock || '12:00').split(':');
           const minsRem = parseInt(clockParts[0]) + (parseInt(clockParts[1] || 0) / 60);
           elapsed = Math.max(1, minsInPeriod + (12 - minsRem));
+        } else if (prop.league === 'WNBA') {
+          total = 40; // 4 × 10-min quarters
+          const minsInPeriod = (gameInfo.period - 1) * 10;
+          const clockParts = (gameInfo.displayClock || '10:00').split(':');
+          const minsRem = parseInt(clockParts[0]) + (parseInt(clockParts[1] || 0) / 60);
+          elapsed = Math.max(1, minsInPeriod + (10 - minsRem));
         } else if (prop.league === 'NHL') {
           total = 60;
           const minsInPeriod = (gameInfo.period - 1) * 20;
