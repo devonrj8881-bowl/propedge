@@ -17,6 +17,9 @@ const ASK_ANALYST_URL =
 const GAME_FILTER_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/game-filter";
 
+const GAME_ODDS_URL =
+  "https://propedgemasters.netlify.app/.netlify/functions/game-odds";
+
 const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
 const GEMINI_MODEL_FALLBACKS = [
   "gemini-3.5-flash",
@@ -102,6 +105,62 @@ async function fetchActiveSlate(league: string): Promise<ActiveSlate | null> {
   } catch {
     return null;
   }
+}
+
+type GameBetProp = {
+  league: string;
+  team: string;
+  opponent: string;
+  prop: string;
+  direction: string;
+  line?: number;
+  odds?: number;
+  gameLabel: string;
+  gameId?: string;
+};
+
+async function fetchGameOdds(leagueFilter: string): Promise<GameBetProp[]> {
+  try {
+    const params = new URLSearchParams({ alt: "true" });
+    if (leagueFilter && leagueFilter !== "ALL") params.set("leagues", leagueFilter.toUpperCase());
+    const res = await fetch(`${GAME_ODDS_URL}?${params.toString()}`, { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!data?.ok || !Array.isArray(data.props)) return [];
+    return data.props as GameBetProp[];
+  } catch {
+    return [];
+  }
+}
+
+const GAME_ODDS_CORE_MARKETS = new Set(["Moneyline", "Spread", "Total", "1Q Total", "1H Total"]);
+
+function formatGameLinesContext(gameBets: GameBetProp[]): string {
+  if (!gameBets.length) return "";
+  const core = gameBets.filter((b) => GAME_ODDS_CORE_MARKETS.has(b.prop));
+  if (!core.length) return "";
+
+  const fmtOdds = (o?: number) => o == null ? "?" : (o > 0 ? `+${o}` : String(o));
+  const fmtLine = (l?: number) => l == null ? "" : (l >= 0 ? "+" + l : String(l));
+
+  const byGame = new Map<string, { league: string; label: string; bets: GameBetProp[] }>();
+  for (const b of core) {
+    const key = `${b.league}|${b.gameId || b.gameLabel}`;
+    if (!byGame.has(key)) byGame.set(key, { league: b.league, label: b.gameLabel, bets: [] });
+    byGame.get(key)!.bets.push(b);
+  }
+
+  const lines: string[] = ["GAME LINES (DraftKings):"];
+  for (const { league, label, bets } of byGame.values()) {
+    const get = (market: string) => bets.filter((b) => b.prop === market);
+    const ml  = get("Moneyline").map((b) => `${b.team} ${fmtOdds(b.odds)}`).join("/");
+    const sp  = get("Spread").map((b) => `${b.team}${fmtLine(b.line)} (${fmtOdds(b.odds)})`).join("/");
+    const tot = get("Total").map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
+    const q1  = get("1Q Total").map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
+    const parts = [ml && `ML: ${ml}`, sp && `Spread: ${sp}`, tot && `Total: ${tot}`, q1 && `1Q: ${q1}`].filter(Boolean);
+    if (parts.length) lines.push(`[${league}] ${label}: ${parts.join(" | ")}`);
+  }
+  return lines.length > 1 ? lines.join("\n") : "";
 }
 
 function normalizeTeamAbbr(team: string): string {
@@ -541,9 +600,10 @@ export async function POST(req: NextRequest) {
 
     if (!GEMINI_API_KEY) throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not set");
 
-    const [rows, slate] = await Promise.all([
+    const [rows, slate, gameOddsBets] = await Promise.all([
       fetchProps(),
       fetchActiveSlate(league),
+      fetchGameOdds(league),
     ]);
     let slateRows = filterRowsToActiveSlate(rows, slate, league);
     // Guard: if slate filter is too aggressive (stale scraper data), fall back to full board
@@ -563,6 +623,7 @@ export async function POST(req: NextRequest) {
     }
 
     const slateContext = formatSlateContext(slate, league);
+    const gameLinesContext = formatGameLinesContext(gameOddsBets);
 
     // Enrich top props with full PropIQ scoring signals
     const topProps = topRows.map((row) => enrichRow(row, league));
@@ -591,12 +652,14 @@ l5_pct / l20_pct: supplement l10 hit rate. Hot L5 vs cold L20 = trending up. Col
 h2h: player's hit rate vs this specific opponent this season (e.g. "3/5" = 3 for 5). Strong or weak matchup history — always cite when present.
 last_season_pct: prior season hit rate for this prop type. Compare to current season — divergence signals regression or breakout.
 line_delta: line movement since open. Negative = movement toward under (steam indicator).
-ev_pct: edge above fair value — positive = value, cite if > 3%.`;
+ev_pct: edge above fair value — positive = value, cite if > 3%.
+
+GAME LINES: If a GAME LINES section is present, use it to surface game-level plays (totals, ML, spreads, 1Q totals). Cite the line and odds exactly as shown. If no GAME LINES, skip game-level picks. Never invent lines not in that section.`;
 
     const userPrompt = `${question || `What are the best ${league} props today?`}
 
 LEAGUE: ${league}
-${slateContext ? `\n${slateContext}\n` : ""}
+${slateContext ? `\n${slateContext}\n` : ""}${gameLinesContext ? `\n${gameLinesContext}\n` : ""}
 PROPEDGE BOARD (today's active slate only):
 ${JSON.stringify(topProps, null, 2)}
 
