@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { parsePropFeedCsv, buildPropEdgeLlmPayload } from "../../../lib/propedge-payload";
+import type { BoardProp } from "../../../lib/types";
 
 const PROP_FEED_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/prop-feed?sheet=propedge-main";
@@ -25,7 +27,7 @@ const MODEL_CHAIN = Array.from(new Set([PRIMARY_MODEL, ...GEMINI_MODEL_FALLBACKS
 const MAX_PROPS = 4;
 const MAX_GEMINI_ATTEMPTS = 3;
 
-async function fetchProps(): Promise<Record<string, string>[]> {
+async function fetchProps(): Promise<{ rows: Record<string, string>[]; csv: string }> {
   const res = await fetch(PROP_FEED_URL, { cache: "no-store" });
   const csv = await res.text();
   if (!csv.includes("Player") && !csv.includes("PF Rating")) {
@@ -33,10 +35,11 @@ async function fetchProps(): Promise<Record<string, string>[]> {
   }
   const lines = csv.trim().split("\n");
   const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
-  return lines.slice(1).map((line) => {
+  const rows = lines.slice(1).map((line) => {
     const values = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
     return Object.fromEntries(headers.map((h, i) => [h, values[i] ?? ""]));
   });
+  return { rows, csv };
 }
 
 const SLATE_TIMEZONE = "America/New_York";
@@ -397,6 +400,35 @@ function csvRowToAnalystProp(row: Record<string, string>, league: string) {
   };
 }
 
+function enrichRow(
+  row: Record<string, string>,
+  boardProps: BoardProp[],
+  league: string,
+): Record<string, unknown> {
+  const base = csvRowToAnalystProp(row, league);
+  const playerLower = base.player.toLowerCase();
+  const bp = boardProps.find((p) => String(p.player || "").toLowerCase() === playerLower);
+  if (!bp) return base;
+  const payload = buildPropEdgeLlmPayload(bp);
+  if (!payload) return base;
+  const a = payload.analytics;
+  const m = payload.market;
+  return {
+    ...base,
+    ...(a.hit_rate_last_5 != null && { l5_pct: `${Math.round(a.hit_rate_last_5 * 100)}%` }),
+    ...(a.hit_rate_last_20 != null && { l20_pct: `${Math.round(a.hit_rate_last_20 * 100)}%` }),
+    ...(a.ev_percentage != null && { ev_pct: `${(Math.round(a.ev_percentage * 10) / 10).toFixed(1)}%` }),
+    ...(a.propiq_score != null && { propiq_score: a.propiq_score }),
+    ...(a.propiq_for_factors?.length && { propiq_signals: a.propiq_for_factors.slice(0, 3) }),
+    ...(a.propiq_against_factors?.length && { propiq_risks: a.propiq_against_factors.slice(0, 2) }),
+    ...(payload.matchup_context.defensive_rank != null && { matchup: payload.matchup_context.defensive_rank }),
+    ...(a.pitcher_era != null && { pitcher_era: a.pitcher_era }),
+    ...(a.back_to_back != null && { back_to_back: a.back_to_back }),
+    ...(m.opening_line != null && { opening_line: m.opening_line }),
+    ...(m.book_delta != null && { line_delta: m.book_delta }),
+  };
+}
+
 async function callPropEdgeAskAnalystFallback(
   question: string,
   league: string,
@@ -453,14 +485,14 @@ export async function POST(req: NextRequest) {
 
     if (!GEMINI_API_KEY) throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not set");
 
-    const [rows, slate] = await Promise.all([
+    const [{ rows, csv }, slate] = await Promise.all([
       fetchProps(),
       fetchActiveSlate(league),
     ]);
     const slateRows = filterRowsToActiveSlate(rows, slate, league);
-    const topProps = buildTopProps(slateRows, league, question || "");
+    const topRows = buildTopProps(slateRows, league, question || "");
 
-    if (!topProps.length) {
+    if (!topRows.length) {
       return NextResponse.json({
         ok: false,
         error: `No active ${league === "ALL" ? "" : `${league} `}props on today's slate. Teams not playing today (including eliminated playoff teams) are excluded.`,
@@ -470,6 +502,10 @@ export async function POST(req: NextRequest) {
     }
 
     const slateContext = formatSlateContext(slate, league);
+
+    // Enrich top props with full PropIQ scoring signals
+    const boardProps = parsePropFeedCsv(csv);
+    const topProps = topRows.map((row) => enrichRow(row, boardProps, league));
 
     const systemPrompt = `You are a sharp sports betting analyst writing a premium prop report.
 
@@ -485,7 +521,15 @@ Short paragraph per pick. Blank line between picks.
 
 key_numbers_breakdown: short markdown bullets only.
 Do NOT fabricate players, lines, or odds not in the board payload.
-Do NOT include eliminated or off-slate teams (e.g. NBA teams with no game today).`;
+Do NOT include eliminated or off-slate teams (e.g. NBA teams with no game today).
+
+SCORING FIELDS (when present in payload):
+propiq_score: composite 0-100 signal. ≥80 = elite, 65-79 = strong, <65 = value/marginal. Always cite score by name ("PropIQ 83").
+propiq_signals: top scoring factors — lead with 1-2 strongest in your pick paragraph.
+propiq_risks: capping factors — note the primary risk if present.
+l5_pct / l20_pct: supplement l10 hit rate. Hot L5 vs cold L20 = trending up. Cold L5 = cooling.
+line_delta: line movement since open. Negative = movement toward under (steam indicator).
+ev_pct: edge above fair value — positive = value, cite if > 3%.`;
 
     const userPrompt = `${question || `What are the best ${league} props today?`}
 
@@ -512,13 +556,13 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       const backup = await callPropEdgeAskAnalystFallback(
         question || `What are the best ${league} props today?`,
         league,
-        topProps,
+        topRows,
       );
       return NextResponse.json({
         ok: true,
         analysis: backup.parsed,
         model: backup.model,
-        propCount: topProps.length,
+        propCount: topRows.length,
         fallback: true,
         fallback_reason: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
       });
@@ -544,7 +588,7 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       ok: true,
       analysis: parsed,
       model: modelUsed,
-      propCount: topProps.length,
+      propCount: topRows.length,
       fallback: usedFallback,
       slateDate: slate?.dateDisplay || slate?.date,
       filteredOut: rows.length - slateRows.length,

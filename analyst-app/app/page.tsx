@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const LEAGUES = ["ALL", "MLB", "NBA", "NHL", "NFL"];
 
@@ -78,6 +78,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ analysis: Analysis; model: string; propCount: number; fallback?: boolean; slateDate?: string; filteredOut?: number } | null>(null);
   const [error, setError] = useState("");
+
+  // Notify parent frame of content height so iframe auto-resizes
+  useEffect(() => {
+    const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    try { window.parent.postMessage({ type: "propedge-frame-height", height: h }, "*"); } catch (_) {}
+  }, [result, loading, error]);
 
   async function run(retryCount = 0) {
     setLoading(true);
