@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const LEAGUES = ["ALL", "MLB", "NBA", "NHL", "NFL"];
 
@@ -78,25 +78,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ analysis: Analysis; model: string; propCount: number; fallback?: boolean; slateDate?: string; filteredOut?: number } | null>(null);
   const [error, setError] = useState("");
-
-  // Notify parent frame of content height so iframe auto-resizes.
-  // Debounced + deduplicated: only fires if height changed by >20px, at most once per 300ms.
-  // Without this, ResizeObserver fires on every parent height-set → loop → iframe jitter.
-  useEffect(() => {
-    let lastH = 0;
-    let debounceTimer: ReturnType<typeof setTimeout>;
-    const send = () => {
-      const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
-      if (Math.abs(h - lastH) < 20) return;
-      lastH = h;
-      try { window.parent.postMessage({ type: "propedge-frame-height", height: h }, "*"); } catch (_) {}
-    };
-    const debounced = () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(send, 300); };
-    const initial = setTimeout(send, 200);
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(debounced) : null;
-    if (ro) ro.observe(document.body);
-    return () => { clearTimeout(debounceTimer); clearTimeout(initial); ro?.disconnect(); };
-  }, [result, loading, error]);
 
   async function run(retryCount = 0) {
     setLoading(true);
