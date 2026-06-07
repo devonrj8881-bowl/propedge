@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.183 — Isolate sidebar + iframe on GPU layers to stop flicker — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.184 — Fix sidebar flicker: fixed-height iframe, remove sticky+transform — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.183">
+  <meta name="app-version" content="v7.184">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -1496,8 +1496,6 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       position: sticky;
       top: 18px;
       align-self: start;
-      /* Own GPU layer — prevents iframe repaints from invalidating sidebar paint region */
-      transform: translateZ(0);
       width: 100%;
       min-height: calc(100vh - 36px);
       min-height: calc(100dvh - 36px);
@@ -9292,13 +9290,11 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     /* Desktop: show iframe, hide native UI */
     .propai-generative-frame {
       width: 100%;
-      min-height: 720px;
+      height: calc(100svh - 300px);
+      min-height: 580px;
       border: 0;
       border-radius: 12px;
       background: var(--bg-primary, #1a1d2e);
-      /* Isolate iframe paint so height changes don't repaint the sidebar */
-      contain: layout;
-      transform: translateZ(0);
     }
     .propai-gen-native { display: none; }
 
@@ -38922,20 +38918,7 @@ nav.tabs > button,
       };
     }
 
-    // Auto-resize generative analyst iframe when content height changes.
-    // Gate: only apply if height changed by >20px to break ResizeObserver feedback loop
-    // (parent sets height → iframe viewport changes → ResizeObserver fires → loop → jitter).
-    var _genFrameLastH = 0;
-    window.addEventListener('message', function(e) {
-      if (e.data && e.data.type === 'propedge-frame-height' && typeof e.data.height === 'number') {
-        var frame = document.getElementById('propedgeGenerativeAnalystFrame');
-        var newH = Math.max(720, e.data.height + 48);
-        if (frame && Math.abs(newH - _genFrameLastH) > 20) {
-          _genFrameLastH = newH;
-          frame.style.height = newH + 'px';
-        }
-      }
-    });
+    // Iframe is fixed-height (calc(100svh - 300px)) — no auto-resize needed.
 
     // ── Native Generative Analyst (mobile) ────────────────────────────────────
     var _genLeague = 'ALL';
