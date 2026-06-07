@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.195 — WNBA logos: TEAM_LOGOS_BY_LEAGUE.WNBA, WNBA sport path, chip full names — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.196 — WNBA sport-tab added, ticker includes WNBA on league switch — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.195">
+  <meta name="app-version" content="v7.196">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -18431,6 +18431,7 @@ nav.tabs > button,
     <div class="sport-tab" data-league="NHL">🏒 NHL</div>
     <div class="sport-tab" data-league="MLB">⚾ MLB</div>
     <div class="sport-tab" data-league="NFL">🏈 NFL</div>
+    <div class="sport-tab" data-league="WNBA">🏀 WNBA</div>
   </div>
 
   <!-- Navigation Tabs -->
@@ -38901,7 +38902,7 @@ nav.tabs > button,
       });
       if (state.gameFilter) {
         state.gameFilter = null;
-        renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL]);
+        renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL, ...(state.games.WNBA || [])]);
       }
       if (state.marketsGameFilter) state.marketsGameFilter = null;
       syncMarketsFilterUI();
@@ -40843,7 +40844,7 @@ nav.tabs > button,
 
           if (state.gameFilter) {
             state.gameFilter = null;
-            renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL]);
+            renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL, ...(state.games.WNBA || [])]);
           }
 
           runAfterPaint(() => {
