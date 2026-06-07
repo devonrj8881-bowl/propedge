@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.173 — Fix analyst fake fallback, Gemini 3k tokens, card hover stuck on iOS — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.174 — Fix mobile scroll snap-to-top: double-rAF restore + 2s momentum window — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.172">
+  <meta name="app-version" content="v7.174">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -20484,9 +20484,10 @@ nav.tabs > button,
         window._isTouching = false;
         window._lastTouchEndAt = Date.now();
       }, { passive: true });
-      // Returns true if finger is down OR momentum scroll is likely still running (600ms window)
+      // Returns true if finger is down OR momentum scroll is likely still running (2000ms window)
+      // iOS inertia scroll can run 2-3 seconds after touchend — 600ms was too short
       window._isScrollMomentumActive = function() {
-        return window._isTouching || (Date.now() - window._lastTouchEndAt < 600);
+        return window._isTouching || (Date.now() - window._lastTouchEndAt < 2000);
       };
 
       // Re-attach search handlers now that inputs exist
@@ -35169,12 +35170,17 @@ nav.tabs > button,
           ` : ''}
         `;
       }
-      // Restore scroll — but skip entirely if user is mid-swipe or in momentum
-      // (calling scrollTo during momentum interrupts the animation and causes the jump-to-middle bug)
-      if (_savedScrollY > 0 && Math.abs(window.scrollY - _savedScrollY) > 4) {
-        if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
-          window.scrollTo(0, _savedScrollY);
-        }
+      // Restore scroll — double-rAF so layout is committed before scrollTo fires.
+      // Synchronous scrollTo after innerHTML= doesn't work on iOS Safari (layout not painted yet).
+      // Skip if user is still in touch momentum (2000ms window after touchend).
+      if (_savedScrollY > 0) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
+              window.scrollTo({ top: _savedScrollY, behavior: 'instant' });
+            }
+          });
+        });
       }
 
       // On mobile home dashboard: fill deferred below-fold sections after first paint
