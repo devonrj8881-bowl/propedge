@@ -94,7 +94,7 @@ async function callGeminiEvDetail(messages, options = {}) {
 
   const genConfig = {
     temperature: options.temperature != null ? options.temperature : 0.5,
-    maxOutputTokens: options.max_tokens || options.num_predict || 1500,
+    maxOutputTokens: options.max_tokens || options.num_predict || 3000,
   };
   // Only force JSON mime type when caller expects structured JSON (ev_detail mode)
   if (!options.textMode) genConfig.responseMimeType = "application/json";
@@ -850,7 +850,7 @@ exports.handler = async function handler(event) {
   if (isEvDetail) {
     const geminiOpts = {
       temperature: clientOptions.temperature != null ? clientOptions.temperature : 0.5,
-      max_tokens: clientOptions.num_predict || clientOptions.max_tokens || 1500,
+      max_tokens: clientOptions.num_predict || clientOptions.max_tokens || 3000,
     };
 
     try {
