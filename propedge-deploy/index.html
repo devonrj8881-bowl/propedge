@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.180 — Markets tab Hide Final game filter checkbox — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.181 — Fix Markets scroll-to-top on load more — 2026-06-06 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.180">
+  <meta name="app-version" content="v7.181">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -38631,9 +38631,21 @@ nav.tabs > button,
       sentinel.textContent = `Showing ${_marketsDisplayCap} of ${totalCount} — scroll to load more`;
       _marketsLoadMoreObserver = new IntersectionObserver(entries => {
         if (!entries[0].isIntersecting) return;
-        _marketsDisplayCap = Math.min(_marketsDisplayCap + 30, totalCount);
-        renderMarketsBoard('marketsBrowserList');
-      }, { rootMargin: '200px' });
+        // Disconnect immediately — prevents double-fires on fast scroll
+        if (_marketsLoadMoreObserver) { _marketsLoadMoreObserver.disconnect(); _marketsLoadMoreObserver = null; }
+        const allRanked = getMarketsBoardFiltered();
+        const prevCap = _marketsDisplayCap;
+        _marketsDisplayCap = Math.min(prevCap + 30, allRanked.length);
+        // Append only new rows — no innerHTML replacement, no iOS scroll-to-top jump
+        const newItems = allRanked.slice(prevCap, _marketsDisplayCap);
+        const listEl = document.getElementById('marketsBrowserList');
+        if (listEl && newItems.length) {
+          const newHTML = newItems.map(p => buildPropAIMarketRowHTML(hydratePropWithLiveOdds(p))).join('');
+          listEl.insertAdjacentHTML('beforeend', newHTML);
+          batchHeadshotLookups(newItems);
+        }
+        setupMarketsLoadMore(allRanked.length);
+      }, { rootMargin: '100px' });
       _marketsLoadMoreObserver.observe(sentinel);
     }
 
