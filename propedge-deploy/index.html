@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.190 — WNBA support: scraper, game-filter, TEAM_ALIASES, league filters, analyst UI — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.191 — WNBA: ESPN team stats/game-locations feed, B2B scoring branch, Gemini system prompt — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.190">
+  <meta name="app-version" content="v7.191">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -19428,9 +19428,10 @@ nav.tabs > button,
 
     // Live team stats APIs — used for pace ranking + opponent defense context
     const TEAM_STATS_APIS = {
-      NBA: 'https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byteam?season=2026&seasontype=2&limit=32',
-      NHL: 'https://site.web.api.espn.com/apis/common/v3/sports/hockey/nhl/statistics/byteam?season=2026&seasontype=2&limit=32',
-      MLB: 'https://site.web.api.espn.com/apis/common/v3/sports/baseball/mlb/statistics/byteam?season=2026&seasontype=2&limit=32'
+      NBA:  'https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byteam?season=2026&seasontype=2&limit=32',
+      NHL:  'https://site.web.api.espn.com/apis/common/v3/sports/hockey/nhl/statistics/byteam?season=2026&seasontype=2&limit=32',
+      MLB:  'https://site.web.api.espn.com/apis/common/v3/sports/baseball/mlb/statistics/byteam?season=2026&seasontype=2&limit=32',
+      WNBA: 'https://site.web.api.espn.com/apis/common/v3/sports/basketball/wnba/statistics/byteam?season=2026&seasontype=2&limit=16'
     };
 
     // Live player game log — for recent form validation
@@ -19440,12 +19441,12 @@ nav.tabs > button,
     // ── LIVE TEAM STATS STATE ──────────────────────────────────
     // Populated by fetchLiveTeamStats(). Keyed by team abbreviation.
     // _teamStats[league][abbr] = { ppg, rpg, apg, pace, paceRank, defPtsRank, ... }
-    window._teamStats  = { NBA: {}, NHL: {}, MLB: {} };
+    window._teamStats  = { NBA: {}, NHL: {}, MLB: {}, WNBA: {} };
     window._teamPaceRanks = {};  // abbr → rank (1=fastest)
-    window._gameLocations = { NBA: {}, NHL: {}, MLB: {}, NFL: {} };
+    window._gameLocations = { NBA: {}, NHL: {}, MLB: {}, NFL: {}, WNBA: {} };
 
     async function fetchLiveTeamStats() {
-      for (const league of ['NBA', 'NHL', 'MLB']) {
+      for (const league of ['NBA', 'NHL', 'MLB', 'WNBA']) {
         try {
           const res  = await fetch(TEAM_STATS_APIS[league] + '&_=' + Date.now(), { cache: 'no-store' });
           const data = await res.json();
@@ -19472,8 +19473,9 @@ nav.tabs > button,
             window._teamStats[league][abbr] = statMap;
           });
 
-          // Build pace rank (NBA: possessions/game or PPG proxy; NHL: goals/game; MLB: runs/game)
-          const paceKey = league === 'NBA' ? ['pace','possessionspergame','avgpossessions','pointspergame']
+          // Build pace rank (NBA/WNBA: possessions/game or PPG proxy; NHL: goals/game; MLB: runs/game)
+          const paceKey = (league === 'NBA' || league === 'WNBA')
+                        ? ['pace','possessionspergame','avgpossessions','pointspergame']
                         : league === 'NHL' ? ['goalspergame','goalsfor','gf/g']
                         : ['runspergame','runsscored','r/g'];
           const getPaceVal = row => {
@@ -19496,10 +19498,11 @@ nav.tabs > button,
 
     async function fetchLiveGameLocations() {
       const SCOREBOARD_APIS = {
-        NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-        NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-        MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
-        NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
+        NBA:  'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+        NHL:  'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+        MLB:  'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
+        NFL:  'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+        WNBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard'
       };
       for (const [league, url] of Object.entries(SCOREBOARD_APIS)) {
         try {
@@ -21693,6 +21696,18 @@ nav.tabs > button,
             } else if (sznMatchup >= 27 && direction === 'UNDER' && isGoalScoringProp) {
                modelScore -= 4;
                propFactors.push('⚠️ Leaky Goalie — fights UNDER');
+            }
+        } else if (actualLeague === 'WNBA') {
+            // WNBA: B2B fatigue applies same as NBA (compressed schedule, basketball volume props)
+            const isB2bWNBA = isB2b || oppDetails.toLowerCase().includes('b2b') || oppDetails.toLowerCase().includes('back-to-back');
+            if (isB2bWNBA) {
+               modelScore -= 10;
+               propFactors.push('🔋 Fatigue (Back-to-Back)');
+            }
+            // Rest bonus: well-rested WNBA players hit volume props at higher rate
+            if (!isB2bWNBA && daysRest != null && daysRest >= 3 && direction === 'OVER') {
+               modelScore += 3;
+               propFactors.push(`💪 Well-Rested (${daysRest}d rest)`);
             }
         }
 

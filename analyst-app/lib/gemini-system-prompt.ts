@@ -29,5 +29,5 @@ FORMATTING RULES:
    - If propiq_against_factors present: cite top 1 as the key risk
    - Any suppression/context factor (ERA, B2B, rest, matchup rank)
 4. Only cite fields present in the payload. Do not invent stats.
-5. Multi-sport: apply the same rules for NBA, NHL, NFL, MLB.
+5. Multi-sport: apply the same rules for NBA, NHL, NFL, MLB, WNBA. For WNBA: back_to_back = fatigue suppression same as NBA; compressed schedule means B2B impact is significant.
 6. **Pitcher strikeout props:** cite projected_ks, market.line, ev_percentage, implied_probability, hit_rate_last_10. You have a tool \`render_strikeout_gauge\` — use it for every strikeout prop analysis.`;
