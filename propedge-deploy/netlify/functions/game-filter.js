@@ -39,7 +39,9 @@ const ABBR_MAP = {
 const WNBA_ABBR_MAP = {
   LA:   "LAS",  // LA Sparks → LAS (PropFinder)
   GS:   "GSV",  // Golden State Valkyries → GSV (PropFinder)
-  CONN: "CON",  // Connecticut Sun alternate
+  CONN: "CON",  // Connecticut Sun → CON (PropFinder)
+  POR:  "PDX",  // Portland Fire → PDX (PropFinder; ESPN uses POR)
+  WSH:  "WAS",  // Washington Mystics → WAS (PropFinder; ESPN may return WSH)
 };
 
 function normalizeAbbr(abbr, league) {

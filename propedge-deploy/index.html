@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.196 — WNBA sport-tab added, ticker includes WNBA on league switch — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.197 — WNBA abbr normalization: POR→PDX/WSH→WAS in game-filter+parseGame, scraper consolidated — 2026-06-07 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.196">
+  <meta name="app-version" content="v7.197">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -28441,11 +28441,15 @@ nav.tabs > button,
       // Stale-data tracking — mark when we last saw a live update
       const lastUpdate = isLive ? Date.now() : null;
 
+      // WNBA: remap ESPN abbreviations → PropFinder canonical so game chips match prop cards
+      const WNBA_ESPN_NORM = { LA: 'LAS', GS: 'GSV', CONN: 'CON', POR: 'PDX', WSH: 'WAS' };
+      const _normWNBA = (abbr) => (league === 'WNBA' && WNBA_ESPN_NORM[abbr]) ? WNBA_ESPN_NORM[abbr] : abbr;
+
       return {
         id: event.id,
         league,
-        homeTeam: home.team?.abbreviation || 'HOME',
-        awayTeam: away.team?.abbreviation || 'AWAY',
+        homeTeam: _normWNBA(home.team?.abbreviation || 'HOME'),
+        awayTeam: _normWNBA(away.team?.abbreviation || 'AWAY'),
         homeName: home.team?.displayName   || '',
         awayName: away.team?.displayName   || '',
         homeScore: parseInt(home.score) || 0,
