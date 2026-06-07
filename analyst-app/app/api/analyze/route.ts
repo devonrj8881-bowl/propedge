@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { buildPropEdgeLlmPayload } from "../../../lib/propedge-payload";
 import type { BoardProp } from "../../../lib/types";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
 const PROP_FEED_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/prop-feed?sheet=propedge-main";
 
@@ -515,6 +521,10 @@ async function callPropEdgeAskAnalystFallback(
   }
 }
 
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: CORS_HEADERS });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { question, league = "ALL" } = await req.json();
@@ -534,7 +544,7 @@ export async function POST(req: NextRequest) {
         error: `No active ${league === "ALL" ? "" : `${league} `}props on today's slate. Teams not playing today (including eliminated playoff teams) are excluded.`,
         slateDate: slate?.dateDisplay || slate?.date,
         filteredOut: rows.length - slateRows.length,
-      }, { status: 200 });
+      }, { status: 200, headers: CORS_HEADERS });
     }
 
     const slateContext = formatSlateContext(slate, league);
@@ -600,7 +610,7 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
         propCount: topRows.length,
         fallback: true,
         fallback_reason: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
-      });
+      }, { headers: CORS_HEADERS });
     }
 
     let parsed;
@@ -627,7 +637,7 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       fallback: usedFallback,
       slateDate: slate?.dateDisplay || slate?.date,
       filteredOut: rows.length - slateRows.length,
-    });
+    }, { headers: CORS_HEADERS });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[analyze]", msg);
@@ -636,6 +646,6 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       : /404|not found/i.test(msg)
         ? "Analysis model unavailable — please try again."
         : msg;
-    return NextResponse.json({ ok: false, error: friendly }, { status: 500 });
+    return NextResponse.json({ ok: false, error: friendly }, { status: 500, headers: CORS_HEADERS });
   }
 }
