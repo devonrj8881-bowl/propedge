@@ -46,3 +46,4 @@ scraper-v14.js
 scraper-v13.js
 logs/
 *.VERIFIED
+scraper-status.json
