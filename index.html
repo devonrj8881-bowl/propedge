@@ -38666,7 +38666,6 @@ nav.tabs > button,
     }
 
     function buildPropAIMarketRowHTML(prop) {
-      const headshot = getPlayerHeadshot(prop.player, prop.league);
       const market = propAIMarketCategory(prop);
       const iq = propIQValue(prop);
       const iqClass = propIQTierClass(iq);
@@ -38684,14 +38683,35 @@ nav.tabs > button,
       const livePill = bookFromLive && state.fdLinesSource === 'live'
         ? '<span class="propai-live-odds-pill">Live</span>'
         : '';
+
+      // Game-bet props (Totals, Moneyline, etc) show team logos; player props show headshots
+      let imageHTML = '';
+      let displayName = '';
+      if (prop.isGameBet) {
+        // Game-bet: show both team logos
+        const homeTeam = prop.opponent || '';
+        const awayTeam = prop.team || '';
+        const homeLogo = getTeamLogo(homeTeam, prop.league);
+        const awayLogo = getTeamLogo(awayTeam, prop.league);
+        imageHTML = `<div style="display:flex;gap:4px;align-items:center;">${awayLogo}${homeLogo}</div>`;
+        displayName = prop.gameLabel || `${awayTeam} @ ${homeTeam}`;
+      } else {
+        // Player prop: show player headshot
+        const headshot = getPlayerHeadshot(prop.player, prop.league);
+        imageHTML = headshot
+          ? `<img src="${escapeHTML(headshot)}" alt="${escapeHTML(prop.player || '')}" data-player-headshot-key="${escapeHTML(playerHeadshotKey(prop.player || '', prop.league || ''))}" data-player="${escapeHTML(prop.player || '')}" data-league="${escapeHTML(prop.league || '')}" onerror="handlePlayerHeadshotError(this)">`
+          : headshotPlaceholderHTML(prop.player || 'Player', prop.league || '', 'prop');
+        displayName = prop.player || 'Player';
+      }
+
       return `
           <div class="propai-market-row propai-market-row--deck tier-${badgeTier}">
             <div class="propai-deck-spine" aria-hidden="true"></div>
             <div class="propai-deck-inner">
               <div class="propai-market-player">
-                ${headshot ? `<img src="${escapeHTML(headshot)}" alt="${escapeHTML(prop.player || '')}" data-player-headshot-key="${escapeHTML(playerHeadshotKey(prop.player || '', prop.league || ''))}" data-player="${escapeHTML(prop.player || '')}" data-league="${escapeHTML(prop.league || '')}" onerror="handlePlayerHeadshotError(this)">` : headshotPlaceholderHTML(prop.player || 'Player', prop.league || '', 'prop')}
+                ${imageHTML}
                 <div>
-                  <div class="propai-market-name">${leagueBadge}${leagueBadge ? ' ' : ''}${escapeHTML(prop.player || 'Player')}</div>
+                  <div class="propai-market-name">${leagueBadge}${leagueBadge ? ' ' : ''}${escapeHTML(displayName)}</div>
                   <div class="propai-market-sub">${escapeHTML(`${prop.team || ''} · ${market === 'ALL' ? (prop.prop || prop.stat || 'Prop') : market} · ${propLineText(prop)}`)}</div>
                 </div>
               </div>
