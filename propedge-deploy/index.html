@@ -18930,6 +18930,7 @@ nav.tabs > button,
                 <button class="propai-market-tab" type="button" data-market="Spread" onclick="setPropAIMarketFilter('Spread')">Spread</button>
                 <button class="propai-market-tab" type="button" data-market="Totals" onclick="setPropAIMarketFilter('Totals')">Total</button>
                 <button class="propai-market-tab" type="button" data-market="Alt Total" onclick="setPropAIMarketFilter('Alt Total')">Alt Total</button>
+                <button class="propai-market-tab" type="button" data-market="Alt Spread" onclick="setPropAIMarketFilter('Alt Spread')">Alt Spread</button>
                 <button class="propai-market-tab" type="button" data-market="1H" onclick="setPropAIMarketFilter('1H')">1H</button>
                 <button class="propai-market-tab" type="button" data-market="1Q" onclick="setPropAIMarketFilter('1Q')">1Q</button>
                 </div>
@@ -21164,6 +21165,7 @@ nav.tabs > button,
           if (oddsResp.ok) {
             const oddsData = await oddsResp.json();
             state.gameOdds = oddsData.props || [];
+            state.gameOddsAltLoaded = false;
             console.log(`[PropEdge] Loaded ${(state.gameOdds || []).length} game odds entries`);
           }
         } catch (e) {
@@ -28299,6 +28301,30 @@ nav.tabs > button,
         l5Pct: null,
         l10Pct: null
       }));
+    }
+
+    async function loadGameOddsAlt() {
+      if (state.gameOddsAltLoaded) return;
+      try {
+        const activeLeagues = ['NBA', 'MLB', 'NHL', 'WNBA', 'NFL'].join(',');
+        const oddsResp = await fetch(`/.netlify/functions/game-odds?leagues=${activeLeagues}&alt=true`, { cache: 'no-store' });
+        if (!oddsResp.ok) return;
+        const oddsData = await oddsResp.json();
+        if (!oddsData || !Array.isArray(oddsData.props) || !oddsData.props.length) return;
+        state.gameOdds = oddsData.props;
+        state.gameOddsAltLoaded = true;
+        if (Array.isArray(state.props)) {
+          state.props = state.props.filter(p => !p.isGameBet);
+          const gameLevelProps = createGameLevelPropsFromOdds();
+          if (gameLevelProps.length) {
+            state.props = [...state.props, ...gameLevelProps];
+          }
+        }
+        console.log(`[PropEdge] Loaded ${state.gameOdds.length} game odds entries (alt markets)`);
+        if (typeof renderMarketsView === 'function') renderMarketsView();
+      } catch (e) {
+        console.warn('[PropEdge] Alt market odds fetch failed:', e.message);
+      }
     }
 
     function syncUnifiedScores() {
@@ -38321,8 +38347,8 @@ nav.tabs > button,
 
     function propAIMarketCategory(prop) {
       // Game-level market types (from game-odds function) — check prop.prop field directly
-      if (prop.prop === '1Q Total') return '1Q';
-      if (prop.prop === '1H Total') return '1H';
+      if (['1Q Total', '1Q Spread', '1Q ML'].includes(prop.prop)) return '1Q';
+      if (['1H Total', '1H Spread', '1H ML'].includes(prop.prop)) return '1H';
       if (prop.prop === 'Alt Total') return 'Alt Total';
       if (prop.prop === 'Alt Spread') return 'Alt Spread';
       if (prop.prop === 'Moneyline') return 'Moneyline';
@@ -39240,10 +39266,15 @@ nav.tabs > button,
       debouncedRenderMarketsView();
     }
 
+    const ALT_GAME_MARKETS = new Set(['Alt Total', 'Alt Spread', '1H', '1Q']);
+
     function toggleMarketsMarket(market) {
       state.marketsMarketTypes = _toggleMultiFilter(state.marketsMarketTypes, market);
       _marketsDisplayCap = getMarketsBoardRenderCap();
       syncMarketsFilterUI();
+      if (ALT_GAME_MARKETS.has(market)) {
+        loadGameOddsAlt().catch(e => console.warn('[PropEdge] Alt market odds fetch failed:', e.message));
+      }
       debouncedRenderMarketsView();
       renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
     }

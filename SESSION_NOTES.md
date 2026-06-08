@@ -179,7 +179,7 @@ com.propedge.outcomes-sync       ✅  Removed (orphaned)
 - ✅ Live at `https://propedgemasters.netlify.app`
 
 ---
-**Last Updated:** 2026-06-03
+**Last Updated:** 2026-06-08
 
 ## Session: 2026-06-08 (Midnight Scoring & UX Restoration)
 
@@ -202,3 +202,9 @@ com.propedge.outcomes-sync       ✅  Removed (orphaned)
 ### 4. Deployment
 - **GitHub**: Pushed logic-only updates to `redesign-scoring-v2`.
 - **Production**: Successfully deployed v7.207 to propedgemasters.netlify.app.
+
+### 5. Odds API Alt Markets Patch (Addendum)
+- **Alt Spread UI**: Added Alt Spread market chip to both Markets and PropAI filters.
+- **Lazy-load trigger**: Selecting Alt Total/Alt Spread/1H/1Q now fetches `alt=true` game-odds and refreshes the board.
+- **Expanded ALT markets**: Added alternate_spreads + 1H/1Q ML/Spread markets to the per-event Odds API call.
+- **Game-bet mapping**: Categorizes 1H/1Q totals/spreads/ML under the correct filter chips.
