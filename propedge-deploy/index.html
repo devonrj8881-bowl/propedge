@@ -18926,6 +18926,12 @@ nav.tabs > button,
                 <button class="propai-market-tab" type="button" data-market="TB" onclick="setPropAIMarketFilter('TB')">Tot. Bases</button>
                 <button class="propai-market-tab" type="button" data-market="Strikeouts" onclick="setPropAIMarketFilter('Strikeouts')">Strikeouts</button>
                 <button class="propai-market-tab" type="button" data-market="Goals" onclick="setPropAIMarketFilter('Goals')">Goals</button>
+                <button class="propai-market-tab" type="button" data-market="Moneyline" onclick="setPropAIMarketFilter('Moneyline')">ML</button>
+                <button class="propai-market-tab" type="button" data-market="Spread" onclick="setPropAIMarketFilter('Spread')">Spread</button>
+                <button class="propai-market-tab" type="button" data-market="Totals" onclick="setPropAIMarketFilter('Totals')">Total</button>
+                <button class="propai-market-tab" type="button" data-market="Alt Total" onclick="setPropAIMarketFilter('Alt Total')">Alt Total</button>
+                <button class="propai-market-tab" type="button" data-market="1H" onclick="setPropAIMarketFilter('1H')">1H</button>
+                <button class="propai-market-tab" type="button" data-market="1Q" onclick="setPropAIMarketFilter('1Q')">1Q</button>
                 </div>
               </div>
             </div>
@@ -19067,6 +19073,12 @@ nav.tabs > button,
           <button class="propai-market-tab" type="button" data-market="TB" onclick="setPropAIMarketFilter('TB')">Tot. Bases</button>
           <button class="propai-market-tab" type="button" data-market="Strikeouts" onclick="setPropAIMarketFilter('Strikeouts')">Strikeouts</button>
           <button class="propai-market-tab" type="button" data-market="Goals" onclick="setPropAIMarketFilter('Goals')">Goals</button>
+          <button class="propai-market-tab" type="button" data-market="Moneyline" onclick="setPropAIMarketFilter('Moneyline')">ML</button>
+          <button class="propai-market-tab" type="button" data-market="Spread" onclick="setPropAIMarketFilter('Spread')">Spread</button>
+          <button class="propai-market-tab" type="button" data-market="Totals" onclick="setPropAIMarketFilter('Totals')">Total</button>
+          <button class="propai-market-tab" type="button" data-market="Alt Total" onclick="setPropAIMarketFilter('Alt Total')">Alt Total</button>
+          <button class="propai-market-tab" type="button" data-market="1H" onclick="setPropAIMarketFilter('1H')">1H</button>
+          <button class="propai-market-tab" type="button" data-market="1Q" onclick="setPropAIMarketFilter('1Q')">1Q</button>
           </div>
         </div>
       </div>
@@ -38308,6 +38320,16 @@ nav.tabs > button,
     }
 
     function propAIMarketCategory(prop) {
+      // Game-level market types (from game-odds function) — check prop.prop field directly
+      if (prop.prop === '1Q Total') return '1Q';
+      if (prop.prop === '1H Total') return '1H';
+      if (prop.prop === 'Alt Total') return 'Alt Total';
+      if (prop.prop === 'Alt Spread') return 'Alt Spread';
+      if (prop.prop === 'Moneyline') return 'Moneyline';
+      if (prop.prop === 'Spread') return 'Spread';
+      if (prop.prop === 'Total') return 'Totals';
+
+      // Player prop market types (from CSV)
       const market = normalizeLiveOddsText(propMarketText(prop));
       if (market.includes('points rebounds assists') || market.includes('pts reb ast') || market.includes('pra')) return 'PRA';
       if (market.includes('3 pointers') || market.includes('three') || market.includes('3pt')) return '3PM';
@@ -38380,10 +38402,12 @@ nav.tabs > button,
             p.player,
             p.team,
             p.opponent,
+            p.gameLabel,      // game-bet props: "SAS @ NYK"
+            p.betLabel,       // game-bet props: "Over", "Chicago Bulls"
             propMarketText(p),
             propLineText(p),
             p.league
-          ].map(normalizeLiveOddsText).join(' ');
+          ].filter(Boolean).map(normalizeLiveOddsText).join(' ');
           return blob.includes(search);
         });
       }
