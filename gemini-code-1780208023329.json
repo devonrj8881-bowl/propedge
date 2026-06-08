@@ -1,0 +1,31 @@
+{
+  "event": {
+    "date": "2026-05-31",
+    "home_team": "LAD",
+    "away_team": "PHI"
+  },
+  "player": {
+    "name": "Jesús Luzardo",
+    "team": "PHI",
+    "position": "SP"
+  },
+  "market": {
+    "prop_type": "Strikeouts",
+    "line": 5.5,
+    "odds": -108,
+    "implied_probability": 0.5192
+  },
+  "analytics": {
+    "season_k_per_9": 9.8,
+    "average_ks_per_game": 6.5,
+    "hit_rate_last_10": 0.60,
+    "projected_ks": 6.2,
+    "ev_percentage": 4.5
+  },
+  "matchup_context": {
+    "opponent_k_rate_vs_lhp": 0.224,
+    "opposing_pitcher": "Roki Sasaki",
+    "weather_factor": "Neutral",
+    "umpire_strike_zone_rating": 1.02
+  }
+}

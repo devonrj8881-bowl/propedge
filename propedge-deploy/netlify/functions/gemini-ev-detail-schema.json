@@ -1,0 +1,36 @@
+{
+  "type": "OBJECT",
+  "properties": {
+    "best_singles": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "headline": { "type": "STRING" },
+          "matchup": { "type": "STRING" },
+          "angle": { "type": "STRING" }
+        },
+        "required": ["headline", "matchup", "angle"]
+      }
+    },
+    "top_player_props": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "headline": { "type": "STRING" },
+          "matchup": { "type": "STRING" },
+          "angle": { "type": "STRING" },
+          "player": { "type": "STRING" },
+          "team": { "type": "STRING" }
+        },
+        "required": ["headline", "matchup", "angle"]
+      }
+    },
+    "followups": {
+      "type": "ARRAY",
+      "items": { "type": "STRING" }
+    }
+  },
+  "required": ["best_singles", "top_player_props", "followups"]
+}
