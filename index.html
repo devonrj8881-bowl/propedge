@@ -21144,15 +21144,15 @@ nav.tabs > button,
         let allProps = [];
         const csv = await fetchPropedgeMainCsv();
         
-        // --- RESTORED: Fetch Game-Level Odds (ML, Totals, Spreads, Alts) ---
+        // --- RESTORED: Fetch Game-Level Odds (ML, Totals, Spreads) ---
         try {
           console.log('[PropEdge] Fetching game-level odds from Odds API...');
           const activeLeagues = ['NBA', 'MLB', 'NHL', 'WNBA', 'NFL'].join(',');
-          const oddsResp = await fetch(`/.netlify/functions/game-odds?leagues=${activeLeagues}&alt=true`, { cache: 'no-store' });
+          const oddsResp = await fetch(`/.netlify/functions/game-odds?leagues=${activeLeagues}&alt=false`, { cache: 'no-store' });
           if (oddsResp.ok) {
             const oddsData = await oddsResp.json();
-            state.gameOdds = oddsData.odds || {};
-            console.log(`[PropEdge] Loaded ${Object.keys(state.gameOdds).length} game odds entries`);
+            state.gameOdds = oddsData.props || [];
+            console.log(`[PropEdge] Loaded ${(state.gameOdds || []).length} game odds entries`);
           }
         } catch (e) {
           console.warn('[PropEdge] Game-level odds fetch failed:', e);
@@ -28277,48 +28277,16 @@ nav.tabs > button,
     // ==========================================
     
     function createGameLevelPropsFromOdds() {
-      if (!state.gameOdds || Object.keys(state.gameOdds).length === 0) return [];
-      const gameProps = [];
-      
-      Object.entries(state.gameOdds).forEach(([gameId, markets]) => {
-        // Find the game info from state.games
-        const league = gameId.split(':')[0]; // format was league:away:home:time
-        const game = [...(state.games.NBA || []), ...(state.games.NHL || []), ...(state.games.MLB || []), ...(state.games.WNBA || []), ...(state.games.NFL || [])]
-          .find(g => String(g.id) === String(gameId));
-        
-        if (!game) return;
-
-        Object.entries(markets).forEach(([marketKey, lines]) => {
-          if (!Array.isArray(lines)) return;
-          
-          lines.forEach((line, idx) => {
-            const propType = line.market || marketKey;
-            const side = line.side || 'OVER';
-            
-            // Create a pseudo-prop object compatible with the board
-            const p = {
-              id: `game-${gameId}-${marketKey}-${idx}`,
-              player: game.awayTeam + ' @ ' + game.homeTeam,
-              team: side === 'OVER' || line.name === game.homeTeam ? game.homeTeam : game.awayTeam,
-              opponent: side === 'OVER' || line.name === game.homeTeam ? game.awayTeam : game.homeTeam,
-              league: league,
-              prop: propType,
-              statType: propType,
-              line: line.line || line.point || '',
-              odds: line.odds || line.price || '',
-              direction: side,
-              modelScore: 70, // Baseline for game-level odds
-              pfRating: 70,
-              confidence: 65,
-              l10Pct: 50,
-              isGameLevel: true,
-              game_id: gameId
-            };
-            gameProps.push(p);
-          });
-        });
-      });
-      return gameProps;
+      if (!state.gameOdds || !Array.isArray(state.gameOdds) || state.gameOdds.length === 0) return [];
+      // game-odds function already returns properly formatted props, just pass through
+      return (state.gameOdds || []).map(p => ({
+        ...p,
+        isGameBet: p.isGameBet || true,  // mark as game-level, not player prop
+        modelScore: 0,  // game-level props don't have scoring; let user decide via book odds
+        confidence: 0,
+        l5Pct: null,
+        l10Pct: null
+      }));
     }
 
     function syncUnifiedScores() {
