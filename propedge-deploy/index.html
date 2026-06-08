@@ -18899,7 +18899,6 @@ nav.tabs > button,
                   <button class="propai-league-tab" type="button" data-league="NBA" onclick="toggleMarketsLeague('NBA')">🏀 NBA</button>
                   <button class="propai-league-tab" type="button" data-league="NHL" onclick="toggleMarketsLeague('NHL')">🏒 NHL</button>
                   <button class="propai-league-tab" type="button" data-league="MLB" onclick="toggleMarketsLeague('MLB')">⚾ MLB</button>
-                  <button class="propai-league-tab" type="button" data-league="WNBA" onclick="toggleMarketsLeague('WNBA')">🏀 WNBA</button>
                   <button class="propai-league-tab" type="button" data-league="NFL" onclick="toggleMarketsLeague('NFL')">🏈 NFL</button>
                   <button class="propai-league-tab" type="button" data-league="WNBA" onclick="toggleMarketsLeague('WNBA')">🏀 WNBA</button>
                 </div>
@@ -19037,11 +19036,12 @@ nav.tabs > button,
           <div class="propai-board-meta-label">League</div>
           <div class="propai-league-tabs">
             <button class="propai-league-tab active" type="button" data-league="ALL" onclick="toggleMarketsLeague('ALL')">All</button>
-            <button class="propai-league-tab" type="button" data-league="NBA" onclick="toggleMarketsLeague('NBA')">🏀 NBA</button>
-            <button class="propai-league-tab" type="button" data-league="NHL" onclick="toggleMarketsLeague('NHL')">🏒 NHL</button>
-            <button class="propai-league-tab" type="button" data-league="MLB" onclick="toggleMarketsLeague('MLB')">⚾ MLB</button>
-            <button class="propai-league-tab" type="button" data-league="NFL" onclick="toggleMarketsLeague('NFL')">🏈 NFL</button>
-          </div>
+                  <button class="propai-league-tab" type="button" data-league="NBA" onclick="toggleMarketsLeague('NBA')">🏀 NBA</button>
+                  <button class="propai-league-tab" type="button" data-league="NHL" onclick="toggleMarketsLeague('NHL')">🏒 NHL</button>
+                  <button class="propai-league-tab" type="button" data-league="MLB" onclick="toggleMarketsLeague('MLB')">⚾ MLB</button>
+                  <button class="propai-league-tab" type="button" data-league="NFL" onclick="toggleMarketsLeague('NFL')">🏈 NFL</button>
+                  <button class="propai-league-tab" type="button" data-league="WNBA" onclick="toggleMarketsLeague('WNBA')">🏀 WNBA</button>
+                </div>
         </div>
         <div class="propai-browser-search">
           <span class="propai-browser-search-icon">⌕</span>
@@ -19603,6 +19603,7 @@ nav.tabs > button,
     // STATE
     // ==========================================
     const state = {
+      gameOdds: {}, // Restored for game-level ML/Totals/Spreads/Alts
       props: [],
       filteredProps: [],
       parlay: [],
@@ -20009,6 +20010,38 @@ nav.tabs > button,
 
     state.multiBookOdds = state.multiBookOdds || {}; // { "player|propType|line": { dk: -110, betmgm: -115, fd: -110 } }
 
+    // MULTIBOOK ODDS PROVIDER (Restored)
+    class MultiBookOddsProvider {
+      constructor(apiKey) {
+        this.apiKey = apiKey;
+        this.baseUrl = 'https://api.the-odds-api.com/v4/sports';
+        this.sportsMap = {
+          'NBA': 'basketball_nba',
+          'NHL': 'hockey_nhl',
+          'MLB': 'baseball_mlb',
+          'NFL': 'americanfootball_nfl',
+          'WNBA': 'basketball_wnba'
+        };
+      }
+
+      async fetchPlayerProps(league, eventId) {
+        if (!this.sportsMap[league]) return null;
+        try {
+          // Add alternate totals/lines to markets
+          const markets = 'player_points,player_rebounds,player_assists,player_threes,player_blocks,player_steals,player_points_rebounds_assists,alternate_player_points,alternate_player_rebounds,alternate_player_assists';
+          const url = `${this.baseUrl}/${this.sportsMap[league]}/events/${eventId}/odds?apiKey=${this.apiKey}&regions=us&markets=${markets}&oddsFormat=american`;
+          
+          const response = await fetch(url);
+          if (!response.ok) return null;
+          return await response.json();
+        } catch(e) {
+          console.warn('[MultiBook] Failed to fetch odds:', e);
+          return null;
+        }
+      }
+    }
+    
+    // Fallback to existing logic if odds API is rate-limited
     async function fetchMultiBookOdds(player, propType, team, league) {
       try {
         const cacheKey = `${player}|${propType}|${team}`;
@@ -21110,6 +21143,21 @@ nav.tabs > button,
 
         let allProps = [];
         const csv = await fetchPropedgeMainCsv();
+        
+        // --- RESTORED: Fetch Game-Level Odds (ML, Totals, Spreads, Alts) ---
+        try {
+          console.log('[PropEdge] Fetching game-level odds from Odds API...');
+          const activeLeagues = ['NBA', 'MLB', 'NHL', 'WNBA', 'NFL'].join(',');
+          const oddsResp = await fetch(`/.netlify/functions/game-odds?leagues=${activeLeagues}&alt=true`, { cache: 'no-store' });
+          if (oddsResp.ok) {
+            const oddsData = await oddsResp.json();
+            state.gameOdds = oddsData.odds || {};
+            console.log(`[PropEdge] Loaded ${Object.keys(state.gameOdds).length} game odds entries`);
+          }
+        } catch (e) {
+          console.warn('[PropEdge] Game-level odds fetch failed:', e);
+        }
+        // ------------------------------------------------------------------
         if (csv) {
           console.log(`[PropEdge] propedge-main received ${csv.length} bytes`);
           const _csvLines = csv.split('\n');
@@ -22271,7 +22319,7 @@ nav.tabs > button,
       }
       if (startIndex === 0) console.log('[PropEdge] Loading archive data for trends...');
       try {
-        const leagues = ['NBA', 'NHL', 'MLB'];
+        const leagues = ['NBA', 'NHL', 'MLB', 'WNBA', 'NFL'];
         let totalArchiveRows = Object.values(window._archiveData || {}).reduce((sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0), 0);
 
         for (let idx = startIndex; idx < leagues.length; idx++) {
@@ -22565,7 +22613,7 @@ nav.tabs > button,
 
     function mergeApiSportsInjuriesIfNeeded(bundle) {
       if (!bundle?.injuries || typeof _injState === 'undefined') return;
-      ['NBA', 'NHL', 'MLB', 'NFL', 'WNBA'].forEach((league) => {
+      ['NBA', 'NHL', 'MLB', 'WNBA', 'NFL'].forEach((league) => {
         if ((_injState.injuries[league] || []).length) return;
         const list = bundle.injuries[league];
         if (Array.isArray(list) && list.length) _injState.injuries[league] = list;
@@ -28227,6 +28275,52 @@ nav.tabs > button,
     // Called once after CSV parse completes; rescoreSharpMoney() re-runs
     // on top of the unified base when line movement data arrives.
     // ==========================================
+    
+    function createGameLevelPropsFromOdds() {
+      if (!state.gameOdds || Object.keys(state.gameOdds).length === 0) return [];
+      const gameProps = [];
+      
+      Object.entries(state.gameOdds).forEach(([gameId, markets]) => {
+        // Find the game info from state.games
+        const league = gameId.split(':')[0]; // format was league:away:home:time
+        const game = [...(state.games.NBA || []), ...(state.games.NHL || []), ...(state.games.MLB || []), ...(state.games.WNBA || []), ...(state.games.NFL || [])]
+          .find(g => String(g.id) === String(gameId));
+        
+        if (!game) return;
+
+        Object.entries(markets).forEach(([marketKey, lines]) => {
+          if (!Array.isArray(lines)) return;
+          
+          lines.forEach((line, idx) => {
+            const propType = line.market || marketKey;
+            const side = line.side || 'OVER';
+            
+            // Create a pseudo-prop object compatible with the board
+            const p = {
+              id: `game-${gameId}-${marketKey}-${idx}`,
+              player: game.awayTeam + ' @ ' + game.homeTeam,
+              team: side === 'OVER' || line.name === game.homeTeam ? game.homeTeam : game.awayTeam,
+              opponent: side === 'OVER' || line.name === game.homeTeam ? game.awayTeam : game.homeTeam,
+              league: league,
+              prop: propType,
+              statType: propType,
+              line: line.line || line.point || '',
+              odds: line.odds || line.price || '',
+              direction: side,
+              modelScore: 70, // Baseline for game-level odds
+              pfRating: 70,
+              confidence: 65,
+              l10Pct: 50,
+              isGameLevel: true,
+              game_id: gameId
+            };
+            gameProps.push(p);
+          });
+        });
+      });
+      return gameProps;
+    }
+
     function syncUnifiedScores() {
       if (!state.props || state.props.length === 0) return;
       let synced = 0;
@@ -28257,6 +28351,14 @@ nav.tabs > button,
 
         synced++;
       });
+      
+      // --- RESTORED: Inject Game-Level Props (ML, Totals, Spreads) ---
+      const gameLevelProps = createGameLevelPropsFromOdds();
+      if (gameLevelProps.length > 0) {
+        state.props = [...state.props, ...gameLevelProps];
+        console.log(`[PropEdge] Injected ${gameLevelProps.length} game-level props from Odds API`);
+      }
+      // --------------------------------------------------------------
       console.log(`[PropEdge v5] syncUnifiedScores: aligned ${synced} props to computeBetScore() engine`);
     }
 
@@ -28271,7 +28373,7 @@ nav.tabs > button,
         ticker.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
       }
 
-      const leagues = ['NBA', 'NHL', 'MLB', 'NFL'];
+      const leagues = ['NBA', 'NHL', 'MLB', 'WNBA', 'NFL'];
       let allGames = [];
 
       // Force today-only by passing dates=YYYYMMDD to ESPN
@@ -36040,7 +36142,8 @@ nav.tabs > button,
         ...(state.games.NBA || []),
         ...(state.games.NHL || []),
         ...(state.games.MLB || []),
-        ...(state.games.NFL || [])
+        ...(state.games.NFL || []),
+        ...(state.games.WNBA || [])
       ];
 
       if (todayGames.length === 0) {
@@ -36061,7 +36164,7 @@ nav.tabs > button,
       });
 
       // Render by league order: NBA, NHL, MLB, NFL
-      const leagueOrder = ['NBA', 'NHL', 'MLB', 'NFL'];
+      const leagueOrder = ['NBA', 'NHL', 'MLB', 'WNBA', 'NFL'];
       const orderedLeagues = leagueOrder.filter(league => gamesByLeague[league]);
 
       // Build prop lookup by team for inline counts
@@ -38258,6 +38361,9 @@ nav.tabs > button,
       if (market.includes('saves')) return 'Saves';
       if (market.includes('blocks')) return 'Blocks';
       if (market.includes('steals')) return 'Steals';
+      if (market.includes('moneyline') || market.includes('h2h')) return 'Moneyline';
+      if (market.includes('total') || market.includes('o/u')) return 'Totals';
+      if (market.includes('spread')) return 'Spread';
       return 'ALL';
     }
 
@@ -43014,7 +43120,7 @@ nav.tabs > button,
       _stopLiveTickerPoll();   // also calls _stopTickerClockCountdown
       const liveGames = [
         ...(state.games.NBA || []), ...(state.games.NHL || []),
-        ...(state.games.MLB || []), ...(state.games.NFL || []),
+        ...(state.games.MLB || []), ...(state.games.NFL || []), ...(state.games.WNBA || []),
       ].filter(g => g.status === 'live');
       if (liveGames.length) {
         _startLiveTickerPoll();  // also calls _startTickerClockCountdown

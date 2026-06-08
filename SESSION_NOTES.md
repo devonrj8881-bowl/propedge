@@ -180,3 +180,25 @@ com.propedge.outcomes-sync       ✅  Removed (orphaned)
 
 ---
 **Last Updated:** 2026-06-03
+
+## Session: 2026-06-08 (Midnight Scoring & UX Restoration)
+
+### 1. UX & League Restoration
+- **WNBA Support**: Fully restored WNBA sport tabs in main navigation, Markets sidebar, and PropAI sidebar. Added WNBA to live ESPN scoreboard sync and internal state management.
+- **Odds API (MultiBook)**: Re-injected `MultiBookOddsProvider` class and `createGameLevelPropsFromOdds()` logic.
+- **New Markets**: Added UI filters and rendering support for Moneyline, Totals, Spreads, and Alternate lines (Q1/1H) pulled from the Odds API.
+
+### 2. Scoring & Math Upgrades
+- **Unit Sizing**: Integrated bankroll management directly into prop cards (e.g., `🔒 LOCK • 💰 2.0u`).
+- **True Probability (Devig)**: Replaced hardcoded `0.952` with dynamic additive devig math to remove vig/juice more accurately.
+- **Multi-Book Edge**: Logic now compares DraftKings and FanDuel lines and calculates model edge based on the best available price.
+- **Home/Away Splits**: Updated `run-enrichment.js` to compute home/road variance. Frontend now applies a ±6 pt PropIQ modifier based on elite/poor split performance.
+
+### 3. Automation & Infra
+- **CLV Tracking**: Built `capture-closing-lines.js` to snapshot odds at game-tip for Closing Line Value tracking. 
+- **Launchd job**: Registered `com.propedge.capture-closing-lines` to run daily at 7:00 PM ET.
+- **Netlify Fix**: Patched `netlify.toml` to remove strict `framework` constraints causing CLI crashes.
+
+### 4. Deployment
+- **GitHub**: Pushed logic-only updates to `redesign-scoring-v2`.
+- **Production**: Successfully deployed v7.207 to propedgemasters.netlify.app.
