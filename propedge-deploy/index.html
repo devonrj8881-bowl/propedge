@@ -10873,6 +10873,16 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       contain: none !important;
     }
 
+    /* Mobile: always paint prop cards — content-visibility leaves blue gaps mid-scroll */
+    @media (max-width: 1023px) {
+      .prop-card,
+      .propai-market-row--deck {
+        content-visibility: visible !important;
+        contain-intrinsic-size: none !important;
+        contain: none !important;
+      }
+    }
+
     /* Mobile-specific safe area adjustments */
     @media (max-width: 767px) {
       body { background-attachment: scroll; }
@@ -15350,6 +15360,17 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     }
 
     .load-more-btn:hover { border-color: var(--accent-green); }
+
+    .props-load-more-sentinel {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 16px 12px 8px;
+    }
+
+    .site-mobile-props-board .props-grid {
+      gap: 12px;
+    }
 
     /* Toast */
     .toast {
@@ -35072,6 +35093,19 @@ nav.tabs > button,
       const currentLimit = state.propDisplayLimit || 100;
       const displayProps = props.slice(0, currentLimit);
       const hasMore = props.length > currentLimit;
+      const isDesktopHome = window.matchMedia('(min-width: 1024px)').matches;
+      const propsBoardSig = [
+        props.length,
+        currentLimit,
+        state.filter,
+        state.league,
+        state.sort,
+        state.gameFilter?.id || '',
+        state.propDisplayLimit,
+      ].join('|');
+      if (!isDesktopHome && state.view === 'props' && document.getElementById('propsGridList') && propsBoardSig === _lastPropsBoardSig) {
+        return;
+      }
 
       let cardsHtml = '';
       try {
@@ -35468,44 +35502,48 @@ nav.tabs > button,
         cardsHtml = `<div style="color: red; padding: 20px;">Error rendering props: ${err.message}</div>`;
       }
 
-      const isDesktopHome = window.matchMedia('(min-width: 1024px)').matches;
-      const _savedScrollY = window.scrollY;
-      if (state.view === 'props') {
-        container.innerHTML = isDesktopHome
-          ? buildDesktopHomeDashboardHTML(props)
-          : buildMobileHomeDashboardHTML(props);
-      } else {
-        container.innerHTML = `
-          <div class="props-grid">
-            ${cardsHtml}
-          </div>
-          ${hasMore ? `
-            <div class="load-more">
+      _lastPropsBoardSig = propsBoardSig;
+      const scrollRoot = document.querySelector('.site-shell-main') || document.scrollingElement || document.documentElement;
+      const _savedScrollY = scrollRoot.scrollTop || window.scrollY;
+      const loadMoreBlock = hasMore ? `
+            <div class="load-more" id="propsLoadMoreWrap">
+              <div id="propsLoadMoreSentinel" class="props-load-more-sentinel">Showing ${currentLimit} of ${props.length}</div>
               <button class="load-more-btn" onclick="loadMoreProps()">
                 Load More (${currentLimit} of ${props.length})
               </button>
             </div>
-          ` : ''}
+          ` : '';
+
+      if (state.view === 'props') {
+        container.innerHTML = isDesktopHome
+          ? buildDesktopHomeDashboardHTML(props)
+          : `
+          <div class="site-mobile-props-board">
+            <div class="props-grid" id="propsGridList">
+              ${cardsHtml}
+            </div>
+            ${loadMoreBlock}
+          </div>
+        `;
+        if (!isDesktopHome) setupPropsLoadMore(props.length, currentLimit);
+      } else {
+        container.innerHTML = `
+          <div class="props-grid" id="propsGridList">
+            ${cardsHtml}
+          </div>
+          ${loadMoreBlock}
         `;
       }
+      batchHeadshotLookups(displayProps);
       // Restore scroll — double-rAF so layout is committed before scrollTo fires.
-      // Synchronous scrollTo after innerHTML= doesn't work on iOS Safari (layout not painted yet).
-      // Skip if user is still in touch momentum (2000ms window after touchend).
       if (_savedScrollY > 0) {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
-              window.scrollTo({ top: _savedScrollY, behavior: 'instant' });
+              scrollRoot.scrollTo({ top: _savedScrollY, behavior: 'auto' });
             }
           });
         });
-      }
-
-      // On mobile home dashboard: fill deferred below-fold sections after first paint
-      if (!isDesktopHome && state.view === 'props') {
-        setTimeout(() => {
-          if (typeof _renderMobileHomeDeferredSections === 'function') _renderMobileHomeDeferredSections();
-        }, 80);
       }
 
       // Keep the active navigation view intact. renderProps() is also called by
@@ -35535,7 +35573,28 @@ nav.tabs > button,
       if (typeof refreshMarketsAfterPropsIfNeeded === 'function') refreshMarketsAfterPropsIfNeeded();
     }
 
+    let _lastPropsBoardSig = '';
+    let _propsLoadMoreObserver = null;
+
+    function setupPropsLoadMore(totalCount, shownCount) {
+      if (_propsLoadMoreObserver) { _propsLoadMoreObserver.disconnect(); _propsLoadMoreObserver = null; }
+      const sentinel = document.getElementById('propsLoadMoreSentinel');
+      if (!sentinel || shownCount >= totalCount) {
+        if (sentinel) sentinel.style.display = 'none';
+        return;
+      }
+      sentinel.style.display = '';
+      sentinel.textContent = `Showing ${shownCount} of ${totalCount} — scroll for more`;
+      _propsLoadMoreObserver = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        if (_propsLoadMoreObserver) { _propsLoadMoreObserver.disconnect(); _propsLoadMoreObserver = null; }
+        loadMoreProps();
+      }, { rootMargin: '240px' });
+      _propsLoadMoreObserver.observe(sentinel);
+    }
+
     function loadMoreProps() {
+      _lastPropsBoardSig = '';
       state.propDisplayLimit = (state.propDisplayLimit || 100) + 100;
       queueUserPropsRender('load-more', 70);
     }
@@ -40799,7 +40858,7 @@ nav.tabs > button,
       // Detect iOS/Safari: disable content-visibility to prevent scroll position jumps
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      document.body.classList.toggle('no-content-visibility', isIOS || isSafari);
+      document.body.classList.toggle('no-content-visibility', isIOS || isSafari || isMobile);
       if (!isMobile) toggleMobileMoreMenu(false);
       syncMobileStickyHeaderOffset();
     }
