@@ -21032,7 +21032,7 @@ nav.tabs > button,
     }
 
     async function fetchPropedgeMainCsv() {
-      const directUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=propedge-main&_=${Date.now()}`;
+      const directUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1351555262&_=${Date.now()}`;
       const proxiedUrl = `/.netlify/functions/prop-feed?sheet=propedge-main`;
       let response = await fetch(directUrl, { cache: 'no-store' });
       if (response.ok) {
@@ -21069,10 +21069,10 @@ nav.tabs > button,
           if (meta) return meta;
         }
       } catch (_) {}
-      // Fallback: read gviz directly from browser (works for public sheets)
+      // Fallback: read export directly from browser (works for public sheets)
       try {
         const SHEET_ID = '1e53GcCS9alxJhzDQPqkH55mpllEjVUShPKyP63R-BeY';
-        const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=meta`);
+        const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1129712148&_=${Date.now()}`);
         if (!res.ok) return null;
         const text = await res.text();
         if (!text || /^\s*</.test(text)) return null;
@@ -21370,7 +21370,7 @@ nav.tabs > button,
         league: headers.findIndex(h => h === 'league' || h === 'sport'),
         pfRating: headers.findIndex(h => h.includes('pf') && h.includes('rating')),
         team: headers.findIndex(h => h === 'team'),
-        opponent: headers.findIndex(h => h === 'opponent' || h === 'opp'),
+        opponent: headers.findIndex(h => h === 'opponent' || h === 'opp' || h === 'opponent_est'),
         pos: headers.findIndex(h => h === 'pos' || h === 'position'),
         player: headers.findIndex(h => h === 'player' || h === 'name'),
         prop: headers.findIndex(h => h === 'prop' || h === 'market'),
@@ -21397,7 +21397,7 @@ nav.tabs > button,
         l10: headers.findIndex(h => h === 'l10'),
         l20: headers.findIndex(h => h === 'l20'),
         l30: headers.findIndex(h => h === 'l30'),
-        date: headers.findIndex(h => h === 'date'),
+        date: headers.findIndex(h => h === 'date' || h === 'game_date'),
         lastUpdate: headers.findIndex(h => h === 'last update'),
         opening: headers.findIndex(h => h.includes('opening') || h.includes('open')),
         spread: headers.findIndex(h => h === 'spread'),
@@ -21499,7 +21499,7 @@ nav.tabs > button,
 
         const teamAbbr = typeof window.normalizeTeam === 'function' ? window.normalizeTeam(getValue(cols.team)) : getValue(cols.team);
         const oppAbbr = typeof window.normalizeTeam === 'function' ? window.normalizeTeam(getValue(cols.opponent) || '') : getValue(cols.opponent);
-        const gameLoc = window._gameLocations && window._gameLocations[league] ? window._gameLocations[league][teamAbbr] : null;
+        const gameLoc = window._gameLocations && window._gameLocations[actualLeague] ? window._gameLocations[actualLeague][teamAbbr] : null;
 
         const oddsStr = getValue(cols.odds);
         const odds = parseInt(oddsStr.replace(/[^0-9\-]/g, '')) || -110;
@@ -21609,7 +21609,7 @@ nav.tabs > button,
         // Fix B v2: Streak logic with regression warning for extended streaks.
         // Actuarial fact: after 6+ consecutive hits, mean reversion probability spikes.
         // Short streaks (3-5) are genuinely predictive; long streaks (6+) overshoot.
-        if (league === 'MLB') {
+        if (actualLeague === 'MLB') {
           if      (streak >= 7)  { modelScore -= 2; propFactors.push('⚠️ Streak Regression Risk (7+ — correction likely)'); }
           else if (streak >= 5)  { modelScore += 2; propFactors.push('🔥 Hot Streak (5)'); }
           else if (streak >= 3)  { modelScore += 1; propFactors.push('🔥 Heating Up'); }
@@ -22107,7 +22107,7 @@ nav.tabs > button,
 
         // ── P2.3: Back-to-back Fatigue — direction-aware ────────
         // Fatigue → player underperforms vs normal: bad for OVER, good for UNDER
-        if (backToBackFlag && league === 'NBA') {
+        if (backToBackFlag && actualLeague === 'NBA') {
           trueProb = direction === 'OVER'
             ? Math.max(0.12, trueProb * 0.92)
             : Math.min(0.88, trueProb * 1.08);
@@ -22127,8 +22127,8 @@ nav.tabs > button,
         
         // League-specific thresholds from Config sheet
         // FIX 2: MLB value edge threshold raised to 8 (matches NBA/NHL) — 6% was too easy to hit
-        const leagueConfig = leagueThresholds[league] || { strong: 72, value: 8 };
-        if (league === 'MLB' && leagueConfig.value < 8) leagueConfig.value = 8;
+        const leagueConfig = leagueThresholds[actualLeague] || { strong: 72, value: 8 };
+        if (actualLeague === 'MLB' && leagueConfig.value < 8) leagueConfig.value = 8;
         const valueThreshold = leagueConfig.value;
         const strongThreshold = leagueConfig.strong;
 
@@ -22141,7 +22141,7 @@ nav.tabs > button,
 
         // Fix F: Raise meetsUltimate bar — requires genuine multi-window consistency + confidence
         // MLB: core criteria only (no confidenceScore gate); NBA/NHL: add confidence gate
-        const meetsUltimate = league === 'MLB'
+        const meetsUltimate = actualLeague === 'MLB'
           ? pfRating >= 80 && perMinL10 > 0 && l10Pct >= 65 && l20Pct >= 62
           : (confidenceScore >= 75) && (pfRating >= 84 && perMinL10 > 0 && l5Pct >= 70 && l20Pct >= 65);
 
@@ -22179,6 +22179,7 @@ nav.tabs > button,
         props.push({
           id: `${actualLeague}-${getValue(cols.player)}-${propType}-${line}-${direction}`.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9\-_.]/g, ''),
           league: actualLeague,
+          date: getValue(cols.date) || '',
           player: getValue(cols.player),
           team: getValue(cols.team),
           pos: getValue(cols.pos),

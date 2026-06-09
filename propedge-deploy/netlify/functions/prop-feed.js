@@ -54,10 +54,19 @@ async function fetchViaApiKey(sheetName) {
   return valuesToCsv(rows);
 }
 
-// Public gviz CSV endpoint — no auth required for a public sheet.
+const SHEET_GIDS = {
+  "propedge-main": "1351555262",
+  "meta": "1129712148",
+  "Prop_Hits": "127085720",
+};
+
+// Public CSV export endpoint — no auth required for a public sheet.
 async function fetchViaGviz(sheetName, bustCache) {
+  const gid = SHEET_GIDS[sheetName];
   const cacheBust = bustCache ? `&_=${Date.now()}` : "";
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}${cacheBust}`;
+  const url = gid
+    ? `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}${cacheBust}`
+    : `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}${cacheBust}`;
   const res = await fetch(url, { headers: { "User-Agent": "PropEdge-prop-feed/1.0" } });
   if (!res.ok) return null;
   const text = await res.text();

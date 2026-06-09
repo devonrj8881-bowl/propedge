@@ -1247,33 +1247,45 @@ async function downloadCSV(page) {
 
   const beforeTs = Date.now();
 
-  const exportClicked = await page.evaluate(() => {
-    const exportBtn = document.querySelector('button[aria-label="Export"]');
-    if (exportBtn) { exportBtn.click(); return true; }
-    return false;
+  // PropFinder (2026): left-toolbar one-click Export — no CSV submenu.
+  await page.evaluate(() => {
+    const dismiss = Array.from(document.querySelectorAll('button')).find(b =>
+      b.getAttribute('aria-label') === 'Dismiss' || b.textContent.trim() === '×'
+    );
+    if (dismiss) dismiss.click();
   });
-  if (!exportClicked) { logWarning('Could not find Export button', 2); return null; }
-  log('Clicked Export button', 2);
-  await sleep(2000);
+  await sleep(400);
 
-  const csvClicked = await page.evaluate(() => {
-    for (const el of document.querySelectorAll('li, div, span, button, [role="menuitem"]')) {
-      const text = el.textContent.trim();
-      if (text === 'Download as CSV' || text === 'Download CSV' || text === 'CSV') {
-        el.click(); return true;
-      }
-    }
-    return false;
+  const exportTarget = await page.evaluate(() => {
+    const pick = (btn) => {
+      const text = (btn.textContent || '').replace(/\s+/g, ' ').trim();
+      if (text !== 'Export') return null;
+      const rect = btn.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, left: rect.left };
+    };
+
+    const toolbarBtns = Array.from(document.querySelectorAll('.MuiDataGrid-toolbar button, [role="toolbar"] button'));
+    const fromToolbar = toolbarBtns.map(pick).filter(Boolean).sort((a, b) => a.left - b.left);
+    if (fromToolbar[0]) return fromToolbar[0];
+
+    const fallback = Array.from(document.querySelectorAll('button'))
+      .map(pick)
+      .filter(b => b && b.left < 400)
+      .sort((a, b) => a.left - b.left);
+    return fallback[0] || null;
   });
-  if (!csvClicked) {
-    logWarning('Could not find CSV option', 2);
-    await page.keyboard.press('Escape');
+
+  if (!exportTarget) {
+    logWarning('Could not find Export button', 2);
     return null;
   }
-  log('Clicked Download as CSV', 2);
+
+  await page.mouse.click(exportTarget.x, exportTarget.y);
+  log('Clicked Export (one-click download)', 2);
 
   let csvPath = null;
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 20; i++) {
     await sleep(1000);
     const candidate = findLatestCSV(30000);
     if (candidate) {
