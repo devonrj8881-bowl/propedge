@@ -18012,9 +18012,19 @@ nav.tabs > button,
     }
 
     /* v7.67 — Mobile mock shell (Mock 3: featured stack + bottom nav) */
+    .site-mobile-bottom-nav,
+    .site-mobile-more-row {
+      display: none;
+    }
+
     @media (max-width: 1023px) {
+      :root {
+        --pe-mobile-bottom-nav-h: 64px;
+      }
+
       body.site-mobile-active {
-        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: 0;
+        scroll-padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 8px);
       }
 
       .nav-tabs {
@@ -18036,6 +18046,8 @@ nav.tabs > button,
         border-top: 1px solid rgba(255, 255, 255, 0.08);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
       }
 
       .site-mobile-nav-btn {
@@ -18087,7 +18099,7 @@ nav.tabs > button,
         position: fixed;
         left: 12px;
         right: 12px;
-        bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 4px);
         z-index: 119;
         gap: 8px;
         padding: 10px;
@@ -18114,9 +18126,22 @@ nav.tabs > button,
         font-family: inherit;
       }
 
-      #propsContainer,
-      .view-container.show {
-        padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+      .app-layout,
+      .view-container.show,
+      #recommendationsContainer,
+      #marketsContainer,
+      #gamesContainer,
+      #newsContainer,
+      #injuriesContainer,
+      #strategyContainer,
+      #paceContainer,
+      #portfolioContainer,
+      #parlayContainer {
+        padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 16px);
+      }
+
+      .props-container {
+        padding-bottom: 24px;
       }
 
       .site-mobile-home-dashboard {
@@ -40852,6 +40877,25 @@ nav.tabs > button,
       document.documentElement.style.setProperty('--pe-mobile-stats-bar-h', `${stickyH}px`);
     }
 
+    function syncMobileBottomNavOffset() {
+      const nav = document.getElementById('siteMobileBottomNav');
+      if (!nav || window.innerWidth >= 1024) {
+        document.documentElement.style.removeProperty('--pe-mobile-bottom-nav-h');
+        if (nav) nav.style.bottom = '';
+        return;
+      }
+      const navH = Math.ceil(nav.getBoundingClientRect().height);
+      document.documentElement.style.setProperty('--pe-mobile-bottom-nav-h', `${navH || 64}px`);
+      // iOS Safari: keep fixed nav above the collapsing URL/home toolbar
+      const vv = window.visualViewport;
+      if (vv) {
+        const browserChrome = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        nav.style.bottom = `${browserChrome}px`;
+      } else {
+        nav.style.bottom = '';
+      }
+    }
+
     function syncMobileShellLayout() {
       const isMobile = window.innerWidth < 1024;
       document.body.classList.toggle('site-mobile-active', isMobile);
@@ -40861,6 +40905,7 @@ nav.tabs > button,
       document.body.classList.toggle('no-content-visibility', isIOS || isSafari || isMobile);
       if (!isMobile) toggleMobileMoreMenu(false);
       syncMobileStickyHeaderOffset();
+      syncMobileBottomNavOffset();
     }
 
     function toggleMobileMoreMenu(forceOpen) {
@@ -41171,6 +41216,10 @@ nav.tabs > button,
 
       let lastHomeLayoutDesktop = window.matchMedia('(min-width: 1024px)').matches;
       let peResizeRaf = 0;
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => syncMobileBottomNavOffset());
+        window.visualViewport.addEventListener('scroll', () => syncMobileBottomNavOffset());
+      }
       window.addEventListener('resize', () => {
         if (peResizeRaf) cancelAnimationFrame(peResizeRaf);
         peResizeRaf = requestAnimationFrame(() => {
@@ -41191,7 +41240,10 @@ nav.tabs > button,
       });
       syncMobileShellLayout();
       syncShellNavState();
-      requestAnimationFrame(() => syncMobileStickyHeaderOffset());
+      requestAnimationFrame(() => {
+        syncMobileStickyHeaderOffset();
+        syncMobileBottomNavOffset();
+      });
     }
 
     function initFilters() {
