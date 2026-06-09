@@ -18034,6 +18034,8 @@ nav.tabs > button,
         font-weight: 700;
         cursor: pointer;
         font-family: inherit;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
       }
 
       .site-mobile-nav-btn.active {
@@ -40855,20 +40857,19 @@ nav.tabs > button,
       });
     }
 
-    function triggerShellView(view, btn) {
-      if (btn) {
-        document.querySelectorAll('.site-shell-nav[data-target-view]').forEach(el => el.classList.remove('active'));
-        btn.classList.add('active');
+    function triggerShellView(view) {
+      const tab = document.querySelector(`.nav-tab[data-view="${view}"]`);
+      if (!tab) return;
+      if (typeof window._propedgeSwitchView === 'function') {
+        window._propedgeSwitchView(tab);
+        return;
       }
-      document.querySelector(`.nav-tab[data-view="${view}"]`)?.click();
+      tab.click();
     }
 
-    function triggerShellLeague(league, btn) {
-      if (btn) {
-        document.querySelectorAll('.site-league-chip[data-shell-league]').forEach(el => el.classList.remove('active'));
-        btn.classList.add('active');
-      }
+    function triggerShellLeague(league) {
       document.querySelector(`.sport-tab[data-league="${league}"]`)?.click();
+      syncShellNavState();
     }
 
     function submitShellPropAIQuery() {
@@ -40895,6 +40896,7 @@ nav.tabs > button,
     // TABS & FILTERS
     // ==========================================
     function applyViewVisibility() {
+      syncShellNavState();
       const view = state.view || 'props';
       const isWideDesktop = window.innerWidth >= 1400;
       const isDesktopView = window.innerWidth >= 1024;
@@ -40948,24 +40950,17 @@ nav.tabs > button,
         parlayEl.style.display = showParlayRail ? 'block' : 'none';
       }
 
-      // Defer expensive DOM queries to requestIdleCallback to unblock tab switch responsiveness
+      // Defer expensive layout work; nav active state already synced above.
+      const deferShellChrome = () => {
+        syncParlayRailBadge();
+        syncMobileShellLayout();
+        syncMobileStickyHeaderOffset();
+        renderAIFastModeToggle();
+      };
       if (typeof requestIdleCallback !== 'undefined') {
-        requestIdleCallback(() => {
-          syncParlayRailBadge();
-          syncMobileShellLayout();
-          syncMobileStickyHeaderOffset();
-          syncShellNavState();
-          renderAIFastModeToggle();
-        }, { timeout: 100 });
+        requestIdleCallback(deferShellChrome, { timeout: 100 });
       } else {
-        // Fallback for browsers without requestIdleCallback
-        setTimeout(() => {
-          syncParlayRailBadge();
-          syncMobileShellLayout();
-          syncMobileStickyHeaderOffset();
-          syncShellNavState();
-          renderAIFastModeToggle();
-        }, 0);
+        setTimeout(deferShellChrome, 0);
       }
     }
 
@@ -41064,10 +41059,16 @@ nav.tabs > button,
         if (!tab) return;
           const nextView = tab.dataset.view;
           if (!nextView) return;
-          if (state.view === nextView && tab.classList.contains('active')) return;
+          if (state.view === nextView) {
+            syncShellNavState();
+            return;
+          }
+          if (typeof toggleMobileMoreMenu === 'function') toggleMobileMoreMenu(false);
           document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
-          try { tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' }); } catch (err) {}
+          if (window.innerWidth >= 1024) {
+            try { tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' }); } catch (err) {}
+          }
           state.view = nextView;
           const scrollRoot = document.querySelector('.site-shell-main') || document.scrollingElement || document.documentElement;
           if (scrollRoot && scrollRoot.scrollTop > 0) scrollRoot.scrollTo({ top: 0, behavior: 'auto' });
@@ -41094,6 +41095,7 @@ nav.tabs > button,
             if (view === 'portfolio') { undockParlay(); renderPortfolio(); resumeTicker(); }
           });
       }
+      window._propedgeSwitchView = switchToNavView;
 
       if (navStrip) {
         navStrip.addEventListener('click', (e) => {
@@ -41129,6 +41131,7 @@ nav.tabs > button,
         });
       });
       syncMobileShellLayout();
+      syncShellNavState();
       requestAnimationFrame(() => syncMobileStickyHeaderOffset());
     }
 
