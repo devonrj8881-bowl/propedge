@@ -2719,9 +2719,27 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     }
 
     @media (max-width: 1023px) {
+      html.site-mobile-active,
+      body.site-mobile-active {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+
+      body.site-mobile-active {
+        min-height: 100svh;
+        min-height: 100dvh;
+      }
+
       .site-rebuild-shell {
-        display: block;
+        display: flex;
+        flex-direction: column;
         padding: 0;
+        height: 100svh;
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
       }
 
       .site-sidebar-shell {
@@ -2733,6 +2751,13 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         flex-direction: column;
         gap: 0;
         min-width: 0;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px);
       }
 
       .site-shell-content {
@@ -18022,8 +18047,15 @@ nav.tabs > button,
         --pe-mobile-bottom-nav-h: 64px;
       }
 
+      html.site-mobile-active {
+        scroll-padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 8px);
+      }
+
       body.site-mobile-active {
         padding-bottom: 0;
+      }
+
+      body.site-mobile-active .site-shell-main {
         scroll-padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 8px);
       }
 
@@ -18126,6 +18158,10 @@ nav.tabs > button,
         font-family: inherit;
       }
 
+      .toast {
+        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px);
+      }
+
       .app-layout,
       .view-container.show,
       #recommendationsContainer,
@@ -18136,12 +18172,9 @@ nav.tabs > button,
       #strategyContainer,
       #paceContainer,
       #portfolioContainer,
-      #parlayContainer {
-        padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 16px);
-      }
-
+      #parlayContainer,
       .props-container {
-        padding-bottom: 24px;
+        padding-bottom: 16px;
       }
 
       .site-mobile-home-dashboard {
@@ -35528,7 +35561,7 @@ nav.tabs > button,
       }
 
       _lastPropsBoardSig = propsBoardSig;
-      const scrollRoot = document.querySelector('.site-shell-main') || document.scrollingElement || document.documentElement;
+      const scrollRoot = getMobileScrollRoot();
       const _savedScrollY = scrollRoot.scrollTop || window.scrollY;
       const loadMoreBlock = hasMore ? `
             <div class="load-more" id="propsLoadMoreWrap">
@@ -35610,11 +35643,15 @@ nav.tabs > button,
       }
       sentinel.style.display = '';
       sentinel.textContent = `Showing ${shownCount} of ${totalCount} — scroll for more`;
+      const scrollRoot = getMobileScrollRoot();
+      const observerRoot = scrollRoot === document.documentElement || scrollRoot === document.body
+        ? null
+        : scrollRoot;
       _propsLoadMoreObserver = new IntersectionObserver(entries => {
         if (!entries[0].isIntersecting) return;
         if (_propsLoadMoreObserver) { _propsLoadMoreObserver.disconnect(); _propsLoadMoreObserver = null; }
         loadMoreProps();
-      }, { rootMargin: '240px' });
+      }, { root: observerRoot, rootMargin: '240px' });
       _propsLoadMoreObserver.observe(sentinel);
     }
 
@@ -40877,6 +40914,14 @@ nav.tabs > button,
       document.documentElement.style.setProperty('--pe-mobile-stats-bar-h', `${stickyH}px`);
     }
 
+    function getMobileScrollRoot() {
+      if (window.innerWidth < 1024) {
+        const shell = document.querySelector('.site-shell-main');
+        if (shell) return shell;
+      }
+      return document.scrollingElement || document.documentElement;
+    }
+
     function syncMobileBottomNavOffset() {
       const nav = document.getElementById('siteMobileBottomNav');
       if (!nav || window.innerWidth >= 1024) {
@@ -40886,18 +40931,12 @@ nav.tabs > button,
       }
       const navH = Math.ceil(nav.getBoundingClientRect().height);
       document.documentElement.style.setProperty('--pe-mobile-bottom-nav-h', `${navH || 64}px`);
-      // iOS Safari: keep fixed nav above the collapsing URL/home toolbar
-      const vv = window.visualViewport;
-      if (vv) {
-        const browserChrome = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-        nav.style.bottom = `${browserChrome}px`;
-      } else {
-        nav.style.bottom = '';
-      }
+      nav.style.bottom = '0';
     }
 
     function syncMobileShellLayout() {
       const isMobile = window.innerWidth < 1024;
+      document.documentElement.classList.toggle('site-mobile-active', isMobile);
       document.body.classList.toggle('site-mobile-active', isMobile);
       // Detect iOS/Safari: disable content-visibility to prevent scroll position jumps
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -41174,7 +41213,7 @@ nav.tabs > button,
             try { tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' }); } catch (err) {}
           }
           state.view = nextView;
-          const scrollRoot = document.querySelector('.site-shell-main') || document.scrollingElement || document.documentElement;
+          const scrollRoot = getMobileScrollRoot();
           if (scrollRoot && scrollRoot.scrollTop > 0) scrollRoot.scrollTo({ top: 0, behavior: 'auto' });
           applyViewVisibility();
 
@@ -41216,10 +41255,6 @@ nav.tabs > button,
 
       let lastHomeLayoutDesktop = window.matchMedia('(min-width: 1024px)').matches;
       let peResizeRaf = 0;
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => syncMobileBottomNavOffset());
-        window.visualViewport.addEventListener('scroll', () => syncMobileBottomNavOffset());
-      }
       window.addEventListener('resize', () => {
         if (peResizeRaf) cancelAnimationFrame(peResizeRaf);
         peResizeRaf = requestAnimationFrame(() => {
