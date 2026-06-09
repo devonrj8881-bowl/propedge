@@ -20,7 +20,11 @@ const GAME_FILTER_URL =
 const GAME_ODDS_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/game-odds";
 
-const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
+const KIMI_API_KEY = process.env.MOONSHOT_API_KEY || process.env.KIMI_API_KEY || "";
+const KIMI_BASE_URL = (process.env.MOONSHOT_API_BASE || "https://api.moonshot.ai/v1").replace(/\/$/, "");
+const KIMI_MODEL = process.env.KIMI_MODEL || "kimi-k2-turbo-preview";
+
+const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL_FALLBACKS = [
   "gemini-3.5-flash",
   "gemini-3.1-flash-lite",
@@ -428,6 +432,45 @@ async function callGeminiModel(
   return { raw, finishReason };
 }
 
+async function callKimi(
+  systemPrompt: string,
+  userPrompt: string,
+  maxOutputTokens: number,
+) {
+  if (!KIMI_API_KEY) throw new Error("MOONSHOT_API_KEY is not set");
+
+  const jsonContract =
+    "Return ONLY valid JSON with keys: article_title, featured_intro, matchup_analysis, key_numbers_breakdown, confidence_rating (number 1-10). No markdown fences.";
+
+  const res = await fetch(`${KIMI_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${KIMI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: KIMI_MODEL,
+      messages: [
+        { role: "system", content: `${systemPrompt}\n\n${jsonContract}` },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.45,
+      max_tokens: maxOutputTokens,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Kimi API ${res.status}: ${err.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  const raw = data?.choices?.[0]?.message?.content?.trim() || "";
+  const finishReason = data?.choices?.[0]?.finish_reason || "";
+  if (!raw) throw new Error("Kimi returned empty response");
+  return { raw, finishReason, model: KIMI_MODEL };
+}
+
 async function callGeminiWithResilience(
   systemPrompt: string,
   userPrompt: string,
@@ -458,6 +501,29 @@ async function callGeminiWithResilience(
   }
 
   throw lastErr || new Error("Gemini unavailable");
+}
+
+async function callAnalysisWithResilience(
+  systemPrompt: string,
+  userPrompt: string,
+  maxOutputTokens: number,
+) {
+  if (KIMI_API_KEY) {
+    try {
+      const kimi = await callKimi(systemPrompt, userPrompt, maxOutputTokens);
+      return { ...kimi, provider: "kimi" as const, fallback: false };
+    } catch (kimiErr) {
+      console.warn("[analyze] Kimi failed, falling back to Gemini:", kimiErr instanceof Error ? kimiErr.message : kimiErr);
+      if (!GEMINI_API_KEY) throw kimiErr;
+    }
+  }
+
+  const gemini = await callGeminiWithResilience(systemPrompt, userPrompt, maxOutputTokens);
+  return {
+    ...gemini,
+    provider: "gemini" as const,
+    fallback: !!KIMI_API_KEY || !!gemini.fallback,
+  };
 }
 
 function csvRowToAnalystProp(row: Record<string, string>, league: string) {
@@ -602,7 +668,9 @@ export async function POST(req: NextRequest) {
   try {
     const { question, league = "ALL" } = await req.json();
 
-    if (!GEMINI_API_KEY) throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not set");
+    if (!KIMI_API_KEY && !GEMINI_API_KEY) {
+      throw new Error("MOONSHOT_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY is not set");
+    }
 
     const [rows, slate, gameOddsBets] = await Promise.all([
       fetchProps(),
@@ -671,17 +739,19 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
 
     let raw = "";
     let finishReason = "";
-    let modelUsed = PRIMARY_MODEL;
+    let modelUsed = KIMI_API_KEY ? KIMI_MODEL : PRIMARY_MODEL;
     let usedFallback = false;
+    let provider: "kimi" | "gemini" = KIMI_API_KEY ? "kimi" : "gemini";
 
     try {
-      const gemini = await callGeminiWithResilience(systemPrompt, userPrompt, 8192);
-      raw = gemini.raw;
-      finishReason = gemini.finishReason;
-      modelUsed = gemini.model;
-      usedFallback = !!gemini.fallback;
-    } catch (geminiErr) {
-      console.warn("[analyze] Gemini exhausted retries:", geminiErr instanceof Error ? geminiErr.message : geminiErr);
+      const analysis = await callAnalysisWithResilience(systemPrompt, userPrompt, 8192);
+      raw = analysis.raw;
+      finishReason = analysis.finishReason;
+      modelUsed = analysis.model;
+      usedFallback = analysis.fallback;
+      provider = analysis.provider;
+    } catch (analysisErr) {
+      console.warn("[analyze] Primary analysis exhausted:", analysisErr instanceof Error ? analysisErr.message : analysisErr);
       const backup = await callPropEdgeAskAnalystFallback(
         question || `What are the best ${league} props today?`,
         league,
@@ -691,9 +761,10 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
         ok: true,
         analysis: backup.parsed,
         model: backup.model,
+        provider: "propedge",
         propCount: topRows.length,
         fallback: true,
-        fallback_reason: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
+        fallback_reason: analysisErr instanceof Error ? analysisErr.message : String(analysisErr),
       }, { headers: CORS_HEADERS });
     }
 
@@ -701,13 +772,14 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
     try {
       parsed = parseGeminiJson(raw);
     } catch (firstErr) {
-      if (finishReason === "MAX_TOKENS") {
+      if (finishReason === "MAX_TOKENS" || finishReason === "length") {
         const retryProps = buildTopProps(slateRows, league, question || "", 3);
         const retryPrompt = `${userPrompt}\n\nIMPORTANT: Cover only the top ${retryProps.length} picks with shorter paragraphs.`;
-        const retry = await callGeminiWithResilience(systemPrompt, retryPrompt, 8192);
+        const retry = await callAnalysisWithResilience(systemPrompt, retryPrompt, 8192);
         parsed = parseGeminiJson(retry.raw);
         modelUsed = retry.model;
-        usedFallback = usedFallback || !!retry.fallback;
+        usedFallback = usedFallback || retry.fallback;
+        provider = retry.provider;
       } else {
         throw firstErr;
       }
@@ -717,6 +789,7 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       ok: true,
       analysis: parsed,
       model: modelUsed,
+      provider,
       propCount: topRows.length,
       fallback: usedFallback,
       slateDate: slate?.dateDisplay || slate?.date,
@@ -726,7 +799,7 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[analyze]", msg);
     const friendly = /503|429|UNAVAILABLE|high demand/i.test(msg)
-      ? "Gemini is temporarily busy. Please wait a few seconds and try again."
+      ? "Analysis models are temporarily busy. Please wait a few seconds and try again."
       : /404|not found/i.test(msg)
         ? "Analysis model unavailable — please try again."
         : msg;

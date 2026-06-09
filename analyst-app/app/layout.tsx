@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "PropEdge Generative Analyst",
-  description: "AI-powered prop betting analysis powered by Gemini",
+  description: "AI-powered prop betting analysis powered by Kimi and Gemini",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

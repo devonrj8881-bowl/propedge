@@ -76,7 +76,7 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [league, setLeague] = useState("ALL");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ analysis: Analysis; model: string; propCount: number; fallback?: boolean; slateDate?: string; filteredOut?: number } | null>(null);
+  const [result, setResult] = useState<{ analysis: Analysis; model: string; provider?: string; propCount: number; fallback?: boolean; slateDate?: string; filteredOut?: number } | null>(null);
   const [error, setError] = useState("");
 
   async function run(retryCount = 0) {
@@ -105,7 +105,7 @@ export default function Home() {
       const isBusy = /503|UNAVAILABLE|high demand|temporarily busy/i.test(msg);
       setError(
         isBusy
-          ? "Gemini is temporarily busy. We retried automatically — please tap Analyze again in a few seconds."
+          ? "Analysis models are temporarily busy. We retried automatically — please tap Analyze again in a few seconds."
           : msg,
       );
     } finally {
@@ -124,7 +124,7 @@ export default function Home() {
         <div style={{ marginBottom: 28, textAlign: "center" }}>
           <div style={{ color: "#22c55e", fontWeight: 900, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>PropEdge</div>
           <h1 style={{ fontSize: 28, fontWeight: 900, color: "#fff", margin: "0 0 6px" }}>Generative Analyst</h1>
-          <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>Powered by Gemini · PropEdge board data</p>
+          <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>Powered by Kimi + Gemini · PropEdge board data</p>
         </div>
 
         {/* League selector */}
@@ -174,7 +174,7 @@ export default function Home() {
         {loading && (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#475569" }}>
             <div style={{ fontSize: 32, marginBottom: 14 }}>⚡</div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>Gemini is analyzing the board…</div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Kimi is analyzing the board…</div>
             <div style={{ fontSize: 13, marginTop: 6 }}>Pulling Statcast data, splits & matchup context</div>
           </div>
         )}
@@ -186,7 +186,11 @@ export default function Home() {
             {/* Meta row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ color: "#475569", fontSize: 12 }}>
-                {result?.fallback ? "PropEdge backup" : "Gemini"} · {result?.model} · {result?.propCount} props analyzed
+                {result?.provider === "kimi"
+                  ? "Kimi"
+                  : result?.provider === "propedge" || result?.fallback
+                    ? "Gemini backup"
+                    : "Gemini"} · {result?.model} · {result?.propCount} props analyzed
                 {result?.slateDate ? ` · slate ${result.slateDate}` : ""}
                 {typeof result?.filteredOut === "number" && result.filteredOut > 0 ? ` · ${result.filteredOut} stale removed` : ""}
               </span>

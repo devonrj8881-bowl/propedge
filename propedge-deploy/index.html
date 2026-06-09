@@ -39264,7 +39264,7 @@ nav.tabs > button,
 
       btn.textContent = 'Analyzing…';
       btn.disabled = true;
-      resultEl.innerHTML = '<div style="text-align:center;padding:48px 0;color:#475569"><div style="font-size:28px;margin-bottom:12px">⚡</div><div style="font-weight:700;font-size:15px">Gemini is analyzing the board…</div><div style="font-size:13px;margin-top:6px">Pulling splits &amp; matchup context</div></div>';
+      resultEl.innerHTML = '<div style="text-align:center;padding:48px 0;color:#475569"><div style="font-size:28px;margin-bottom:12px">⚡</div><div style="font-weight:700;font-size:15px">Kimi is analyzing the board…</div><div style="font-size:13px;margin-top:6px">Gemini backup if needed · pulling splits &amp; matchup context</div></div>';
 
       var base = getPropEdgeAnalystAppUrl();
       fetch(base + '/api/analyze', {
@@ -39282,7 +39282,8 @@ nav.tabs > button,
         }
         var a = d.analysis || {};
         var conf = Math.max(1, Math.min(10, Math.round(Number(a.confidence_rating) || 7)));
-        var metaText = (d.fallback ? 'PropEdge backup' : 'Gemini') + ' · ' + (d.model || '') + ' · ' + (d.propCount || 0) + ' props' + (d.slateDate ? ' · ' + d.slateDate : '');
+        var providerLabel = d.provider === 'kimi' ? 'Kimi' : (d.provider === 'propedge' || d.fallback ? 'Gemini backup' : 'Gemini');
+        var metaText = providerLabel + ' · ' + (d.model || '') + ' · ' + (d.propCount || 0) + ' props' + (d.slateDate ? ' · ' + d.slateDate : '');
         var html = '<div class="propai-gen-meta"><span>' + metaText + '</span><span class="propai-gen-conf-badge">' + conf + '/10 Confidence</span></div>';
         html += '<div class="propai-gen-intro-card"><div class="propai-gen-intro-label">Model Assessment</div><div class="propai-gen-intro-title">' + (a.article_title || '').replace(/</g,'&lt;') + '</div><p class="propai-gen-intro-text">' + (a.featured_intro || '').replace(/</g,'&lt;') + '</p></div>';
         html += '<div class="propai-gen-analysis-card">' + _renderGenProse(a.matchup_analysis) + '</div>';
@@ -39300,11 +39301,19 @@ nav.tabs > button,
     // ── End Native Generative Analyst ─────────────────────────────────────────
 
     function setPropAISection(section) {
-      state.propaiSection = section || 'analyst';
+      const next = section || 'analyst';
+      if (state.propaiSection === next) {
+        applyPropAISectionVisibility();
+        return;
+      }
+      state.propaiSection = next;
       applyPropAISectionVisibility();
-      if (state.propaiSection === 'markets') renderMarketsView();
-      if (state.propaiSection === 'slate') renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
-      if (state.propaiSection === 'generative') initGenerativeAnalystFrame();
+      requestAnimationFrame(() => {
+        if (state.propaiSection !== next) return;
+        if (next === 'markets') renderMarketsView();
+        if (next === 'slate') renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
+        if (next === 'generative') initGenerativeAnalystFrame();
+      });
     }
 
     function applyPropAISectionVisibility() {
@@ -40979,6 +40988,7 @@ nav.tabs > button,
         let navStartScroll = 0;
         let navDragged = false;
         let navLastDragEndAt = 0;
+        let navHandledPointerTap = false;
 
         navStrip.addEventListener('pointerdown', (e) => {
           navPointerDown = true;
@@ -41004,7 +41014,9 @@ nav.tabs > button,
             const tappedEl = document.elementFromPoint(e.clientX, e.clientY);
             const tappedTab = tappedEl && tappedEl.closest ? tappedEl.closest('.nav-tab') : null;
             if (tappedTab && navStrip.contains(tappedTab)) {
+              navHandledPointerTap = true;
               switchToNavView(tappedTab);
+              setTimeout(() => { navHandledPointerTap = false; }, 320);
             }
           }
           navPointerDown = false;
@@ -41055,9 +41067,10 @@ nav.tabs > button,
           if (state.view === nextView && tab.classList.contains('active')) return;
           document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
-          try { tab.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); } catch (err) {}
+          try { tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' }); } catch (err) {}
           state.view = nextView;
-          if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'instant' });
+          const scrollRoot = document.querySelector('.site-shell-main') || document.scrollingElement || document.documentElement;
+          if (scrollRoot && scrollRoot.scrollTop > 0) scrollRoot.scrollTo({ top: 0, behavior: 'auto' });
           applyViewVisibility();
 
           runAfterPaint(() => {
@@ -41084,19 +41097,16 @@ nav.tabs > button,
 
       if (navStrip) {
         navStrip.addEventListener('click', (e) => {
+          if (navHandledPointerTap) {
+            e.preventDefault();
+            return;
+          }
           const tab = e.target.closest('.nav-tab');
           if (!tab || !navStrip.contains(tab)) return;
           e.preventDefault();
           switchToNavView(tab);
         });
       }
-
-      // View tabs
-      document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          switchToNavView(tab);
-        });
-      });
 
       let lastHomeLayoutDesktop = window.matchMedia('(min-width: 1024px)').matches;
       let peResizeRaf = 0;
