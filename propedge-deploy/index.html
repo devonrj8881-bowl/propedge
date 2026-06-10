@@ -18576,6 +18576,10 @@ nav.tabs > button,
       <div class="stat-value purple" id="statValue">--</div>
       <div class="stat-label">Value</div>
     </div>
+    <div class="stat-box">
+      <div class="stat-value" id="statVigFree" style="color:var(--accent-blue)">--</div>
+      <div class="stat-label">Vig-Free</div>
+    </div>
   </div>
 
   <!-- Timestamp -->
@@ -28430,28 +28434,9 @@ nav.tabs > button,
         window.propEdgeActiveTeams = data.activeTeams;
         window.propEdgeActiveGames = data.games || [];
 
-        const before = state.props.length;
-        state.props = state.props.filter(p => {
-          const league = (p.league || '').toUpperCase();
-          const team = normalizeTeam(p.team || p.Team || '');
-          const opp  = normalizeTeam(p.opponent || p.opp || '');
-          const active = data.activeTeams[league];
-          if (!active || !active.length) return false; // no games today for league → hide props
-          // Normalize active team abbrs too (ESPN sometimes returns short forms like SA, NY)
-          const activeNorm = active.map(a => normalizeTeam(a));
-          return activeNorm.includes(team) || (opp && activeNorm.includes(opp));
-        });
-
-        const removed = before - state.props.length;
-        if (removed > 0) {
-          console.log(`[game-filter] ✅ Removed ${removed} props for teams not playing today`);
-          updateStats(); // refresh stat-bar counts after slate filtering
-          schedulePropsRender('espn-game-filter', 100);
-          if (typeof renderMarketsView === 'function') renderMarketsView();
-          showToast(`🏟️ Filtered ${removed} props — teams not playing today`);
-        } else {
-          console.log('[game-filter] ✅ All props have active games today');
-        }
+        console.log('[game-filter] ESPN slate teams loaded (non-destructive)');
+        schedulePropsRender('espn-game-filter', 100);
+        if (typeof renderMarketsView === 'function') renderMarketsView();
       } catch (e) {
         console.warn('[game-filter] ESPN fetch failed:', e.message);
       }
@@ -41492,15 +41477,18 @@ nav.tabs > button,
       
       document.getElementById('statPrime').textContent = state.props.filter(p => p.tier === 'prime' || p.tier === 'ultimate').length;
       document.getElementById('statValue').textContent = state.props.filter(p => p.isValue).length;
+      document.getElementById('statVigFree').textContent = state.props.filter(p => p.isVigFree === true).length;
 
       const shellStatTotal = document.getElementById('shellStatTotal');
       const shellStatGames = document.getElementById('shellStatGames');
       const shellStatPrime = document.getElementById('shellStatPrime');
       const shellStatValue = document.getElementById('shellStatValue');
+      const shellStatVigFree = document.getElementById('shellStatVigFree');
       if (shellStatTotal) shellStatTotal.textContent = String(state.props.length);
       if (shellStatGames) shellStatGames.textContent = String(uniqueGames.size);
       if (shellStatPrime) shellStatPrime.textContent = String(state.props.filter(p => p.tier === 'prime' || p.tier === 'ultimate').length);
       if (shellStatValue) shellStatValue.textContent = String(state.props.filter(p => p.isValue).length);
+      if (shellStatVigFree) shellStatVigFree.textContent = String(state.props.filter(p => p.isVigFree === true).length);
     }
 
     function showLoading() {
