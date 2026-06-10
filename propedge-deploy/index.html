@@ -2708,7 +2708,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       html.site-mobile-active,
       body.site-mobile-active {
         height: 100%;
-        min-height: 0;
+        min-height: 100dvh; /* Enforce full screen */
         overflow: hidden;
         overscroll-behavior: none;
       }
@@ -2717,13 +2717,10 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         display: flex;
         flex-direction: column;
         position: relative;
-        height: 100svh;
-        height: 100dvh;
-        /* JS-measured visual viewport height — iOS Safari's dvh lags or
-           mismatches the real visible area around toolbar/safe-area, which
-           left a blank band under the nav. */
+        /* Prioritize calculated JS height, but clamp it to at least full screen */
         height: var(--pe-vvh, 100dvh);
-        min-height: 0;
+        min-height: 100dvh;
+        flex: 1;
       }
 
       .site-rebuild-shell {
