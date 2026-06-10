@@ -18198,6 +18198,7 @@ nav.tabs > button,
       #portfolioContainer,
       #parlayContainer,
       .props-container {
+        padding-top: 160px;
         padding-bottom: 16px;
       }
 
@@ -35132,7 +35133,7 @@ nav.tabs > button,
         return;
       }
 
-      const isDesktopHome = true;
+      const isDesktopHome = window.matchMedia('(min-width: 1024px)').matches;
       const currentLimit = state.propDisplayLimit || 100;
       const displayProps = props.slice(0, currentLimit);
       const hasMore = props.length > currentLimit;
