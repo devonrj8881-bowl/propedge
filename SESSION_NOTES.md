@@ -208,3 +208,39 @@ com.propedge.outcomes-sync       ✅  Removed (orphaned)
 - **Lazy-load trigger**: Selecting Alt Total/Alt Spread/1H/1Q now fetches `alt=true` game-odds and refreshes the board.
 - **Expanded ALT markets**: Added alternate_spreads + 1H/1Q ML/Spread markets to the per-event Odds API call.
 - **Game-bet mapping**: Categorizes 1H/1Q totals/spreads/ML under the correct filter chips.
+
+---
+
+## Session: 2026-06-10 — Mobile UX Regression Audit & Revert
+
+### Known-good baseline
+- **Commit:** `194100de` (2026-06-09 23:39 ET)
+- **Version:** v7.209
+- **Why:** Last confirmed working state with WNBA + Odds API + mobile iOS layout (`--pe-vvh`, `flex-shrink:0` on main column) + non-destructive ESPN slate filter.
+
+### What broke mobile (June 10, 00:04–00:52 ET)
+| Commit | Change | Impact |
+|--------|--------|--------|
+| `d0a62aef` | Forced `isDesktopHome = true` globally | Mobile fell into desktop dashboard path — crunched stats bar, wrong scroll |
+| `05e3e904` | Added `padding-top: 160px` hack on `.props-container` | Props hidden behind header; scroll region broken |
+| `26ea5072` / `b5cdbbed` | Reverted to v7.208 base | Lost v7.209 iOS visualViewport + flex-shrink fixes |
+
+### Symptoms reported
+- Desktop layout correct; Home tab on mobile shows outdated shell (old stats bar, compact nav, props behind header).
+- Other tabs (Markets, PropAI, Parlay) showed newer changes — confirms Home-specific `renderProps()` mobile branch was the divergence point.
+- Props intermittently showed 0 until loadData guard added (separate issue).
+
+### Revert action (2026-06-10)
+- Restored `propedge-deploy/index.html` from `194100de` (v7.209).
+- Preserved in v7.209: `buildMobileHomeDashboardHTML()`, `applyEspnGameFilter()` non-destructive, `MultiBookOddsProvider`, WNBA tabs/ESPN paths, game-odds integration.
+- **Not yet deployed** — local restore only; needs commit + Netlify deploy after mobile verification.
+
+### Verification checklist
+1. Mobile Safari: version badge shows **v7.209** (not v7.208/v7.210).
+2. Home tab: mobile dashboard shell with featured ticket, narrative, game board — matches desktop feature set.
+3. Stats bar + bottom nav sized to viewport; no blue band under nav.
+4. Props list scrolls below stats bar (not behind it).
+5. WNBA sport tab + 324+ WNBA props load from sheet.
+6. Markets tab: ML/Spread/Total/Alt chips from game-odds API.
+
+**Last Updated:** 2026-06-10
