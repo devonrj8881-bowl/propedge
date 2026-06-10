@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.227 — iOS nav: opaque fixed bar + kill #020617 bleed (systematic fix) — 2026-06-10 LIVE DEPLOY -->
+<!-- PropEdge v7.228 — Fix mobile shell grid regression (250px column squeeze) — 2026-06-10 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -14,53 +14,65 @@
 <meta name="theme-color" content="#030812">
   <style>
     @media (max-width: 1023px) {
+      :root {
+        --bg-primary: rgb(3, 8, 18);
+        --bg-secondary: rgb(3, 8, 18);
+      }
+
+      /*
+       * iOS Safari viewport fix — the only reliable way to prevent content
+       * bleeding under the fixed bottom nav bar.
+       *
+       * Problem: iOS Safari's dynamic toolbar makes window.innerHeight and
+       * 100svh/100dvh report the *layout* viewport (full height with toolbar
+       * hidden), not the *visual* viewport (what the user actually sees).
+       * position:fixed elements anchor to the layout viewport, so the nav bar
+       * lands in the dead zone below the visible area.
+       *
+       * Fix: lock html+body to height:100% + overflow:hidden so the layout
+       * viewport cannot exceed the visual viewport. The shell becomes the
+       * single bounded flex column; .site-shell-main is the only scroller.
+       * The nav stays position:fixed but now lands exactly at the bottom of
+       * what the user sees.
+       */
       html {
         height: 100%;
-        height: 100svh;
-        height: -webkit-fill-available;
-        min-height: 100%;
-        min-height: 100svh;
-        min-height: -webkit-fill-available;
         overflow: hidden;
         background: rgb(3, 8, 18) !important;
       }
+
       html, body {
         background: rgb(3, 8, 18) !important;
         background-image: none !important;
-        padding-bottom: 0 !important;
-        position: fixed;
-        inset: 0;
-        width: 100%;
-        height: var(--pe-device-viewport-h, 100svh);
-        max-height: var(--pe-device-viewport-h, 100svh);
-        overflow: hidden;
-      }
-      body {
-        display: flex;
-        flex-direction: column;
-        min-height: 0 !important;
+        padding: 0 !important;
         margin: 0;
       }
+
+      body {
+        height: 100%;
+        overflow: hidden;
+        /* Fallback for very old iOS that doesn't honour height:100% on body */
+        min-height: -webkit-fill-available;
+      }
+
       .site-rebuild-shell {
         display: flex !important;
         flex-direction: column !important;
-        flex: 1 1 auto !important;
+        grid-template-columns: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        /* Fill exactly the body height — no more, no less */
+        height: 100% !important;
         min-height: 0 !important;
-        height: auto !important;
-        max-height: none !important;
+        max-height: 100% !important;
         padding: 0 !important;
         gap: 0 !important;
-        overflow: hidden;
-        width: 100%;
-      }
-      body.pe-ios-mobile .site-mobile-bottom-nav {
-        flex: 0 0 auto;
-        width: 100%;
+        overflow: hidden !important;
       }
     }
   </style>
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.226">
+  <meta name="app-version" content="v7.228">
   <script>
     (function () {
       if (window.innerWidth >= 1024) return;
@@ -2822,6 +2834,14 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       }
 
       .site-rebuild-shell {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
         position: relative;
       }
 
@@ -2836,13 +2856,20 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         gap: 0;
         min-width: 0;
         min-height: 0;
-        height: auto;
+        /* Let it grow to fill available flex space, never exceed it */
+        height: 0;
         max-height: none;
         overflow-x: hidden;
         overflow-y: auto;
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
-        padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px) + 12px) !important;
+        /*
+         * Bottom padding = nav bar height + safe area inset.
+         * Drop --pe-nav-bottom-gap: with html/body height:100%, the layout
+         * viewport is now the same as the visual viewport so there is no
+         * extra gap to compensate for.
+         */
+        padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px) !important;
       }
 
       /* Size board columns to content so .site-shell-main stays the one
@@ -18173,29 +18200,38 @@ nav.tabs > button,
 
       .site-mobile-bottom-nav {
         display: flex;
-        position: relative;
-        flex: 0 0 auto;
-        order: 100;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
         z-index: 120;
         align-items: stretch;
         justify-content: space-around;
         gap: 4px;
-        margin-top: auto;
-        padding: 8px 10px calc(8px + var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px));
-        background: linear-gradient(180deg, rgba(4, 10, 22, 0.98), rgba(3, 8, 18, 1));
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+        background-color: rgb(3, 8, 18);
+        background-image: linear-gradient(180deg, rgba(4, 10, 22, 0.98), rgba(3, 8, 18, 1));
         border-top: 1px solid rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
         flex-shrink: 0;
         width: 100%;
         box-sizing: border-box;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        /* Extend background colour flush to screen bottom edge */
+        box-shadow: 0 120px 0 120px rgb(3, 8, 18);
+      }
+
+      body.pe-ios-mobile .site-mobile-bottom-nav,
+      body.pe-android-mobile .site-mobile-bottom-nav {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
       }
 
       body.site-mobile-active .site-mobile-more-row {
         position: fixed;
         left: 0;
         right: 0;
-        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px));
+        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px));
         z-index: 121;
       }
 
@@ -18209,7 +18245,7 @@ nav.tabs > button,
         left: 0;
         right: 0;
         bottom: calc(-1 * var(--pe-nav-bottom-gap, 0px));
-        height: calc(var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px));
+        height: calc(var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px) + 4px);
         background: rgb(3, 8, 18);
         pointer-events: none;
       }
@@ -18219,24 +18255,10 @@ nav.tabs > button,
         background: rgb(3, 8, 18) !important;
       }
 
-      .site-mobile-bottom-nav {
-        flex: 0 0 auto;
-        flex-shrink: 0;
-        width: 100%;
-      }
-
-      /* Tablet bottom nav — iPad mini/Air/Pro 11 portrait, Android tablets */
       @media (min-width: 768px) and (max-width: 1023px) {
         .site-mobile-bottom-nav {
-          padding: 10px 20px calc(10px + var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px));
+          padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px));
           gap: 8px;
-        }
-        .site-mobile-nav-btn {
-          font-size: 11px;
-        }
-        .site-mobile-nav-icon svg {
-          width: 22px;
-          height: 22px;
         }
       }
 
@@ -41174,9 +41196,11 @@ nav.tabs > button,
 
     function syncDeviceViewportProfile() {
       if (window.innerWidth >= 1024) {
-        ['--pe-device-viewport-h', '--pe-device-safe-bottom', '--pe-device-safe-top', '--pe-nav-bottom-gap', '--pe-device-id'].forEach((k) => {
+        ['--pe-device-safe-bottom', '--pe-device-safe-top', '--pe-nav-bottom-gap', '--pe-device-id'].forEach((k) => {
           document.documentElement.style.removeProperty(k);
         });
+        delete document.documentElement.dataset.peNavGap;
+        delete document.documentElement.dataset.peSafeBottom;
         document.body.classList.remove('pe-device-phone', 'pe-device-tablet');
         delete document.body.dataset.peDevice;
         return;
@@ -41191,7 +41215,6 @@ nav.tabs > button,
       const safeBottom = Math.max(profile.safeBottom, safeBottomProbe);
       const safeTop = Math.max(profile.safeTop, safeTopProbe);
 
-      document.documentElement.style.setProperty('--pe-device-viewport-h', viewportH + 'px');
       document.documentElement.style.setProperty('--pe-device-safe-bottom', safeBottom + 'px');
       document.documentElement.style.setProperty('--pe-device-safe-top', safeTop + 'px');
       document.documentElement.style.setProperty('--pe-device-id', profile.id);
@@ -41203,6 +41226,8 @@ nav.tabs > button,
       syncMobileBottomNavOffset();
       const gap = measureNavBottomGap();
       document.documentElement.style.setProperty('--pe-nav-bottom-gap', gap + 'px');
+      document.documentElement.dataset.peNavGap = String(gap);
+      document.documentElement.dataset.peSafeBottom = String(safeBottom);
     }
 
     function measureVisibleViewportHeight() {
