@@ -233,7 +233,7 @@ exports.handler = async (event) => {
   // Bulk endpoint: ML, spread, game total (1 call per league)
   const MAIN_MARKETS = "h2h,spreads,totals";
   // Per-event endpoint: alternate totals, 1H total, 1Q total (1 call per event)
-  const ALT_MARKETS  = "alternate_totals,alternate_spreads,totals_h1,totals_q1,h2h_h1,spreads_h1,h2h_q1,spreads_q1";
+  const ALT_MARKETS  = "alternate_totals,totals_h1,totals_q1";
 
   const cacheKey = requestedLeagues.sort().join(",") + "|alt=" + wantAlt;
   const now = Date.now();

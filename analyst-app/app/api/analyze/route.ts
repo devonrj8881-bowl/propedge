@@ -24,7 +24,7 @@ const GAME_FILTER_URL =
 const GAME_ODDS_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/game-odds";
 
-const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
+const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const MOONSHOT_API_KEY = process.env.MOONSHOT_API_KEY || process.env.KIMI_API_KEY || "";
 
@@ -95,35 +95,42 @@ article_title: Specific slate headline with date and featured matchup(s).
 
 featured_intro: 4-6 sentences. Set the slate narrative — pace, key matchups, where PropIQ clusters (overs/unders, stars, totals). Premium betting preview lede.
 
-matchup_analysis — use this EXACT markdown outline (include EVERY section, do not skip or merge):
-
-## Slate Snapshot
-3-4 sentences: game count, board theme, where PropIQ clusters, juice/edge patterns.
+matchup_analysis — use this EXACT markdown outline. **Top Player Prop Values MUST be the first ## section.**
 
 ## Top Player Prop Values
-Cover all ${maxProps} picks from the payload. For EACH pick use this block:
+Cover all ${maxProps} picks from the payload. For EACH pick:
 
 **Player (TEAM) — Over/Under X.X Market (+odds)**
-5-7 sentence paragraph. MUST cite when present: PropIQ score, L5/L10/L20 hit %, H2H vs opponent, line cushion vs L5 avg, ev_pct, 1-2 propiq_signals, 1 propiq_risk, sport-specific context (pace, usage, splits), and a clear BUY/LEAN/PASS/FADE lean with one-line thesis. Never compress a pick into 1-2 sentences.
+One dense 4-6 sentence paragraph in this style (cite ONLY numbers from payload):
+"Carries PropIQ [score] with [N]% cushion over the [line] — averaging [l5_avg] over his last five ([l5_pct] hit rate). [L10/L20 context]. [If h2h: 'Holds [h2h] head-to-head vs [opponent]'.] [If matchup_scalar: 'Matchup scalar [X] signals favorable/tough environment'.] [If szn_matchup: cite defensive rank.] [If odds ≤-200: note parlay-leg vs straight-bet value.] End with BUY/LEAN/PASS/FADE + one-line thesis."
 
-Blank line between picks.
+Blank line between picks. Every pick MUST mention PropIQ, cushion or l5_avg vs line, and at least two of: L5/L10 hit %, H2H, matchup_scalar, szn_matchup.
 
-## Game Line Plays
-If GAME LINES are in the payload: 2-3 sentences on 1-2 correlated ML/spread/total/1Q plays with exact lines/odds and why they tie to prop thesis.
-If no GAME LINES section: write "No game lines on today's board payload."
+## Matchup Context
+For EACH game on the board (group props by team vs opponent): 2-3 sentences on opponent profile, pace/total environment, and how it frames the prop cluster. Cite szn_matchup, matchup_scalar, opponent from payload.
 
-## Risk Notes
-4-5 bullets: slate-wide cautions (heavy juice, regression, small samples, correlated exposure, key-number traps).
+## Game Line & Alternate Plays
+If GAME LINES or GAME_LINES_JSON present — for EACH game recommend:
+- **Best Alt Total — Over/Under X.X ([+odds])** — 2-3 sentences tying to player-prop thesis (use recommended_alt_totals from JSON first)
+- **Best 1Q or 1H Total** if present
+- Main total/spread lean in one sentence
+Never invent lines.
 
-key_numbers_breakdown: 8-12 markdown bullets — sharpest split/variance numbers from your picks (L5 vs L20 divergences, H2H, line_delta, matchup rank, cushion %). Specific numbers only.
+key_numbers_breakdown: 5-8 markdown bullets (KEY VARIANCES format). One bullet per top pick:
+* **Player**: PropIQ X, Edge Y, L5 Z, L10 W, Cushion N%, H2H, Scalar S, Conf C%
+Use exact payload numbers only.
 
 Do NOT truncate, summarize, or omit sections. Write the complete report every time.
 
 SCORING FIELD GLOSSARY (use when present in payload):
 propiq_score: 0-100 PropIQ grade. ≥80 elite, 65-79 strong, <65 value/marginal.
 propiq_signals / propiq_risks: top supporting and capping factors.
-l5_pct / l10_pct / l20_pct / last_season_pct: hit-rate windows.
-h2h: hit rate vs this opponent. ev_pct: edge above fair value. line_delta: steam/movement.`;
+l5_pct / l10_pct / l20_pct / last_season_pct / season_pct: hit-rate windows.
+l5_avg / l10_avg: recent averages — compare to line for cushion/regression read.
+szn_matchup / matchup: opponent defensive rank or season matchup grade (#1 soft … #30 tough).
+matchup_scalar: >1.0 favorable matchup, <1.0 tough matchup.
+h2h: hit rate vs this opponent. ev_pct: edge above fair value. line_delta: steam/movement.
+opponent: opposing team abbr — use for matchup narrative.`;
 }
 
 function isValidPropFeedCsv(csv: string): boolean {
@@ -257,6 +264,30 @@ async function fetchGameOdds(leagueFilter: string): Promise<GameBetProp[]> {
 
 const GAME_ODDS_CORE_MARKETS = new Set(["Moneyline", "Spread", "Total", "Alt Total", "1H Total", "1Q Total"]);
 
+function pickAltTotalsForGame(alts: GameBetProp[], mainTotal?: number): GameBetProp[] {
+  if (!alts.length) return [];
+  const playable = alts.filter((b) => {
+    const odds = b.odds ?? 0;
+    return odds >= -220 && odds <= 200;
+  });
+  const pool = playable.length ? playable : alts;
+
+  if (mainTotal != null && Number.isFinite(mainTotal)) {
+    const overs = pool
+      .filter((b) => String(b.direction || "").toUpperCase() === "OVER")
+      .sort((a, b) => Math.abs((a.line ?? 0) - mainTotal) - Math.abs((b.line ?? 0) - mainTotal));
+    const unders = pool
+      .filter((b) => String(b.direction || "").toUpperCase() === "UNDER")
+      .sort((a, b) => Math.abs((a.line ?? 0) - mainTotal) - Math.abs((b.line ?? 0) - mainTotal));
+    const picked = [...unders.slice(0, 2), ...overs.slice(0, 2)];
+    if (picked.length) return picked;
+  }
+
+  return pool
+    .sort((a, b) => Math.abs(Math.abs(a.odds ?? 110) - 110) - Math.abs(Math.abs(b.odds ?? 110) - 110))
+    .slice(0, 4);
+}
+
 function formatGameLinesContext(gameBets: GameBetProp[]): string {
   if (!gameBets.length) return "";
   const core = gameBets.filter((b) => GAME_ODDS_CORE_MARKETS.has(b.prop));
@@ -278,15 +309,80 @@ function formatGameLinesContext(gameBets: GameBetProp[]): string {
     const ml  = get("Moneyline").map((b) => `${b.team} ${fmtOdds(b.odds)}`).join("/");
     const sp  = get("Spread").map((b) => `${b.team}${fmtLine(b.line)} (${fmtOdds(b.odds)})`).join("/");
     const tot = get("Total").map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
-    // Alt totals: show up to 3 lines nearest to -110 (best value lines)
-    const altTotNear110 = get("Alt Total").sort((a, b) => Math.abs(Math.abs(a.odds ?? 110) - 110) - Math.abs(Math.abs(b.odds ?? 110) - 110)).slice(0, 3);
-    const altTot = altTotNear110.map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
+    const mainTotalLine = get("Total").find((b) => b.line != null)?.line;
+    const altPicks = pickAltTotalsForGame(get("Alt Total"), mainTotalLine);
+    const altTot = altPicks.map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
     const h1  = get("1H Total").map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
     const q1  = get("1Q Total").map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
     const parts = [ml && `ML: ${ml}`, sp && `Spread: ${sp}`, tot && `Total: ${tot}`, altTot && `AltTot: ${altTot}`, h1 && `1H: ${h1}`, q1 && `1Q: ${q1}`].filter(Boolean);
     if (parts.length) lines.push(`[${league}] ${label}: ${parts.join(" | ")}`);
   }
   return lines.length > 1 ? lines.join("\n") : "";
+}
+
+function buildGameLinesJsonBlock(gameBets: GameBetProp[]): string {
+  if (!gameBets.length) return "";
+  const core = gameBets.filter((b) => GAME_ODDS_CORE_MARKETS.has(b.prop));
+  if (!core.length) return "";
+
+  const byGame = new Map<string, { league: string; label: string; bets: GameBetProp[] }>();
+  for (const b of core) {
+    const key = `${b.league}|${b.gameId || b.gameLabel}`;
+    if (!byGame.has(key)) byGame.set(key, { league: b.league, label: b.gameLabel, bets: [] });
+    byGame.get(key)!.bets.push(b);
+  }
+
+  const games = [];
+  for (const { league, label, bets } of byGame.values()) {
+    const get = (market: string) => bets.filter((b) => b.prop === market);
+    const totals = get("Total");
+    const mainLine = totals.find((b) => b.line != null)?.line;
+    const altBoard = pickAltTotalsForGame(get("Alt Total"), mainLine).map((b) => ({
+      direction: b.direction,
+      line: b.line,
+      odds: b.odds,
+      team: b.team,
+    }));
+    const playableAlts = get("Alt Total")
+      .filter((b) => (b.odds ?? 0) >= -220 && (b.odds ?? 0) <= 200)
+      .sort((a, b) => Math.abs(Math.abs(a.odds ?? 110) - 110) - Math.abs(Math.abs(b.odds ?? 110) - 110))
+      .slice(0, 8)
+      .map((b) => ({ direction: b.direction, line: b.line, odds: b.odds }));
+
+    games.push({
+      league,
+      game: label,
+      moneyline: get("Moneyline").map((b) => ({ team: b.team, odds: b.odds })),
+      spread: get("Spread").map((b) => ({ team: b.team, line: b.line, odds: b.odds })),
+      main_total: totals.map((b) => ({ direction: b.direction, line: b.line, odds: b.odds })),
+      recommended_alt_totals: altBoard,
+      alt_totals_board: playableAlts,
+      first_half_total: get("1H Total").map((b) => ({ direction: b.direction, line: b.line, odds: b.odds })),
+      first_quarter_total: get("1Q Total").map((b) => ({ direction: b.direction, line: b.line, odds: b.odds })),
+    });
+  }
+
+  if (!games.length) return "";
+  return `GAME_LINES_JSON (use ONLY these lines — recommend best alt totals explicitly):\n${JSON.stringify(games, null, 2)}`;
+}
+
+function groupPropsByMatchup(topProps: Record<string, unknown>[]): string {
+  const byGame = new Map<string, Record<string, unknown>[]>();
+  for (const p of topProps) {
+    const team = String(p.team || p.Team || "").toUpperCase();
+    const opp = String(p.opponent || p.Opponent || "").toUpperCase();
+    const key = [team, opp].filter(Boolean).sort().join("|") || "unknown";
+    if (!byGame.has(key)) byGame.set(key, []);
+    byGame.get(key)!.push(p);
+  }
+  const lines = ["PROPS BY MATCHUP (for Matchup Context section):"];
+  for (const [key, props] of byGame.entries()) {
+    const sample = props[0] || {};
+    const team = sample.team || sample.Team || "?";
+    const opp = sample.opponent || sample.Opponent || "?";
+    lines.push(`- ${team} vs ${opp}: ${props.map((p) => `${p.player} ${p.prop || p.market} (${p.direction || ""})`).join("; ")}`);
+  }
+  return lines.join("\n");
 }
 
 function normalizeTeamAbbr(team: string): string {
@@ -463,6 +559,50 @@ function normalizeAnalysis(parsed: Record<string, unknown>) {
     if (typeof out[k] === "string") out[k] = unescapeJsonString(out[k]);
   }
   return out;
+}
+
+function buildKeyNumbersFromProps(topProps: Record<string, unknown>[]): string {
+  return topProps.slice(0, MAX_PROPS).map((p) => {
+    const iq = p.propiq_score ?? p.pfRating ?? "n/a";
+    const edge = p.ev_pct ?? p.edge ?? "n/a";
+    const l5 = p.l5_pct ?? p.l5Pct ?? "n/a";
+    const l10 = p.l10_pct ?? p.l10Pct ?? "n/a";
+    const parts = [
+      `PropIQ ${iq}`,
+      `Edge ${edge}`,
+      `L5 ${l5}`,
+      `L10 ${l10}`,
+      p.cushion_pct != null ? `Cushion ${p.cushion_pct}` : null,
+      p.h2h ? `H2H ${p.h2h}` : null,
+      p.matchup_scalar != null ? `Scalar ${p.matchup_scalar}` : null,
+      p.confidence_pct != null ? `Conf ${p.confidence_pct}%` : null,
+    ].filter(Boolean);
+    return `* **${p.player || "Player"}**: ${parts.join(", ")}`;
+  }).join("\n");
+}
+
+function looksLikeProperVariances(text: string): boolean {
+  const bullets = text.split("\n").filter((l) => /^\*\s+\*\*/.test(l.trim()));
+  return bullets.length >= 3;
+}
+
+function enrichAnalysisFromBoard(
+  parsed: Record<string, string | number>,
+  topProps: Record<string, unknown>[],
+): Record<string, string | number> {
+  let matchup = String(parsed.matchup_analysis || "").trim();
+  if (!matchup) {
+    matchup = "## Top Player Prop Values\n\nAnalysis unavailable — see board.";
+  } else if (!/Top Player Prop/i.test(matchup)) {
+    matchup = `## Top Player Prop Values\n\n${matchup}`;
+  }
+
+  let variances = String(parsed.key_numbers_breakdown || "").trim();
+  if (!variances || variances.length < 60 || !looksLikeProperVariances(variances)) {
+    variances = buildKeyNumbersFromProps(topProps);
+  }
+
+  return { ...parsed, matchup_analysis: matchup, key_numbers_breakdown: variances };
 }
 
 function parseGeminiJson(raw: string) {
@@ -690,7 +830,7 @@ function rowToBoardProp(row: Record<string, string>, league: string): BoardProp 
     league: row["League"] || league || undefined,
     player: row["Player"] || "",
     team: row["Team"] || undefined,
-    opponent: row["opponent_est"] || undefined,
+    opponent: row["Opponent"] || row["Opp"] || row["opponent_est"] || undefined,
     pos: row["Pos"] || undefined,
     prop: propType || propStr,
     stat: propType || propStr,
@@ -719,29 +859,71 @@ function rowToBoardProp(row: Record<string, string>, league: string): BoardProp 
 function enrichRow(
   row: Record<string, string>,
   league: string,
+  boardRank?: number,
 ): Record<string, unknown> {
   const base = csvRowToAnalystProp(row, league);
   const bp = rowToBoardProp(row, league);
   const payload = buildPropEdgeLlmPayload(bp);
-  if (!payload) return base;
+  const confPct = parseFloat(row["Confidence %"]);
+  const edgeRaw = row["Edge %"] || row["Edge"] || "";
+  const lineNum = bp.line;
+  const dir = String(bp.direction || "OVER").toUpperCase();
+  let cushionPct: string | undefined;
+  if (bp.l5Avg != null && Number.isFinite(bp.l5Avg) && lineNum != null && Number.isFinite(lineNum) && lineNum > 0) {
+    const cushion = dir === "OVER"
+      ? (bp.l5Avg - lineNum) / lineNum
+      : (lineNum - bp.l5Avg) / lineNum;
+    cushionPct = `${Math.round(cushion * 100)}%`;
+  }
+  if (!payload) {
+    return {
+      ...base,
+      ...(boardRank != null && { board_rank: boardRank }),
+      ...(bp.opponent && { opponent: bp.opponent }),
+      ...(bp.h2h && { h2h: bp.h2h }),
+      ...(cushionPct && { cushion_pct: cushionPct }),
+      ...(Number.isFinite(confPct) && { confidence_pct: Math.round(confPct) }),
+      ...(edgeRaw && { edge: edgeRaw }),
+    };
+  }
   const a = payload.analytics;
   const m = payload.market;
+  const l10Pct = a.hit_rate_last_10 != null ? `${Math.round(a.hit_rate_last_10 * 100)}%` : undefined;
+  const l30Pct = a.hit_rate_last_30 != null ? `${Math.round(a.hit_rate_last_30 * 100)}%` : undefined;
+  const seasonPct = a.season_hit_rate != null ? `${Math.round(a.season_hit_rate)}%` : undefined;
   return {
     ...base,
+    ...(boardRank != null && { board_rank: boardRank }),
+    ...(bp.opponent && { opponent: bp.opponent }),
+    ...(bp.sznMatchup && { szn_matchup: bp.sznMatchup }),
+    ...(bp.h2h && { h2h: bp.h2h }),
+    ...(bp.matchup_scalar != null && Number.isFinite(bp.matchup_scalar) && { matchup_scalar: bp.matchup_scalar }),
+    ...(bp.l5Avg != null && Number.isFinite(bp.l5Avg) && { l5_avg: bp.l5Avg }),
+    ...(bp.l10Avg != null && Number.isFinite(bp.l10Avg) && { l10_avg: bp.l10Avg }),
+    ...(cushionPct && { cushion_pct: cushionPct }),
+    ...(Number.isFinite(confPct) && { confidence_pct: Math.round(confPct) }),
+    ...(edgeRaw && { edge: edgeRaw }),
+    ...(bp.l5Pct && { l5_hit: bp.l5Pct }),
+    ...(bp.l10Pct && { l10_hit: bp.l10Pct }),
+    ...(bp.l20Pct && { l20_hit: bp.l20Pct }),
+    ...(bp.streak != null && Number.isFinite(bp.streak) && { streak: bp.streak }),
     ...(a.hit_rate_last_5 != null && { l5_pct: `${Math.round(a.hit_rate_last_5 * 100)}%` }),
+    ...(l10Pct && { l10_pct: l10Pct }),
     ...(a.hit_rate_last_20 != null && { l20_pct: `${Math.round(a.hit_rate_last_20 * 100)}%` }),
+    ...(l30Pct && { l30_pct: l30Pct }),
+    ...(seasonPct && { season_pct: seasonPct }),
     ...(a.ev_percentage != null && { ev_pct: `${(Math.round(a.ev_percentage * 10) / 10).toFixed(1)}%` }),
-    // Use board's PF Rating as canonical score — matches what the board shows.
-    // computePortablePropIq score is kept only for factor/signal text generation.
     ...(parseFloat(row["PF Rating"]) > 0 && { propiq_score: parseFloat(row["PF Rating"]) }),
-    ...(a.propiq_for_factors?.length && { propiq_signals: a.propiq_for_factors.slice(0, 3) }),
-    ...(a.propiq_against_factors?.length && { propiq_risks: a.propiq_against_factors.slice(0, 2) }),
+    ...(a.propiq_for_factors?.length && { propiq_signals: a.propiq_for_factors.slice(0, 4) }),
+    ...(a.propiq_against_factors?.length && { propiq_risks: a.propiq_against_factors.slice(0, 3) }),
     ...(payload.matchup_context.defensive_rank != null && { matchup: payload.matchup_context.defensive_rank }),
     ...(payload.matchup_context.h2h_history != null && { h2h: payload.matchup_context.h2h_history }),
     ...(bp.lastSeasonPct != null && { last_season_pct: bp.lastSeasonPct }),
     ...(a.pitcher_era != null && { pitcher_era: a.pitcher_era }),
+    ...(a.pitcher_xera != null && { pitcher_xera: a.pitcher_xera }),
     ...(m.opening_line != null && { opening_line: m.opening_line }),
     ...(m.book_delta != null && { line_delta: m.book_delta }),
+    ...(a.projected_value != null && { projected_avg: a.projected_value }),
   };
 }
 
@@ -829,27 +1011,32 @@ export async function POST(req: NextRequest) {
 
     const slateContext = formatSlateContext(slate, league);
     const gameLinesContext = formatGameLinesContext(gameOddsBets);
+    const gameLinesJson = buildGameLinesJsonBlock(gameOddsBets);
     const slateDateDisplay = slate?.dateDisplay || slateDateParts().display;
 
     // Enrich top props with full PropIQ scoring signals
-    const topProps = topRows.map((row) => enrichRow(row, league));
+    const topProps = topRows.map((row, i) => enrichRow(row, league, i + 1));
+    const propsByMatchup = groupPropsByMatchup(topProps);
 
     const systemPrompt = buildAnalystSystemPrompt(slateDateDisplay, MAX_PROPS);
 
     const userPrompt = `${question || `What are the best ${league} props today?`}
 
 LEAGUE: ${league}
-${slateContext ? `\n${slateContext}\n` : ""}${gameLinesContext ? `\n${gameLinesContext}\n` : ""}
-PROPEDGE BOARD (today's active slate only):
+${slateContext ? `\n${slateContext}\n` : ""}${gameLinesContext ? `\n${gameLinesContext}\n` : ""}${gameLinesJson ? `\n${gameLinesJson}\n` : ""}
+${propsByMatchup}
+
+PROPEDGE BOARD (today's active slate only — each prop includes matchup, split, and PropIQ fields):
 ${JSON.stringify(topProps, null, 2)}
 
-Return valid JSON only. Write the COMPLETE premium report — all four ## sections, ${MAX_PROPS} full pick paragraphs (5-7 sentences each), and 8-12 key_numbers bullets. Do not truncate or shorten.`;
+Return valid JSON only. Write the COMPLETE report — matchup_analysis with Top Player Prop Values FIRST (data-dense paragraphs citing PropIQ, cushion, L5 avg, H2H, matchup scalar), Matchup Context, Game Line & Alternate Plays; plus key_numbers_breakdown bullets. Do not truncate.`;
 
     let raw = "";
     let finishReason = "";
     let modelUsed = PRIMARY_MODEL;
     let providerUsed: "kimi" | "gemini" | "propedge" = "gemini";
     let usedFallback = false;
+    let kimiFallbackReason: string | undefined;
 
     if (resolveKimiConfig()) {
       try {
@@ -859,9 +1046,12 @@ Return valid JSON only. Write the COMPLETE premium report — all four ## sectio
         modelUsed = kimi.model;
         providerUsed = "kimi";
       } catch (kimiErr) {
-        console.warn("[analyze] Kimi failed, falling back to Gemini:", kimiErr instanceof Error ? kimiErr.message : kimiErr);
+        kimiFallbackReason = kimiErr instanceof Error ? kimiErr.message : String(kimiErr);
+        console.warn("[analyze] Kimi failed, falling back to Gemini:", kimiFallbackReason);
         usedFallback = true;
       }
+    } else {
+      kimiFallbackReason = "OPENROUTER_API_KEY or MOONSHOT_API_KEY not configured on server";
     }
 
     if (!raw) {
@@ -916,11 +1106,14 @@ Return valid JSON only. Write the COMPLETE premium report — all four ## sectio
 
     return NextResponse.json({
       ok: true,
-      analysis: parsed,
+      analysis: enrichAnalysisFromBoard(parsed, topProps),
       model: modelUsed,
       provider: providerUsed,
       propCount: topRows.length,
       fallback: usedFallback,
+      ...(kimiFallbackReason && providerUsed !== "kimi" ? { kimi_fallback_reason: kimiFallbackReason } : {}),
+      gameOddsCount: gameOddsBets.length,
+      gameLinesInPrompt: Boolean(gameLinesContext),
       slateDate: slate?.dateDisplay || slate?.date,
       filteredOut: usedFullBoard ? rows.length - rawSlateCount : rows.length - slateRows.length,
     }, { headers: CORS_HEADERS });

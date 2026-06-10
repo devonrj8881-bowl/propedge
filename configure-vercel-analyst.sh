@@ -68,7 +68,12 @@ for item in data:
 PY
 }
 
-echo "Syncing environment variables from Netlify → Vercel..."
+local_val() {
+  local key="$1"
+  local file="$APP/.env.local"
+  [[ -f "$file" ]] || return 0
+  grep -E "^${key}=" "$file" 2>/dev/null | head -1 | cut -d= -f2- || true
+}
 if [[ "${1:-}" != "--deploy-only" ]]; then
 for key in OPENAI_API_KEY OPENAI_MODEL GEMINI_API_KEY GEMINI_MODEL; do
   val="$(netlify_val "$key" || true)"
@@ -78,6 +83,18 @@ done
 GEMINI_ANALYST="$(netlify_val GEMINI_ANALYST_MODEL || true)"
 [[ -z "$GEMINI_ANALYST" ]] && GEMINI_ANALYST="$(netlify_val GEMINI_MODEL || true)"
 push_env "GEMINI_ANALYST_MODEL" "$GEMINI_ANALYST"
+
+# Kimi / OpenRouter + Gemini (prefer analyst-app/.env.local — not stored on Netlify)
+for key in OPENROUTER_API_KEY KIMI_MODEL KIMI_MAX_OUTPUT_TOKENS KIMI_TIMEOUT_MS KIMI_API_URL \
+           MOONSHOT_API_KEY GOOGLE_GENERATIVE_AI_API_KEY GEMINI_MODEL PROPEDGE_FEED_URL; do
+  val="$(local_val "$key" || true)"
+  push_env "$key" "$val"
+done
+# Mirror GEMINI_API_KEY → GOOGLE_GENERATIVE_AI_API_KEY if only one is set
+GEMINI_DIRECT="$(local_val GOOGLE_GENERATIVE_AI_API_KEY || true)"
+[[ -z "$GEMINI_DIRECT" ]] && GEMINI_DIRECT="$(local_val GEMINI_API_KEY || true)"
+[[ -z "$GEMINI_DIRECT" ]] && GEMINI_DIRECT="$(netlify_val GEMINI_API_KEY || true)"
+push_env "GOOGLE_GENERATIVE_AI_API_KEY" "$GEMINI_DIRECT"
 
 push_env "PROPEDGE_FEED_URL" "https://propedgemasters.netlify.app/.netlify/functions/prop-feed?sheet=propedge-main"
 fi

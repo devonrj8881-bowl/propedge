@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.211 — Fix: unify mobile/desktop home view — always use buildDesktopHomeDashboardHTML (CSS collapses two-col to single-col on mobile via max-width:1199px) — 2026-06-10 LIVE DEPLOY -->
+<!-- PropEdge v7.212 — Fix iPhone gap below bottom nav (pe-vvh lock, no 100dvh overflow) — 2026-06-10 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.211">
+  <meta name="app-version" content="v7.212">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -2707,8 +2707,11 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     @media (max-width: 1023px) {
       html.site-mobile-active,
       body.site-mobile-active {
-        height: 100%;
-        min-height: 100dvh; /* Enforce full screen */
+        background: #020617;
+        /* Lock to visual viewport — 100dvh min-height was extending past Safari toolbar */
+        height: var(--pe-vvh, 100svh);
+        min-height: var(--pe-vvh, 100svh);
+        max-height: var(--pe-vvh, 100svh);
         overflow: hidden;
         overscroll-behavior: none;
       }
@@ -2717,18 +2720,16 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         display: flex;
         flex-direction: column;
         position: relative;
-        /* Prioritize calculated JS height, but clamp it to at least full screen */
-        height: var(--pe-vvh, 100dvh);
-        min-height: 100dvh;
         flex: 1;
+        padding-bottom: 0 !important;
+        overflow-y: hidden !important;
       }
 
       .site-rebuild-shell {
         display: flex;
         flex-direction: column;
         padding: 0;
-        height: 100svh;
-        height: 100dvh;
+        flex: 1 1 auto;
         min-height: 0;
         overflow: hidden;
       }
@@ -2736,7 +2737,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       /* Nav lives in normal flow as a flex footer (iOS Safari fails to
          reposition position:fixed elements when its toolbar collapses
          during inner-scroller scroll). Shell flexes to fill remaining
-         height; 100dvh on body tracks the toolbar. */
+         height; --pe-vvh on body tracks the visible viewport. */
       body.site-mobile-active .site-rebuild-shell {
         height: auto;
         flex: 1 1 auto;
@@ -18113,6 +18114,7 @@ nav.tabs > button,
         right: auto;
         bottom: auto;
         flex: 0 0 auto;
+        margin-top: auto;
         width: 100%;
         box-sizing: border-box;
       }
@@ -18356,9 +18358,10 @@ nav.tabs > button,
       }
     }
 
-    /* v7.69 / v7.71 — iPhone safe-area: header padding only (no body double-offset) */
+    /* v7.69 / v7.71 / v7.212 — iPhone safe-area: no body bottom padding (nav owns inset) */
     body.site-mobile-active {
       padding-top: 0;
+      padding-bottom: 0 !important;
     }
 
     body.site-mobile-active .header {
@@ -39386,7 +39389,10 @@ nav.tabs > button,
         var a = d.analysis || {};
         var conf = Math.max(1, Math.min(10, Math.round(Number(a.confidence_rating) || 7)));
         var providerLabel = d.provider === 'kimi' ? 'Kimi' : (d.provider === 'propedge' || d.fallback ? 'Gemini backup' : 'Gemini');
-        var metaText = providerLabel + ' · ' + (d.model || '') + ' · ' + (d.propCount || 0) + ' props' + (d.slateDate ? ' · ' + d.slateDate : '');
+        var metaText = providerLabel + ' · ' + (d.model || '') + ' · ' + (d.propCount || 0) + ' props';
+        if (d.gameOddsCount) metaText += ' · ' + d.gameOddsCount + ' game lines';
+        if (d.slateDate) metaText += ' · ' + d.slateDate;
+        if (d.kimi_fallback_reason && d.provider !== 'kimi') metaText += ' · Kimi: ' + String(d.kimi_fallback_reason).slice(0, 48);
         var html = '<div class="propai-gen-meta"><span>' + metaText + '</span><span class="propai-gen-conf-badge">' + conf + '/10 Confidence</span></div>';
         html += '<div class="propai-gen-intro-card"><div class="propai-gen-intro-label">Model Assessment</div><div class="propai-gen-intro-title">' + (a.article_title || '').replace(/</g,'&lt;') + '</div><p class="propai-gen-intro-text">' + (a.featured_intro || '').replace(/</g,'&lt;') + '</p></div>';
         html += '<div class="propai-gen-analysis-card">' + _renderGenProse(a.matchup_analysis) + '</div>';
@@ -40905,25 +40911,25 @@ nav.tabs > button,
       const nav = document.getElementById('siteMobileBottomNav');
       if (!nav || window.innerWidth >= 1024) {
         document.documentElement.style.removeProperty('--pe-mobile-bottom-nav-h');
-        if (nav) nav.style.bottom = '';
         return;
       }
       const navH = Math.ceil(nav.getBoundingClientRect().height);
       document.documentElement.style.setProperty('--pe-mobile-bottom-nav-h', `${navH || 64}px`);
-      nav.style.bottom = '0';
     }
 
     function syncMobileViewportHeight() {
       if (window.innerWidth >= 1024) {
         document.documentElement.style.removeProperty('--pe-vvh');
+        document.body.style.removeProperty('--pe-vvh');
         return;
       }
       const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-      // Ignore large shrinks — those are the soft keyboard opening, not toolbar collapse.
-      // Toolbar collapse is ~50px; keyboard open is ~250-350px. Threshold 150px separates them.
+      // Ignore large shrinks — soft keyboard, not Safari toolbar collapse.
       const current = parseInt(document.documentElement.style.getPropertyValue('--pe-vvh') || '0', 10);
       if (current > 0 && (current - h) > 150) return;
-      document.documentElement.style.setProperty('--pe-vvh', `${Math.round(h)}px`);
+      const px = `${Math.round(h)}px`;
+      document.documentElement.style.setProperty('--pe-vvh', px);
+      document.body.style.setProperty('--pe-vvh', px);
     }
 
     function syncMobileShellLayout() {
