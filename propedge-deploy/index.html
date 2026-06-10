@@ -40910,6 +40910,10 @@ nav.tabs > button,
         return;
       }
       const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      // Ignore large shrinks — those are the soft keyboard opening, not toolbar collapse.
+      // Toolbar collapse is ~50px; keyboard open is ~250-350px. Threshold 150px separates them.
+      const current = parseInt(document.documentElement.style.getPropertyValue('--pe-vvh') || '0', 10);
+      if (current > 0 && (current - h) > 150) return;
       document.documentElement.style.setProperty('--pe-vvh', `${Math.round(h)}px`);
     }
 
