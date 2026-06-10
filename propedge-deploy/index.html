@@ -41399,15 +41399,18 @@ nav.tabs > button,
       
       document.getElementById('statPrime').textContent = state.props.filter(p => p.tier === 'prime' || p.tier === 'ultimate').length;
       document.getElementById('statValue').textContent = state.props.filter(p => p.isValue).length;
+      document.getElementById('statVigFree').textContent = state.props.filter(p => p.isVigFree === true).length;
 
       const shellStatTotal = document.getElementById('shellStatTotal');
       const shellStatGames = document.getElementById('shellStatGames');
       const shellStatPrime = document.getElementById('shellStatPrime');
       const shellStatValue = document.getElementById('shellStatValue');
+      const shellStatVigFree = document.getElementById('shellStatVigFree');
       if (shellStatTotal) shellStatTotal.textContent = String(state.props.length);
       if (shellStatGames) shellStatGames.textContent = String(uniqueGames.size);
       if (shellStatPrime) shellStatPrime.textContent = String(state.props.filter(p => p.tier === 'prime' || p.tier === 'ultimate').length);
       if (shellStatValue) shellStatValue.textContent = String(state.props.filter(p => p.isValue).length);
+      if (shellStatVigFree) shellStatVigFree.textContent = String(state.props.filter(p => p.isVigFree === true).length);
     }
 
     function showLoading() {
