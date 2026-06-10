@@ -18539,6 +18539,10 @@ nav.tabs > button,
       <div class="stat-value purple" id="statValue">--</div>
       <div class="stat-label">Value</div>
     </div>
+    <div class="stat-box">
+      <div class="stat-value" id="statVigFree" style="color:var(--accent-blue)">--</div>
+      <div class="stat-label">Vig-Free</div>
+    </div>
   </div>
 
   <!-- Timestamp -->
@@ -21331,18 +21335,20 @@ nav.tabs > button,
         if (csv) {
           console.log(`[PropEdge] propedge-main received ${csv.length} bytes`);
           const _csvLines = csv.split('\n');
-          console.log(`[PropEdge] ✅ propedge-main sheet: ${_csvLines.length} lines | header: ${_csvLines[0].substring(0, 200)}`);
+          console.log(`[PropEdge] ✅ propedge-main sheet: ${_csvLines.length} lines`);
           writePropFeedCache(csv);
           allProps = parseCSV(csv, 'UNIFIED');
-          console.log(`[PropEdge] ✅ propedge-main: parsed ${allProps.length} props with enrichment data`);
+          console.log(`[PropEdge] ✅ propedge-main: parsed ${allProps.length} props`);
+          
+          // SAFETY: Only update state.props if we actually got data
+          if (allProps.length > 0) {
+            state.props = allProps;
+          } else {
+            console.error('[PropEdge] ⚠️ Sheet fetched but parse returned 0 props — keeping existing state');
+          }
         } else {
-          console.error('[PropEdge] ❌ propedge-main feed unavailable (not CSV or network blocked)');
-          allProps = [];
+          console.error('[PropEdge] ❌ propedge-main feed unavailable');
         }
-
-        console.log(`[PropEdge] Data load complete: ${allProps.length} total props loaded`);
-
-        state.props = allProps;
         // Invalidate memoized scores so cachedPropScore recomputes on next render
         allProps.forEach(p => { delete p._cachedScore; });
         syncUnifiedScores(); // v5: align prop.modelScore + prop.tier with computeBetScore() engine
