@@ -9,7 +9,11 @@ const CORS_HEADERS = {
 };
 
 const PROP_FEED_URL =
+  process.env.PROPEDGE_FEED_URL ||
   "https://propedgemasters.netlify.app/.netlify/functions/prop-feed?sheet=propedge-main";
+
+const PROP_FEED_GVIZ_FALLBACK =
+  "https://docs.google.com/spreadsheets/d/1e53GcCS9alxJhzDQPqkH55mpllEjVUShPKyP63R-BeY/gviz/tq?tqx=out:csv&sheet=propedge-main";
 
 const ASK_ANALYST_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/ask-analyst";
@@ -20,32 +24,146 @@ const GAME_FILTER_URL =
 const GAME_ODDS_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/game-odds";
 
-const KIMI_API_KEY = process.env.MOONSHOT_API_KEY || process.env.KIMI_API_KEY || "";
-const KIMI_BASE_URL = (process.env.MOONSHOT_API_BASE || "https://api.moonshot.ai/v1").replace(/\/$/, "");
-const KIMI_MODEL = process.env.KIMI_MODEL || "kimi-k2-turbo-preview";
+const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+const MOONSHOT_API_KEY = process.env.MOONSHOT_API_KEY || process.env.KIMI_API_KEY || "";
 
-const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
+type KimiBackend = "openrouter" | "moonshot";
+
+function resolveKimiConfig(): {
+  apiKey: string;
+  apiUrl: string;
+  model: string;
+  backend: KimiBackend;
+} | null {
+  if (OPENROUTER_API_KEY) {
+    return {
+      apiKey: OPENROUTER_API_KEY,
+      apiUrl: process.env.KIMI_API_URL || "https://openrouter.ai/api/v1/chat/completions",
+      model: process.env.KIMI_MODEL || "moonshotai/kimi-k2-0905",
+      backend: "openrouter",
+    };
+  }
+  if (MOONSHOT_API_KEY) {
+    return {
+      apiKey: MOONSHOT_API_KEY,
+      apiUrl: process.env.KIMI_API_URL || "https://api.moonshot.ai/v1/chat/completions",
+      model: process.env.KIMI_MODEL || "kimi-k2.5",
+      backend: "moonshot",
+    };
+  }
+  return null;
+}
+
 const GEMINI_MODEL_FALLBACKS = [
-  "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
-  "gemini-3.1-flash-image",
-  "gemini-3-pro-image",
-  "gemini-2.5-flash-image",
+  "gemini-2.0-flash",
 ];
 
 const PRIMARY_MODEL = process.env.GEMINI_MODEL || GEMINI_MODEL_FALLBACKS[0];
 const MODEL_CHAIN = Array.from(new Set([PRIMARY_MODEL, ...GEMINI_MODEL_FALLBACKS]));
-const MAX_PROPS = 4;
+const MAX_PROPS = 6;
 const MAX_GEMINI_ATTEMPTS = 3;
+const KIMI_TIMEOUT_MS = Number(process.env.KIMI_TIMEOUT_MS || 90000);
+const KIMI_MAX_OUTPUT_TOKENS = Number(process.env.KIMI_MAX_OUTPUT_TOKENS || 8192);
+const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 8192);
+
+export const maxDuration = 300;
+
+function buildAnalystSystemPrompt(slateDateDisplay: string, maxProps: number): string {
+  return `You are a sharp sports betting analyst writing a premium PropEdge +EV report — linemaker tone, data-driven, no fluff.
+
+TODAY is ${slateDateDisplay} (US Eastern). Use this exact date in article_title — never tomorrow's date.
+
+Use ONLY players/lines/odds from the PropEdge board payload. Add matchup/splits context from your training knowledge, but never invent props.
+
+LINEMAKER PRINCIPLES — APPLY ON EVERY PICK:
+1. REGRESSION: Hot L5 streaks on cold L20/season baselines are traps — call out explicitly.
+2. CONVERGENCE: Best plays have PropIQ + hit-rate windows + matchup all aligned; flag conflicts.
+3. JUICE GATE: Heavy juice (≤-180) needs bigger cushion; say FADE when grade is elite but price kills ROI.
+4. MARKET SOFTNESS: Rebounds/assists/combos = softer; points = sharper — adjust thesis accordingly.
+
+FOR EACH PICK — READ THE BOARD FIRST, THEN LAYER TRAINING DATA:
+- Start with payload: PropIQ, L5/L10/L20, H2H, ev_pct, line cushion, propiq_signals/risks.
+- Then add sport context you know: NBA pace/ORTG/DRTG/rest; MLB Statcast/splits/park; NHL goalie/PP; NFL target share/weather.
+- If L5 >> L20/season: flag regression risk. If L5 << L20: flag bounce-back.
+
+OUTPUT JSON keys: article_title, featured_intro, matchup_analysis, key_numbers_breakdown, confidence_rating (1-10).
+
+article_title: Specific slate headline with date and featured matchup(s).
+
+featured_intro: 4-6 sentences. Set the slate narrative — pace, key matchups, where PropIQ clusters (overs/unders, stars, totals). Premium betting preview lede.
+
+matchup_analysis — use this EXACT markdown outline (include EVERY section, do not skip or merge):
+
+## Slate Snapshot
+3-4 sentences: game count, board theme, where PropIQ clusters, juice/edge patterns.
+
+## Top Player Prop Values
+Cover all ${maxProps} picks from the payload. For EACH pick use this block:
+
+**Player (TEAM) — Over/Under X.X Market (+odds)**
+5-7 sentence paragraph. MUST cite when present: PropIQ score, L5/L10/L20 hit %, H2H vs opponent, line cushion vs L5 avg, ev_pct, 1-2 propiq_signals, 1 propiq_risk, sport-specific context (pace, usage, splits), and a clear BUY/LEAN/PASS/FADE lean with one-line thesis. Never compress a pick into 1-2 sentences.
+
+Blank line between picks.
+
+## Game Line Plays
+If GAME LINES are in the payload: 2-3 sentences on 1-2 correlated ML/spread/total/1Q plays with exact lines/odds and why they tie to prop thesis.
+If no GAME LINES section: write "No game lines on today's board payload."
+
+## Risk Notes
+4-5 bullets: slate-wide cautions (heavy juice, regression, small samples, correlated exposure, key-number traps).
+
+key_numbers_breakdown: 8-12 markdown bullets — sharpest split/variance numbers from your picks (L5 vs L20 divergences, H2H, line_delta, matchup rank, cushion %). Specific numbers only.
+
+Do NOT truncate, summarize, or omit sections. Write the complete report every time.
+
+SCORING FIELD GLOSSARY (use when present in payload):
+propiq_score: 0-100 PropIQ grade. ≥80 elite, 65-79 strong, <65 value/marginal.
+propiq_signals / propiq_risks: top supporting and capping factors.
+l5_pct / l10_pct / l20_pct / last_season_pct: hit-rate windows.
+h2h: hit rate vs this opponent. ev_pct: edge above fair value. line_delta: steam/movement.`;
+}
+
+function isValidPropFeedCsv(csv: string): boolean {
+  const text = csv.trim();
+  if (!text || text.length < 100) return false;
+  if (text.startsWith("<") || text.startsWith("{")) return false;
+  return text.includes("Player") || text.includes("PF Rating");
+}
+
+async function downloadPropFeedCsv(url: string): Promise<string> {
+  const res = await fetch(url, { cache: "no-store" });
+  const csv = await res.text();
+  if (!res.ok) {
+    throw new Error(`Prop feed HTTP ${res.status} from ${url}`);
+  }
+  if (!isValidPropFeedCsv(csv)) {
+    throw new Error(`Prop feed invalid payload from ${url}`);
+  }
+  return csv;
+}
 
 async function fetchProps(): Promise<Record<string, string>[]> {
-  const res = await fetch(PROP_FEED_URL, { cache: "no-store" });
-  const csv = await res.text();
-  if (!csv.includes("Player") && !csv.includes("PF Rating")) {
-    throw new Error("Invalid prop feed response");
+  const sources = [PROP_FEED_URL, PROP_FEED_GVIZ_FALLBACK];
+  let csv = "";
+  let lastErr: Error | null = null;
+
+  for (const url of sources) {
+    try {
+      csv = await downloadPropFeedCsv(url);
+      break;
+    } catch (err) {
+      lastErr = err instanceof Error ? err : new Error(String(err));
+      console.warn("[analyze] prop feed attempt failed:", lastErr.message);
+    }
   }
+
+  if (!csv) {
+    throw new Error(lastErr?.message || "Invalid prop feed response");
+  }
+
   const lines = csv.trim().split("\n");
   const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
   return lines.slice(1).map((line) => {
@@ -397,7 +515,7 @@ async function callGeminiModel(
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: "user", parts: [{ text: userPrompt }] }],
     generationConfig: {
-      temperature: 0.45,
+      temperature: 0.55,
       maxOutputTokens,
       responseMimeType: "application/json",
       responseSchema: {
@@ -432,45 +550,6 @@ async function callGeminiModel(
   return { raw, finishReason };
 }
 
-async function callKimi(
-  systemPrompt: string,
-  userPrompt: string,
-  maxOutputTokens: number,
-) {
-  if (!KIMI_API_KEY) throw new Error("MOONSHOT_API_KEY is not set");
-
-  const jsonContract =
-    "Return ONLY valid JSON with keys: article_title, featured_intro, matchup_analysis, key_numbers_breakdown, confidence_rating (number 1-10). No markdown fences.";
-
-  const res = await fetch(`${KIMI_BASE_URL}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${KIMI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: KIMI_MODEL,
-      messages: [
-        { role: "system", content: `${systemPrompt}\n\n${jsonContract}` },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.45,
-      max_tokens: maxOutputTokens,
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Kimi API ${res.status}: ${err.slice(0, 300)}`);
-  }
-
-  const data = await res.json();
-  const raw = data?.choices?.[0]?.message?.content?.trim() || "";
-  const finishReason = data?.choices?.[0]?.finish_reason || "";
-  if (!raw) throw new Error("Kimi returned empty response");
-  return { raw, finishReason, model: KIMI_MODEL };
-}
-
 async function callGeminiWithResilience(
   systemPrompt: string,
   userPrompt: string,
@@ -503,27 +582,83 @@ async function callGeminiWithResilience(
   throw lastErr || new Error("Gemini unavailable");
 }
 
-async function callAnalysisWithResilience(
+class KimiApiError extends Error {
+  status: number;
+  body: string;
+
+  constructor(status: number, body: string) {
+    super(`Kimi API ${status}: ${body.slice(0, 300)}`);
+    this.status = status;
+    this.body = body;
+  }
+}
+
+async function callKimiModel(
   systemPrompt: string,
   userPrompt: string,
   maxOutputTokens: number,
 ) {
-  if (KIMI_API_KEY) {
-    try {
-      const kimi = await callKimi(systemPrompt, userPrompt, maxOutputTokens);
-      return { ...kimi, provider: "kimi" as const, fallback: false };
-    } catch (kimiErr) {
-      console.warn("[analyze] Kimi failed, falling back to Gemini:", kimiErr instanceof Error ? kimiErr.message : kimiErr);
-      if (!GEMINI_API_KEY) throw kimiErr;
-    }
+  const cfg = resolveKimiConfig();
+  if (!cfg) throw new Error("No Kimi API key configured (set OPENROUTER_API_KEY or MOONSHOT_API_KEY)");
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${cfg.apiKey}`,
+  };
+  if (cfg.backend === "openrouter") {
+    headers["HTTP-Referer"] = process.env.OPENROUTER_REFERER || "https://propedgemasters.netlify.app";
+    headers["X-Title"] = process.env.OPENROUTER_APP_NAME || "PropEdge Generative Analyst";
   }
 
-  const gemini = await callGeminiWithResilience(systemPrompt, userPrompt, maxOutputTokens);
-  return {
-    ...gemini,
-    provider: "gemini" as const,
-    fallback: !!KIMI_API_KEY || !!gemini.fallback,
-  };
+  const res = await fetch(cfg.apiUrl, {
+    method: "POST",
+    headers,
+    signal: AbortSignal.timeout(KIMI_TIMEOUT_MS),
+    body: JSON.stringify({
+      model: cfg.model,
+      messages: [
+        {
+          role: "system",
+          content: `${systemPrompt}\n\nReturn valid JSON only with keys: article_title, featured_intro, matchup_analysis, key_numbers_breakdown, confidence_rating.`,
+        },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.55,
+      max_tokens: maxOutputTokens,
+      response_format: { type: "json_object" },
+      ...(cfg.backend === "openrouter"
+        ? { provider: { sort: "latency" } }
+        : {}),
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new KimiApiError(res.status, err);
+  }
+
+  const data = await res.json();
+  const message = data?.choices?.[0]?.message || {};
+  const raw = String(message.content || message.reasoning || "").trim();
+  if (!raw) throw new Error("Kimi returned empty response");
+  return { raw, finishReason: data?.choices?.[0]?.finish_reason || "stop", model: cfg.model };
+}
+
+async function callKimiWithResilience(
+  systemPrompt: string,
+  userPrompt: string,
+  maxOutputTokens: number,
+) {
+  try {
+    const result = await callKimiModel(systemPrompt, userPrompt, maxOutputTokens);
+    return { ...result, fallback: false };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (err instanceof Error && err.name === "TimeoutError") {
+      throw new Error(`Kimi timed out after ${Math.round(KIMI_TIMEOUT_MS / 1000)}s`);
+    }
+    throw err instanceof Error ? err : new Error(msg);
+  }
 }
 
 function csvRowToAnalystProp(row: Record<string, string>, league: string) {
@@ -668,9 +803,7 @@ export async function POST(req: NextRequest) {
   try {
     const { question, league = "ALL" } = await req.json();
 
-    if (!KIMI_API_KEY && !GEMINI_API_KEY) {
-      throw new Error("MOONSHOT_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY is not set");
-    }
+    if (!GEMINI_API_KEY) throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not set");
 
     const [rows, slate, gameOddsBets] = await Promise.all([
       fetchProps(),
@@ -696,37 +829,12 @@ export async function POST(req: NextRequest) {
 
     const slateContext = formatSlateContext(slate, league);
     const gameLinesContext = formatGameLinesContext(gameOddsBets);
+    const slateDateDisplay = slate?.dateDisplay || slateDateParts().display;
 
     // Enrich top props with full PropIQ scoring signals
     const topProps = topRows.map((row) => enrichRow(row, league));
 
-    const systemPrompt = `You are a sharp sports betting analyst writing a premium prop report.
-
-TODAY is ${slate?.dateDisplay || slateDateParts().display} (US Eastern). Use this exact date in article_title — never tomorrow's date.
-
-Use the PropEdge board as foundation, then add Statcast/splits context you know.
-Keep JSON compact: 2-3 sentence paragraphs per pick, max ${MAX_PROPS} picks.
-
-FORMAT inside matchup_analysis:
-## Top Player Prop Values
-**Player (TEAM) — Over/Under X.X Market (+odds)**
-Short paragraph per pick. Blank line between picks.
-
-key_numbers_breakdown: short markdown bullets only.
-Do NOT fabricate players, lines, or odds not in the board payload.
-Do NOT include eliminated or off-slate teams (e.g. NBA teams with no game today).
-
-SCORING FIELDS (when present in payload):
-propiq_score: composite 0-100 signal. ≥80 = elite, 65-79 = strong, <65 = value/marginal. Always cite score by name ("PropIQ 83").
-propiq_signals: top scoring factors — lead with 1-2 strongest in your pick paragraph.
-propiq_risks: capping factors — note the primary risk if present.
-l5_pct / l20_pct: supplement l10 hit rate. Hot L5 vs cold L20 = trending up. Cold L5 = cooling.
-h2h: player's hit rate vs this specific opponent this season (e.g. "3/5" = 3 for 5). Strong or weak matchup history — always cite when present.
-last_season_pct: prior season hit rate for this prop type. Compare to current season — divergence signals regression or breakout.
-line_delta: line movement since open. Negative = movement toward under (steam indicator).
-ev_pct: edge above fair value — positive = value, cite if > 3%.
-
-GAME LINES: If a GAME LINES section is present, use it to surface game-level plays (totals, ML, spreads, 1Q totals). Cite the line and odds exactly as shown. If no GAME LINES, skip game-level picks. Never invent lines not in that section.`;
+    const systemPrompt = buildAnalystSystemPrompt(slateDateDisplay, MAX_PROPS);
 
     const userPrompt = `${question || `What are the best ${league} props today?`}
 
@@ -735,37 +843,52 @@ ${slateContext ? `\n${slateContext}\n` : ""}${gameLinesContext ? `\n${gameLinesC
 PROPEDGE BOARD (today's active slate only):
 ${JSON.stringify(topProps, null, 2)}
 
-Return valid JSON only. Keep prose concise so the full JSON completes.`;
+Return valid JSON only. Write the COMPLETE premium report — all four ## sections, ${MAX_PROPS} full pick paragraphs (5-7 sentences each), and 8-12 key_numbers bullets. Do not truncate or shorten.`;
 
     let raw = "";
     let finishReason = "";
-    let modelUsed = KIMI_API_KEY ? KIMI_MODEL : PRIMARY_MODEL;
+    let modelUsed = PRIMARY_MODEL;
+    let providerUsed: "kimi" | "gemini" | "propedge" = "gemini";
     let usedFallback = false;
-    let provider: "kimi" | "gemini" = KIMI_API_KEY ? "kimi" : "gemini";
 
-    try {
-      const analysis = await callAnalysisWithResilience(systemPrompt, userPrompt, 8192);
-      raw = analysis.raw;
-      finishReason = analysis.finishReason;
-      modelUsed = analysis.model;
-      usedFallback = analysis.fallback;
-      provider = analysis.provider;
-    } catch (analysisErr) {
-      console.warn("[analyze] Primary analysis exhausted:", analysisErr instanceof Error ? analysisErr.message : analysisErr);
-      const backup = await callPropEdgeAskAnalystFallback(
-        question || `What are the best ${league} props today?`,
-        league,
-        topRows,
-      );
-      return NextResponse.json({
-        ok: true,
-        analysis: backup.parsed,
-        model: backup.model,
-        provider: "propedge",
-        propCount: topRows.length,
-        fallback: true,
-        fallback_reason: analysisErr instanceof Error ? analysisErr.message : String(analysisErr),
-      }, { headers: CORS_HEADERS });
+    if (resolveKimiConfig()) {
+      try {
+        const kimi = await callKimiWithResilience(systemPrompt, userPrompt, KIMI_MAX_OUTPUT_TOKENS);
+        raw = kimi.raw;
+        finishReason = kimi.finishReason;
+        modelUsed = kimi.model;
+        providerUsed = "kimi";
+      } catch (kimiErr) {
+        console.warn("[analyze] Kimi failed, falling back to Gemini:", kimiErr instanceof Error ? kimiErr.message : kimiErr);
+        usedFallback = true;
+      }
+    }
+
+    if (!raw) {
+      try {
+        const gemini = await callGeminiWithResilience(systemPrompt, userPrompt, GEMINI_MAX_OUTPUT_TOKENS);
+        raw = gemini.raw;
+        finishReason = gemini.finishReason;
+        modelUsed = gemini.model;
+        providerUsed = "gemini";
+        usedFallback = usedFallback || !!gemini.fallback;
+      } catch (geminiErr) {
+        console.warn("[analyze] Gemini exhausted retries:", geminiErr instanceof Error ? geminiErr.message : geminiErr);
+        const backup = await callPropEdgeAskAnalystFallback(
+          question || `What are the best ${league} props today?`,
+          league,
+          topRows,
+        );
+        return NextResponse.json({
+          ok: true,
+          analysis: backup.parsed,
+          model: backup.model,
+          provider: "propedge",
+          propCount: topRows.length,
+          fallback: true,
+          fallback_reason: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
+        }, { headers: CORS_HEADERS });
+      }
     }
 
     let parsed;
@@ -773,13 +896,19 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       parsed = parseGeminiJson(raw);
     } catch (firstErr) {
       if (finishReason === "MAX_TOKENS" || finishReason === "length") {
-        const retryProps = buildTopProps(slateRows, league, question || "", 3);
-        const retryPrompt = `${userPrompt}\n\nIMPORTANT: Cover only the top ${retryProps.length} picks with shorter paragraphs.`;
-        const retry = await callAnalysisWithResilience(systemPrompt, retryPrompt, 8192);
-        parsed = parseGeminiJson(retry.raw);
-        modelUsed = retry.model;
-        usedFallback = usedFallback || retry.fallback;
-        provider = retry.provider;
+        const retryProps = buildTopProps(slateRows, league, question || "", 4);
+        const retryPrompt = `${userPrompt}\n\nIMPORTANT: Prioritize complete JSON. Cover top ${retryProps.length} picks with full section outline but slightly shorter paragraphs.`;
+        if (providerUsed === "kimi" && resolveKimiConfig()) {
+          const retry = await callKimiWithResilience(systemPrompt, retryPrompt, KIMI_MAX_OUTPUT_TOKENS);
+          parsed = parseGeminiJson(retry.raw);
+          modelUsed = retry.model;
+          finishReason = retry.finishReason;
+        } else {
+          const retry = await callGeminiWithResilience(systemPrompt, retryPrompt, GEMINI_MAX_OUTPUT_TOKENS);
+          parsed = parseGeminiJson(retry.raw);
+          modelUsed = retry.model;
+          usedFallback = usedFallback || !!retry.fallback;
+        }
       } else {
         throw firstErr;
       }
@@ -789,7 +918,7 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
       ok: true,
       analysis: parsed,
       model: modelUsed,
-      provider,
+      provider: providerUsed,
       propCount: topRows.length,
       fallback: usedFallback,
       slateDate: slate?.dateDisplay || slate?.date,
@@ -799,7 +928,7 @@ Return valid JSON only. Keep prose concise so the full JSON completes.`;
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[analyze]", msg);
     const friendly = /503|429|UNAVAILABLE|high demand/i.test(msg)
-      ? "Analysis models are temporarily busy. Please wait a few seconds and try again."
+      ? "Gemini is temporarily busy. Please wait a few seconds and try again."
       : /404|not found/i.test(msg)
         ? "Analysis model unavailable — please try again."
         : msg;

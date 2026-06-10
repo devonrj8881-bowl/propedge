@@ -18117,6 +18117,18 @@ nav.tabs > button,
         box-sizing: border-box;
       }
 
+      /* Fill iPhone home-indicator strip — prevents blue gap below nav */
+      body.site-mobile-active .site-mobile-bottom-nav::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: env(safe-area-inset-bottom, 0px);
+        background: rgba(3, 8, 18, 1);
+        pointer-events: none;
+      }
+
       /* Anchor the More popup to the body box (position:relative, 100dvh)
          instead of the viewport — same iOS toolbar-collapse quirk as the
          nav. Toast stays fixed: its hidden translateY state would overflow

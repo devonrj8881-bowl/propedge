@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.183 — Isolate sidebar + iframe on GPU layers to stop flicker — 2026-06-06 LIVE DEPLOY -->
+<!-- PropEdge v7.211 — Fix: unify mobile/desktop home view — always use buildDesktopHomeDashboardHTML (CSS collapses two-col to single-col on mobile via max-width:1199px) — 2026-06-10 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.183">
+  <meta name="app-version" content="v7.211">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -2705,9 +2705,42 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     }
 
     @media (max-width: 1023px) {
+      html.site-mobile-active,
+      body.site-mobile-active {
+        height: 100%;
+        min-height: 100dvh; /* Enforce full screen */
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+
+      body.site-mobile-active {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        /* Prioritize calculated JS height, but clamp it to at least full screen */
+        height: var(--pe-vvh, 100dvh);
+        min-height: 100dvh;
+        flex: 1;
+      }
+
       .site-rebuild-shell {
-        display: block;
+        display: flex;
+        flex-direction: column;
         padding: 0;
+        height: 100svh;
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      /* Nav lives in normal flow as a flex footer (iOS Safari fails to
+         reposition position:fixed elements when its toolbar collapses
+         during inner-scroller scroll). Shell flexes to fill remaining
+         height; 100dvh on body tracks the toolbar. */
+      body.site-mobile-active .site-rebuild-shell {
+        height: auto;
+        flex: 1 1 auto;
+        min-height: 0;
       }
 
       .site-sidebar-shell {
@@ -2719,6 +2752,34 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         flex-direction: column;
         gap: 0;
         min-width: 0;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        padding-bottom: 16px;
+      }
+
+      /* Size board columns to content so .site-shell-main stays the one
+         scroller. Their auto overflow makes min-height:auto resolve to 0,
+         so as flex:1 items Chromium collapses them to slivers with an
+         internal scrollbar; flex-basis:auto + shrink 0 forces content
+         height in every engine. */
+      .site-shell-content .app-layout,
+      .app-layout .main-content {
+        flex: 0 0 auto;
+        height: auto;
+        min-height: 0;
+      }
+
+      /* Every section in the main scroll column keeps its content height.
+         Without this the column's huge negative free space crushes the
+         shrinkable items (game board, sport tabs, filter row) into
+         overlapping slivers. .site-shell-content is display:contents, so
+         its children are the real flex items. */
+      .site-shell-main > *,
+      .site-shell-content > * {
+        flex-shrink: 0;
       }
 
       .site-shell-content {
@@ -7351,6 +7412,27 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       .site-home-left-col .propai-feature-confidence { display: block !important; }
     }
 
+    /* Mobile phone: stack hero vertically — art as small headshot, copy full width below */
+    @media (max-width: 767px) {
+      .site-home-left-col .site-home-featured-full .propai-feature-hero,
+      .site-home-left-col .propai-feature-hero {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        padding: 12px 14px !important;
+      }
+      .site-home-left-col .site-home-featured-full .propai-feature-art,
+      .site-home-left-col .propai-feature-art {
+        width: 80px !important;
+        min-height: 80px !important;
+        max-height: 100px !important;
+        align-self: flex-start !important;
+      }
+      .site-home-left-col .propai-feature-copy { width: 100%; min-width: 0; overflow: hidden; }
+      .site-home-left-col .propai-feature-player { font-size: 18px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+      .site-home-left-col .propai-feature-confidence { display: none !important; }
+    }
+
     .site-home-dashboard .ai-context-empty {
       padding: 20px 16px;
       font-size: 13px;
@@ -10820,6 +10902,29 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       content-visibility: visible !important;
       contain-intrinsic-size: none !important;
       contain: none !important;
+    }
+
+    /* Mobile: always paint prop cards — content-visibility/backface leave blue gaps mid-scroll */
+    @media (max-width: 1023px) {
+      .props-container,
+      .props-grid,
+      .site-mobile-props-board,
+      .prop-card,
+      .propai-market-row--deck {
+        content-visibility: visible !important;
+        contain-intrinsic-size: none !important;
+        contain: none !important;
+        backface-visibility: visible !important;
+        -webkit-backface-visibility: visible !important;
+        transform: none !important;
+        -webkit-transform: none !important;
+        will-change: auto !important;
+      }
+
+      .site-mobile-nav-btn:not(.active) {
+        background: transparent !important;
+        color: var(--text-muted) !important;
+      }
     }
 
     /* Mobile-specific safe area adjustments */
@@ -15300,12 +15405,24 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
     .load-more-btn:hover { border-color: var(--accent-green); }
 
+    .props-load-more-sentinel {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 16px 12px 8px;
+    }
+
+    .site-mobile-props-board .props-grid {
+      gap: 12px;
+    }
+
     /* Toast */
     .toast {
       position: fixed;
       bottom: 100px;
       left: 50%;
       transform: translateX(-50%) translateY(100px);
+      pointer-events: none;
       background: var(--bg-secondary);
       color: var(--text-primary);
       padding: 12px 24px;
@@ -16965,13 +17082,16 @@ nav.tabs > button,
     }
 
     /* v7.56 — Home dashboard: fix blank panels (Safari paint + grid stretch) */
-    .props-container:has(.site-home-dashboard) {
+    .props-container:has(.site-home-dashboard),
+    .props-container:has(.site-mobile-props-board) {
       backface-visibility: visible;
       -webkit-backface-visibility: visible;
     }
 
     .site-home-dashboard,
-    .site-home-dashboard * {
+    .site-home-dashboard *,
+    .site-mobile-props-board,
+    .site-mobile-props-board * {
       backface-visibility: visible;
       -webkit-backface-visibility: visible;
     }
@@ -17940,9 +18060,26 @@ nav.tabs > button,
     }
 
     /* v7.67 — Mobile mock shell (Mock 3: featured stack + bottom nav) */
+    .site-mobile-bottom-nav,
+    .site-mobile-more-row {
+      display: none;
+    }
+
     @media (max-width: 1023px) {
+      :root {
+        --pe-mobile-bottom-nav-h: 64px;
+      }
+
+      html.site-mobile-active {
+        scroll-padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 8px);
+      }
+
       body.site-mobile-active {
-        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: 0;
+      }
+
+      body.site-mobile-active .site-shell-main {
+        scroll-padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 8px);
       }
 
       .nav-tabs {
@@ -17964,6 +18101,40 @@ nav.tabs > button,
         border-top: 1px solid rgba(255, 255, 255, 0.08);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+      }
+
+      /* In-flow flex footer once the mobile shell is active — see
+         body.site-mobile-active flex column above. */
+      body.site-mobile-active .site-mobile-bottom-nav {
+        position: relative;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        flex: 0 0 auto;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      /* Fill iPhone home-indicator strip — prevents blue gap below nav */
+      body.site-mobile-active .site-mobile-bottom-nav::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: env(safe-area-inset-bottom, 0px);
+        background: rgba(3, 8, 18, 1);
+        pointer-events: none;
+      }
+
+      /* Anchor the More popup to the body box (position:relative, 100dvh)
+         instead of the viewport — same iOS toolbar-collapse quirk as the
+         nav. Toast stays fixed: its hidden translateY state would overflow
+         the body box and create phantom scroll height. */
+      body.site-mobile-active .site-mobile-more-row {
+        position: absolute;
       }
 
       .site-mobile-nav-btn {
@@ -17983,6 +18154,8 @@ nav.tabs > button,
         font-weight: 700;
         cursor: pointer;
         font-family: inherit;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
       }
 
       .site-mobile-nav-btn.active {
@@ -18013,7 +18186,7 @@ nav.tabs > button,
         position: fixed;
         left: 12px;
         right: 12px;
-        bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 4px);
         z-index: 119;
         gap: 8px;
         padding: 10px;
@@ -18040,9 +18213,23 @@ nav.tabs > button,
         font-family: inherit;
       }
 
-      #propsContainer,
-      .view-container.show {
-        padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+      .toast {
+        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px);
+      }
+
+      .app-layout,
+      .view-container.show,
+      #recommendationsContainer,
+      #marketsContainer,
+      #gamesContainer,
+      #newsContainer,
+      #injuriesContainer,
+      #strategyContainer,
+      #paceContainer,
+      #portfolioContainer,
+      #parlayContainer,
+      .props-container {
+        padding-bottom: 16px;
       }
 
       .site-mobile-home-dashboard {
@@ -21018,7 +21205,7 @@ nav.tabs > button,
     }
 
     async function fetchPropedgeMainCsv() {
-      const directUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=propedge-main&_=${Date.now()}`;
+      const directUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1351555262&_=${Date.now()}`;
       const proxiedUrl = `/.netlify/functions/prop-feed?sheet=propedge-main`;
       let response = await fetch(directUrl, { cache: 'no-store' });
       if (response.ok) {
@@ -21055,10 +21242,10 @@ nav.tabs > button,
           if (meta) return meta;
         }
       } catch (_) {}
-      // Fallback: read gviz directly from browser (works for public sheets)
+      // Fallback: read export directly from browser (works for public sheets)
       try {
         const SHEET_ID = '1e53GcCS9alxJhzDQPqkH55mpllEjVUShPKyP63R-BeY';
-        const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=meta`);
+        const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1129712148&_=${Date.now()}`);
         if (!res.ok) return null;
         const text = await res.text();
         if (!text || /^\s*</.test(text)) return null;
@@ -21370,7 +21557,7 @@ nav.tabs > button,
         league: headers.findIndex(h => h === 'league' || h === 'sport'),
         pfRating: headers.findIndex(h => h.includes('pf') && h.includes('rating')),
         team: headers.findIndex(h => h === 'team'),
-        opponent: headers.findIndex(h => h === 'opponent' || h === 'opp'),
+        opponent: headers.findIndex(h => h === 'opponent' || h === 'opp' || h === 'opponent_est'),
         pos: headers.findIndex(h => h === 'pos' || h === 'position'),
         player: headers.findIndex(h => h === 'player' || h === 'name'),
         prop: headers.findIndex(h => h === 'prop' || h === 'market'),
@@ -21397,7 +21584,7 @@ nav.tabs > button,
         l10: headers.findIndex(h => h === 'l10'),
         l20: headers.findIndex(h => h === 'l20'),
         l30: headers.findIndex(h => h === 'l30'),
-        date: headers.findIndex(h => h === 'date'),
+        date: headers.findIndex(h => h === 'date' || h === 'game_date'),
         lastUpdate: headers.findIndex(h => h === 'last update'),
         opening: headers.findIndex(h => h.includes('opening') || h.includes('open')),
         spread: headers.findIndex(h => h === 'spread'),
@@ -21505,7 +21692,7 @@ nav.tabs > button,
 
         const teamAbbr = typeof window.normalizeTeam === 'function' ? window.normalizeTeam(getValue(cols.team)) : getValue(cols.team);
         const oppAbbr = typeof window.normalizeTeam === 'function' ? window.normalizeTeam(getValue(cols.opponent) || '') : getValue(cols.opponent);
-        const gameLoc = window._gameLocations && window._gameLocations[league] ? window._gameLocations[league][teamAbbr] : null;
+        const gameLoc = window._gameLocations && window._gameLocations[actualLeague] ? window._gameLocations[actualLeague][teamAbbr] : null;
 
         const oddsStr = getValue(cols.odds);
         const odds = parseInt(oddsStr.replace(/[^0-9\-]/g, '')) || -110;
@@ -21643,7 +21830,7 @@ nav.tabs > button,
         // Fix B v2: Streak logic with regression warning for extended streaks.
         // Actuarial fact: after 6+ consecutive hits, mean reversion probability spikes.
         // Short streaks (3-5) are genuinely predictive; long streaks (6+) overshoot.
-        if (league === 'MLB') {
+        if (actualLeague === 'MLB') {
           if      (streak >= 7)  { modelScore -= 2; propFactors.push('⚠️ Streak Regression Risk (7+ — correction likely)'); }
           else if (streak >= 5)  { modelScore += 2; propFactors.push('🔥 Hot Streak (5)'); }
           else if (streak >= 3)  { modelScore += 1; propFactors.push('🔥 Heating Up'); }
@@ -22122,9 +22309,12 @@ nav.tabs > button,
           trueProb *= 0.90; // 10% reduction when key teammates are out
         }
 
-        // ── P2.3: Back-to-back Fatigue — applied BEFORE edge calc ────────
-        if (backToBackFlag && league === 'NBA') {
-          trueProb *= 0.92; // 8% reduction for fatigued players
+        // ── P2.3: Back-to-back Fatigue — direction-aware ────────
+        // Fatigue → player underperforms vs normal: bad for OVER, good for UNDER
+        if (backToBackFlag && actualLeague === 'NBA') {
+          trueProb = direction === 'OVER'
+            ? Math.max(0.12, trueProb * 0.92)
+            : Math.min(0.88, trueProb * 1.08);
         }
 
         // ── Base edge calculation ──
@@ -22141,8 +22331,8 @@ nav.tabs > button,
         
         // League-specific thresholds from Config sheet
         // FIX 2: MLB value edge threshold raised to 8 (matches NBA/NHL) — 6% was too easy to hit
-        const leagueConfig = leagueThresholds[league] || { strong: 72, value: 8 };
-        if (league === 'MLB' && leagueConfig.value < 8) leagueConfig.value = 8;
+        const leagueConfig = leagueThresholds[actualLeague] || { strong: 72, value: 8 };
+        if (actualLeague === 'MLB' && leagueConfig.value < 8) leagueConfig.value = 8;
         const valueThreshold = leagueConfig.value;
         const strongThreshold = leagueConfig.strong;
 
@@ -22155,7 +22345,7 @@ nav.tabs > button,
 
         // Fix F: Raise meetsUltimate bar — requires genuine multi-window consistency + confidence
         // MLB: core criteria only (no confidenceScore gate); NBA/NHL: add confidence gate
-        const meetsUltimate = league === 'MLB'
+        const meetsUltimate = actualLeague === 'MLB'
           ? pfRating >= 80 && perMinL10 > 0 && l10Pct >= 65 && l20Pct >= 62
           : (confidenceScore >= 75) && (pfRating >= 84 && perMinL10 > 0 && l5Pct >= 70 && l20Pct >= 65);
 
@@ -22193,6 +22383,7 @@ nav.tabs > button,
         props.push({
           id: `${actualLeague}-${getValue(cols.player)}-${propType}-${line}-${direction}`.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9\-_.]/g, ''),
           league: actualLeague,
+          date: getValue(cols.date) || '',
           player: getValue(cols.player),
           team: getValue(cols.team),
           pos: getValue(cols.pos),
@@ -28206,47 +28397,21 @@ nav.tabs > button,
         ...(state.games.NBA || []), ...(state.games.NHL || []),
         ...(state.games.MLB || []), ...(state.games.NFL || [])
       ];
-      if (!allGames.length || !Array.isArray(state.props) || !state.props.length) return;
+      if (!allGames.length) return;
 
-      const normalizeT = t => String(t || '').toUpperCase().trim();
+      // Non-destructive: never delete props from state.props.
+      // renderProps() / markets board already handle completed-game suppression at render time.
+      const anyFinal = allGames.some(g =>
+        g.isCompleted || g.status === 'final' ||
+        /final|completed|ended|post/i.test(g.statusText || g.statusDisplay || g.status || '')
+      );
 
-      // Build set of teams with active (non-final) games
-      const activeTeams = {}; // { LEAGUE: Set<team> }
-      const hasAnyGameForLeague = {}; // track which leagues have any ESPN data today
-      allGames.forEach(g => {
-        const league = String(g.league || '').toUpperCase();
-        if (!hasAnyGameForLeague[league]) hasAnyGameForLeague[league] = true;
-        const isFinal = g.isCompleted || g.status === 'final' ||
-          /final|completed|ended|post/i.test(g.statusText || g.statusDisplay || g.status || '');
-        if (!isFinal) {
-          if (!activeTeams[league]) activeTeams[league] = new Set();
-          activeTeams[league].add(normalizeTeam(g.homeTeam));
-          activeTeams[league].add(normalizeTeam(g.awayTeam));
-        }
-      });
+      if (!anyFinal) return;
 
-      // Cache normalizeTeam results — avoids alias-table scan for every one of ~7k props
-      const _teamNormCache = {};
-      const normT = t => _teamNormCache[t] !== undefined ? _teamNormCache[t] : (_teamNormCache[t] = normalizeTeam(t));
-
-      const before = state.props.length;
-      state.props = state.props.filter(p => {
-        const league = String(p.league || '').toUpperCase();
-        // If ESPN has no data for this league today, keep all props for it
-        if (!hasAnyGameForLeague[league]) return true;
-        const team = normT(p.team);
-        const active = activeTeams[league];
-        // If all games for this league are final, active will be empty set
-        return active && active.has(team);
-      });
-
-      const removed = before - state.props.length;
-      if (removed > 0) {
-        console.log(`[game-status-filter] Removed ${removed} props for completed games`);
-        updateStats();
-        schedulePropsRender('game-status-filter', 200);
-        if (typeof renderMarketsView === 'function') renderMarketsView();
-      }
+      console.log('[game-status-filter] Detected final game(s) — triggering re-render (props preserved)');
+      updateStats();
+      schedulePropsRender('game-status-filter', 200);
+      if (typeof renderMarketsView === 'function') renderMarketsView();
     }
 
     async function applyEspnGameFilter() {
@@ -28256,31 +28421,17 @@ nav.tabs > button,
         const data = await res.json();
         if (!data.ok || !data.activeTeams) return;
 
+        // Keep this for downstream odds fetching, but do NOT delete props from state.props.
         window.propEdgeActiveTeams = data.activeTeams;
         window.propEdgeActiveGames = data.games || [];
 
-        const before = state.props.length;
-        state.props = state.props.filter(p => {
-          const league = (p.league || '').toUpperCase();
-          const team = normalizeTeam(p.team || p.Team || '');
-          const opp  = normalizeTeam(p.opponent || p.opp || '');
-          const active = data.activeTeams[league];
-          if (!active || !active.length) return false; // no games today for league → hide props
-          // Normalize active team abbrs too (ESPN sometimes returns short forms like SA, NY)
-          const activeNorm = active.map(a => normalizeTeam(a));
-          return activeNorm.includes(team) || (opp && activeNorm.includes(opp));
-        });
+        const mlbTeams = (data.activeTeams['MLB'] || []).length;
+        const nbaTeams = (data.activeTeams['NBA'] || []).length;
+        console.log('[game-filter] ESPN slate teams (non-destructive): MLB=' + mlbTeams + ' NBA=' + nbaTeams);
 
-        const removed = before - state.props.length;
-        if (removed > 0) {
-          console.log(`[game-filter] ✅ Removed ${removed} props for teams not playing today`);
-          updateStats(); // refresh stat-bar counts after slate filtering
-          schedulePropsRender('espn-game-filter', 100);
-          if (typeof renderMarketsView === 'function') renderMarketsView();
-          showToast(`🏟️ Filtered ${removed} props — teams not playing today`);
-        } else {
-          console.log('[game-filter] ✅ All props have active games today');
-        }
+        // Trigger a re-render so any UI that depends on slate data updates.
+        schedulePropsRender('espn-game-filter', 100);
+        if (typeof renderMarketsView === 'function') renderMarketsView();
       } catch (e) {
         console.warn('[game-filter] ESPN fetch failed:', e.message);
       }
@@ -35006,9 +35157,23 @@ nav.tabs > button,
         return;
       }
 
+      const isDesktopHome = window.matchMedia('(min-width: 1024px)').matches;
       const currentLimit = state.propDisplayLimit || 100;
       const displayProps = props.slice(0, currentLimit);
       const hasMore = props.length > currentLimit;
+      const propsBoardSig = [
+        props.length,
+        currentLimit,
+        state.filter,
+        state.league,
+        state.sort,
+        state.gameFilter?.id || '',
+        state.propDisplayLimit,
+      ].join('|');
+      const existingGrid = document.getElementById('propsGridList');
+      if (!isDesktopHome && state.view === 'props' && existingGrid && existingGrid.children.length > 0 && propsBoardSig === _lastPropsBoardSig) {
+        return;
+      }
 
       let cardsHtml = '';
       try {
@@ -35405,44 +35570,38 @@ nav.tabs > button,
         cardsHtml = `<div style="color: red; padding: 20px;">Error rendering props: ${err.message}</div>`;
       }
 
-      const isDesktopHome = window.matchMedia('(min-width: 1024px)').matches;
-      const _savedScrollY = window.scrollY;
-      if (state.view === 'props') {
-        container.innerHTML = isDesktopHome
-          ? buildDesktopHomeDashboardHTML(props)
-          : buildMobileHomeDashboardHTML(props);
-      } else {
-        container.innerHTML = `
-          <div class="props-grid">
-            ${cardsHtml}
-          </div>
-          ${hasMore ? `
-            <div class="load-more">
+      _lastPropsBoardSig = propsBoardSig;
+      const scrollRoot = getMobileScrollRoot();
+      const _savedScrollY = scrollRoot.scrollTop || window.scrollY;
+      const loadMoreBlock = hasMore ? `
+            <div class="load-more" id="propsLoadMoreWrap">
+              <div id="propsLoadMoreSentinel" class="props-load-more-sentinel">Showing ${currentLimit} of ${props.length}</div>
               <button class="load-more-btn" onclick="loadMoreProps()">
                 Load More (${currentLimit} of ${props.length})
               </button>
             </div>
-          ` : ''}
+          ` : '';
+
+      if (state.view === 'props') {
+        container.innerHTML = buildDesktopHomeDashboardHTML(props);
+      } else {
+        container.innerHTML = `
+          <div class="props-grid" id="propsGridList">
+            ${cardsHtml}
+          </div>
+          ${loadMoreBlock}
         `;
       }
+      batchHeadshotLookups(displayProps);
       // Restore scroll — double-rAF so layout is committed before scrollTo fires.
-      // Synchronous scrollTo after innerHTML= doesn't work on iOS Safari (layout not painted yet).
-      // Skip if user is still in touch momentum (2000ms window after touchend).
       if (_savedScrollY > 0) {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
-              window.scrollTo({ top: _savedScrollY, behavior: 'instant' });
+              scrollRoot.scrollTo({ top: _savedScrollY, behavior: 'auto' });
             }
           });
         });
-      }
-
-      // On mobile home dashboard: fill deferred below-fold sections after first paint
-      if (!isDesktopHome && state.view === 'props') {
-        setTimeout(() => {
-          if (typeof _renderMobileHomeDeferredSections === 'function') _renderMobileHomeDeferredSections();
-        }, 80);
       }
 
       // Keep the active navigation view intact. renderProps() is also called by
@@ -35472,7 +35631,32 @@ nav.tabs > button,
       if (typeof refreshMarketsAfterPropsIfNeeded === 'function') refreshMarketsAfterPropsIfNeeded();
     }
 
+    let _lastPropsBoardSig = '';
+    let _propsLoadMoreObserver = null;
+
+    function setupPropsLoadMore(totalCount, shownCount) {
+      if (_propsLoadMoreObserver) { _propsLoadMoreObserver.disconnect(); _propsLoadMoreObserver = null; }
+      const sentinel = document.getElementById('propsLoadMoreSentinel');
+      if (!sentinel || shownCount >= totalCount) {
+        if (sentinel) sentinel.style.display = 'none';
+        return;
+      }
+      sentinel.style.display = '';
+      sentinel.textContent = `Showing ${shownCount} of ${totalCount} — scroll for more`;
+      const scrollRoot = getMobileScrollRoot();
+      const observerRoot = scrollRoot === document.documentElement || scrollRoot === document.body
+        ? null
+        : scrollRoot;
+      _propsLoadMoreObserver = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        if (_propsLoadMoreObserver) { _propsLoadMoreObserver.disconnect(); _propsLoadMoreObserver = null; }
+        loadMoreProps();
+      }, { root: observerRoot, rootMargin: '240px' });
+      _propsLoadMoreObserver.observe(sentinel);
+    }
+
     function loadMoreProps() {
+      _lastPropsBoardSig = '';
       state.propDisplayLimit = (state.propDisplayLimit || 100) + 100;
       queueUserPropsRender('load-more', 70);
     }
@@ -39183,7 +39367,7 @@ nav.tabs > button,
 
       btn.textContent = 'Analyzing…';
       btn.disabled = true;
-      resultEl.innerHTML = '<div style="text-align:center;padding:48px 0;color:#475569"><div style="font-size:28px;margin-bottom:12px">⚡</div><div style="font-weight:700;font-size:15px">Gemini is analyzing the board…</div><div style="font-size:13px;margin-top:6px">Pulling splits &amp; matchup context</div></div>';
+      resultEl.innerHTML = '<div style="text-align:center;padding:48px 0;color:#475569"><div style="font-size:28px;margin-bottom:12px">⚡</div><div style="font-weight:700;font-size:15px">Kimi is analyzing the board…</div><div style="font-size:13px;margin-top:6px">Gemini backup if needed · pulling splits &amp; matchup context</div></div>';
 
       var base = getPropEdgeAnalystAppUrl();
       fetch(base + '/api/analyze', {
@@ -39201,7 +39385,8 @@ nav.tabs > button,
         }
         var a = d.analysis || {};
         var conf = Math.max(1, Math.min(10, Math.round(Number(a.confidence_rating) || 7)));
-        var metaText = (d.fallback ? 'PropEdge backup' : 'Gemini') + ' · ' + (d.model || '') + ' · ' + (d.propCount || 0) + ' props' + (d.slateDate ? ' · ' + d.slateDate : '');
+        var providerLabel = d.provider === 'kimi' ? 'Kimi' : (d.provider === 'propedge' || d.fallback ? 'Gemini backup' : 'Gemini');
+        var metaText = providerLabel + ' · ' + (d.model || '') + ' · ' + (d.propCount || 0) + ' props' + (d.slateDate ? ' · ' + d.slateDate : '');
         var html = '<div class="propai-gen-meta"><span>' + metaText + '</span><span class="propai-gen-conf-badge">' + conf + '/10 Confidence</span></div>';
         html += '<div class="propai-gen-intro-card"><div class="propai-gen-intro-label">Model Assessment</div><div class="propai-gen-intro-title">' + (a.article_title || '').replace(/</g,'&lt;') + '</div><p class="propai-gen-intro-text">' + (a.featured_intro || '').replace(/</g,'&lt;') + '</p></div>';
         html += '<div class="propai-gen-analysis-card">' + _renderGenProse(a.matchup_analysis) + '</div>';
@@ -39219,11 +39404,19 @@ nav.tabs > button,
     // ── End Native Generative Analyst ─────────────────────────────────────────
 
     function setPropAISection(section) {
-      state.propaiSection = section || 'analyst';
+      const next = section || 'analyst';
+      if (state.propaiSection === next) {
+        applyPropAISectionVisibility();
+        return;
+      }
+      state.propaiSection = next;
       applyPropAISectionVisibility();
-      if (state.propaiSection === 'markets') renderMarketsView();
-      if (state.propaiSection === 'slate') renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
-      if (state.propaiSection === 'generative') initGenerativeAnalystFrame();
+      requestAnimationFrame(() => {
+        if (state.propaiSection !== next) return;
+        if (next === 'markets') renderMarketsView();
+        if (next === 'slate') renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
+        if (next === 'generative') initGenerativeAnalystFrame();
+      });
     }
 
     function applyPropAISectionVisibility() {
@@ -40700,15 +40893,51 @@ nav.tabs > button,
       document.documentElement.style.setProperty('--pe-mobile-stats-bar-h', `${stickyH}px`);
     }
 
+    function getMobileScrollRoot() {
+      if (window.innerWidth < 1024) {
+        const shell = document.querySelector('.site-shell-main');
+        if (shell) return shell;
+      }
+      return document.scrollingElement || document.documentElement;
+    }
+
+    function syncMobileBottomNavOffset() {
+      const nav = document.getElementById('siteMobileBottomNav');
+      if (!nav || window.innerWidth >= 1024) {
+        document.documentElement.style.removeProperty('--pe-mobile-bottom-nav-h');
+        if (nav) nav.style.bottom = '';
+        return;
+      }
+      const navH = Math.ceil(nav.getBoundingClientRect().height);
+      document.documentElement.style.setProperty('--pe-mobile-bottom-nav-h', `${navH || 64}px`);
+      nav.style.bottom = '0';
+    }
+
+    function syncMobileViewportHeight() {
+      if (window.innerWidth >= 1024) {
+        document.documentElement.style.removeProperty('--pe-vvh');
+        return;
+      }
+      const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      // Ignore large shrinks — those are the soft keyboard opening, not toolbar collapse.
+      // Toolbar collapse is ~50px; keyboard open is ~250-350px. Threshold 150px separates them.
+      const current = parseInt(document.documentElement.style.getPropertyValue('--pe-vvh') || '0', 10);
+      if (current > 0 && (current - h) > 150) return;
+      document.documentElement.style.setProperty('--pe-vvh', `${Math.round(h)}px`);
+    }
+
     function syncMobileShellLayout() {
       const isMobile = window.innerWidth < 1024;
+      document.documentElement.classList.toggle('site-mobile-active', isMobile);
       document.body.classList.toggle('site-mobile-active', isMobile);
       // Detect iOS/Safari: disable content-visibility to prevent scroll position jumps
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      document.body.classList.toggle('no-content-visibility', isIOS || isSafari);
+      document.body.classList.toggle('no-content-visibility', isIOS || isSafari || isMobile);
       if (!isMobile) toggleMobileMoreMenu(false);
+      syncMobileViewportHeight();
       syncMobileStickyHeaderOffset();
+      syncMobileBottomNavOffset();
     }
 
     function toggleMobileMoreMenu(forceOpen) {
@@ -40721,15 +40950,16 @@ nav.tabs > button,
     }
 
     function syncShellNavState() {
+      const view = state.view || 'props';
       document.querySelectorAll('.site-shell-nav[data-target-view]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.targetView === state.view);
+        btn.classList.toggle('active', btn.dataset.targetView === view);
       });
       document.querySelectorAll('.site-mobile-nav-btn[data-target-view]').forEach(btn => {
-        if (btn.dataset.targetView === 'more') {
-          btn.classList.remove('active');
-          return;
-        }
-        btn.classList.toggle('active', btn.dataset.targetView === state.view);
+        btn.classList.remove('active');
+      });
+      document.querySelectorAll('.site-mobile-nav-btn[data-target-view]').forEach(btn => {
+        if (btn.dataset.targetView === 'more') return;
+        if (btn.dataset.targetView === view) btn.classList.add('active');
       });
       document.querySelectorAll('.site-mobile-more-chip[data-target-view]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.targetView === state.view);
@@ -40764,20 +40994,20 @@ nav.tabs > button,
       });
     }
 
-    function triggerShellView(view, btn) {
-      if (btn) {
-        document.querySelectorAll('.site-shell-nav[data-target-view]').forEach(el => el.classList.remove('active'));
-        btn.classList.add('active');
+    function triggerShellView(view) {
+      const tab = document.querySelector(`.nav-tab[data-view="${view}"]`);
+      if (!tab) return;
+      if (typeof window._propedgeSwitchView === 'function') {
+        window._propedgeSwitchView(tab);
+      } else {
+        tab.click();
       }
-      document.querySelector(`.nav-tab[data-view="${view}"]`)?.click();
+      syncShellNavState();
     }
 
-    function triggerShellLeague(league, btn) {
-      if (btn) {
-        document.querySelectorAll('.site-league-chip[data-shell-league]').forEach(el => el.classList.remove('active'));
-        btn.classList.add('active');
-      }
+    function triggerShellLeague(league) {
       document.querySelector(`.sport-tab[data-league="${league}"]`)?.click();
+      syncShellNavState();
     }
 
     function submitShellPropAIQuery() {
@@ -40804,6 +41034,7 @@ nav.tabs > button,
     // TABS & FILTERS
     // ==========================================
     function applyViewVisibility() {
+      syncShellNavState();
       const view = state.view || 'props';
       const isWideDesktop = window.innerWidth >= 1400;
       const isDesktopView = window.innerWidth >= 1024;
@@ -40849,24 +41080,17 @@ nav.tabs > button,
         parlayEl.style.display = showParlayRail ? 'block' : 'none';
       }
 
-      // Defer expensive DOM queries to requestIdleCallback to unblock tab switch responsiveness
+      // Defer expensive layout work; nav active state already synced above.
+      const deferShellChrome = () => {
+        syncParlayRailBadge();
+        syncMobileShellLayout();
+        syncMobileStickyHeaderOffset();
+        renderAIFastModeToggle();
+      };
       if (typeof requestIdleCallback !== 'undefined') {
-        requestIdleCallback(() => {
-          syncParlayRailBadge();
-          syncMobileShellLayout();
-          syncMobileStickyHeaderOffset();
-          syncShellNavState();
-          renderAIFastModeToggle();
-        }, { timeout: 100 });
+        requestIdleCallback(deferShellChrome, { timeout: 100 });
       } else {
-        // Fallback for browsers without requestIdleCallback
-        setTimeout(() => {
-          syncParlayRailBadge();
-          syncMobileShellLayout();
-          syncMobileStickyHeaderOffset();
-          syncShellNavState();
-          renderAIFastModeToggle();
-        }, 0);
+        setTimeout(deferShellChrome, 0);
       }
     }
 
@@ -40889,6 +41113,7 @@ nav.tabs > button,
         let navStartScroll = 0;
         let navDragged = false;
         let navLastDragEndAt = 0;
+        let navHandledPointerTap = false;
 
         navStrip.addEventListener('pointerdown', (e) => {
           navPointerDown = true;
@@ -40914,7 +41139,9 @@ nav.tabs > button,
             const tappedEl = document.elementFromPoint(e.clientX, e.clientY);
             const tappedTab = tappedEl && tappedEl.closest ? tappedEl.closest('.nav-tab') : null;
             if (tappedTab && navStrip.contains(tappedTab)) {
+              navHandledPointerTap = true;
               switchToNavView(tappedTab);
+              setTimeout(() => { navHandledPointerTap = false; }, 320);
             }
           }
           navPointerDown = false;
@@ -40962,12 +41189,19 @@ nav.tabs > button,
         if (!tab) return;
           const nextView = tab.dataset.view;
           if (!nextView) return;
-          if (state.view === nextView && tab.classList.contains('active')) return;
+          if (state.view === nextView) {
+            syncShellNavState();
+            return;
+          }
+          if (typeof toggleMobileMoreMenu === 'function') toggleMobileMoreMenu(false);
           document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
-          try { tab.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); } catch (err) {}
+          if (window.innerWidth >= 1024) {
+            try { tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' }); } catch (err) {}
+          }
           state.view = nextView;
-          if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'instant' });
+          const scrollRoot = getMobileScrollRoot();
+          if (scrollRoot && scrollRoot.scrollTop > 0) scrollRoot.scrollTo({ top: 0, behavior: 'auto' });
           applyViewVisibility();
 
           runAfterPaint(() => {
@@ -40991,22 +41225,20 @@ nav.tabs > button,
             if (view === 'portfolio') { undockParlay(); renderPortfolio(); resumeTicker(); }
           });
       }
+      window._propedgeSwitchView = switchToNavView;
 
       if (navStrip) {
         navStrip.addEventListener('click', (e) => {
+          if (navHandledPointerTap) {
+            e.preventDefault();
+            return;
+          }
           const tab = e.target.closest('.nav-tab');
           if (!tab || !navStrip.contains(tab)) return;
           e.preventDefault();
           switchToNavView(tab);
         });
       }
-
-      // View tabs
-      document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          switchToNavView(tab);
-        });
-      });
 
       let lastHomeLayoutDesktop = window.matchMedia('(min-width: 1024px)').matches;
       let peResizeRaf = 0;
@@ -41029,7 +41261,20 @@ nav.tabs > button,
         });
       });
       syncMobileShellLayout();
-      requestAnimationFrame(() => syncMobileStickyHeaderOffset());
+      syncShellNavState();
+      // iOS Safari: --pe-vvh must track toolbar collapse/expand, which only
+      // visualViewport resize reports reliably (window resize can miss it).
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', syncMobileViewportHeight);
+        window.visualViewport.addEventListener('scroll', syncMobileViewportHeight);
+      }
+      window.addEventListener('orientationchange', () => {
+        requestAnimationFrame(syncMobileViewportHeight);
+      });
+      requestAnimationFrame(() => {
+        syncMobileStickyHeaderOffset();
+        syncMobileBottomNavOffset();
+      });
     }
 
     function initFilters() {
@@ -41191,6 +41436,7 @@ nav.tabs > button,
     }
 
     function showLoading() {
+      _lastPropsBoardSig = '';
       document.getElementById('propsContainer').innerHTML = `
         <div class="loading">
           <div class="spinner"></div>
