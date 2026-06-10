@@ -2839,10 +2839,13 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         grid-template-columns: none !important;
         width: 100% !important;
         max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
         min-height: 0 !important;
         padding: 0 !important;
         gap: 0 !important;
         position: relative;
+        overflow: hidden !important;
       }
 
       .site-sidebar-shell {
@@ -2864,12 +2867,11 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
         /*
-         * Bottom padding = nav bar height + safe area inset.
-         * Drop --pe-nav-bottom-gap: with html/body height:100%, the layout
-         * viewport is now the same as the visual viewport so there is no
-         * extra gap to compensate for.
+         * Since nav is now a flex child at the bottom of the shell (not fixed),
+         * .site-shell-main naturally sits above it. We don't need padding to
+         * clear the nav height anymore, just a little breathing room.
          */
-        padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px) !important;
+        padding-bottom: 24px !important;
       }
 
       /* Size board columns to content so .site-shell-main stays the one
@@ -18200,10 +18202,8 @@ nav.tabs > button,
 
       .site-mobile-bottom-nav {
         display: flex;
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        /* iOS Safari flex container layout — don't use position:fixed to avoid layout/visual viewport detached bottom edge */
+        position: relative;
         z-index: 120;
         align-items: stretch;
         justify-content: space-around;
@@ -18217,8 +18217,8 @@ nav.tabs > button,
         box-sizing: border-box;
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
-        /* Extend background colour flush to screen bottom edge */
-        box-shadow: 0 120px 0 120px rgb(3, 8, 18);
+        /* Fills safe area nicely if flex column shifts slightly */
+        box-shadow: 0 48px 0 0 rgb(3, 8, 18);
       }
 
       body.pe-ios-mobile .site-mobile-bottom-nav,
@@ -18228,10 +18228,10 @@ nav.tabs > button,
       }
 
       body.site-mobile-active .site-mobile-more-row {
-        position: fixed;
+        position: absolute;
         left: 0;
         right: 0;
-        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px));
+        bottom: 100%; /* Anchor to top of relative nav container */
         z-index: 121;
       }
 
@@ -18240,14 +18240,7 @@ nav.tabs > button,
       }
 
       body.site-mobile-active .site-mobile-bottom-nav::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: calc(-1 * var(--pe-nav-bottom-gap, 0px));
-        height: calc(var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px) + 4px);
-        background: rgb(3, 8, 18);
-        pointer-events: none;
+        display: none;
       }
 
       html.pe-ios-mobile,
