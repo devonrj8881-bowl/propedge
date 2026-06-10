@@ -1,5 +1,43 @@
 # PropEdge Session Notes
 
+## June 10 — SESSION WRAP ✅
+
+**Production:** `v7.228` at https://propedgemasters.netlify.app  
+**GitHub `main`:** `124a7503` — all commits pushed; all `index.html` copies byte-identical  
+**Generative Analyst:** https://propedge-generative-analyst.vercel.app — Kimi restored with full report outline
+
+### Shipped this session
+
+| Version / area | What |
+|----------------|------|
+| **v7.211** | Unified mobile/desktop home; toast no longer blocks nav taps |
+| **v7.211+** | Keyboard-open viewport shrink ignored; mobile height/overflow fixes |
+| **Parlay tab** | Empty tab fixed (undock + grid shell) — confirmed working v7.218+ |
+| **Kimi analyst** | Generative analyst + richer enrichment in `analyst-app/app/api/analyze/route.ts` |
+| **Gambly** | Parlay slip clears after textPicks/openGamblyBot |
+| **iOS nav gap** | 8+ viewport strategies attempted — **gap persists on real iPhone** |
+| **v7.227 regression** | Mobile shell grid `250px 1fr` squeezed content into narrow left column |
+| **v7.228** | Restored mobile flex override on `.site-rebuild-shell` — full-width layout verified in prod |
+
+### Key commits (`be327a8d` → `124a7503`)
+
+- `be327a8d` / `49b6d326` — v7.211 home unify + toast pointer-events
+- `73146aa9` / `5202ac55` — mobile viewport height + overflow
+- `c66a8b86` / `cdc61a17` — Kimi analyst + Parlay tab + grid shell
+- `f9cc8ca4` — Gambly parlay clear
+- `44ceb3a4` / `b7b65647` / `124a7503` — iOS nav gap attempts + v7.228 grid regression fix
+
+### Mobile nav gap — OPEN
+
+Blue band below bottom nav on iPhone Safari/PWA. Not reproducible in Chromium emulation. Gap color `#020617` (= `:root --bg-primary`). Device diagnostics: `html[data-pe-nav-gap]`, `body[data-pe-device]`.
+
+### Follow up
+
+- [ ] iPhone 17 Pro Max: confirm v7.228 full-width layout + capture nav-gap diagnostics
+- [ ] If gap persists: real WebKit investigation needed — CSS height hacks exhausted
+- [ ] Uncommitted: `.gitignore`, `netlify/functions/enrich-pitcher-era.js` (untracked)
+
+---
 
 ## Session: 2026-06-10 (UI & Gambly Fixes)
 
@@ -21,7 +59,7 @@
 - Added a "Slip sent — parlay cleared" toast confirmation.
 
 ### 3. Generative UI / PropAI "Kimi" Model 
-**Finding:** The user reported Kimi wasn't being pulled in for long complex analysis. Code review confirmed **Kimi is not in the codebase** and `ask-analyst.js` is Gemini-only (migrated previously in commit `3cef642f`). User to decide whether to tune Gemini prompts for deeper analysis or re-add Kimi integration later.
+**Update (v7.228):** Kimi generative analyst restored in `analyst-app/app/api/analyze/route.ts` with full report outline. Netlify `ask-analyst.js` remains Gemini-primary for shell-bar PropAI queries.
 
 ## Session: 2026-06-05 (Late Night)
 
