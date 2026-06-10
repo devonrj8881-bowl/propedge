@@ -1,5 +1,29 @@
 # PropEdge Session Notes
 
+## June 10 — v7.229 iOS Nav Gap Fix
+
+**Version:** `v7.229` — not yet deployed (awaiting deploy approval)
+
+### Problem
+Dark band visible below the bottom nav on iPhone Safari / PWA. Multiple prior attempts (position:fixed, height hacks, visualViewport JS, device profiles) all failed because they fought the symptom, not the root cause.
+
+### Root cause
+`height: 100%` on `html` inherits from the ICB (initial containing block), which in iOS Safari = the **layout viewport**. The layout viewport is taller than the visual viewport when Safari's toolbar is visible. So `body { height: 100% }` = taller than what's on screen, and everything sized off it overflows below the visible area.
+
+### Fix (v7.229)
+Changed `html { height: 100% }` → `height: 100dvh` and added `body { display: flex; flex-direction: column; height: 100dvh }`. The `dvh` (dynamic viewport height) unit, supported since iOS Safari 15.4, tracks the **visual** viewport and shrinks when the toolbar appears. With body as a flex column, `.site-rebuild-shell` gets `flex: 1` (fills remaining space) and `.site-mobile-bottom-nav` stays as `flex-shrink: 0` at the bottom — no position tricks needed.
+
+### Files changed
+- `propedge-deploy/index.html` → v7.229 (head inline `@media (max-width: 1023px)` style block only)
+- `index.html` + `propedge-final/`, `propedge-deploy-manual/`, `propedge-deploy-manual 2/` synced (all MD5 `2a602b88…`)
+
+### Verified locally
+- 390×844 (iPhone 14/15 size): nav flush at bottom, no gap ✓
+- 440×956 (iPhone 17 Pro Max): nav flush at bottom, no gap ✓
+- Full-width content, no 250px grid squeeze ✓
+
+---
+
 ## June 10 — SESSION WRAP ✅
 
 **Production:** `v7.228` at https://propedgemasters.netlify.app  

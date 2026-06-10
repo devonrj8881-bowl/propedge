@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.228 — Fix mobile shell grid regression (250px column squeeze) — 2026-06-10 LIVE DEPLOY -->
+<!-- PropEdge v7.229 — Fix iOS nav gap: use 100dvh + body flex-column so nav anchors to visual viewport — 2026-06-10 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -36,7 +36,9 @@
        * what the user sees.
        */
       html {
-        height: 100%;
+        /* 100dvh = dynamic viewport height — shrinks when Safari toolbar is
+           visible, so layout viewport never exceeds the visual viewport. */
+        height: 100dvh;
         overflow: hidden;
         background: rgb(3, 8, 18) !important;
       }
@@ -49,10 +51,11 @@
       }
 
       body {
-        height: 100%;
+        /* Flex column: shell grows to fill space, nav stays pinned at bottom */
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
         overflow: hidden;
-        /* Fallback for very old iOS that doesn't honour height:100% on body */
-        min-height: -webkit-fill-available;
       }
 
       .site-rebuild-shell {
@@ -61,10 +64,11 @@
         grid-template-columns: none !important;
         width: 100% !important;
         max-width: 100% !important;
-        /* Fill exactly the body height — no more, no less */
-        height: 100% !important;
+        /* flex:1 fills the body minus the nav's natural height */
+        flex: 1 1 0% !important;
+        height: auto !important;
         min-height: 0 !important;
-        max-height: 100% !important;
+        max-height: none !important;
         padding: 0 !important;
         gap: 0 !important;
         overflow: hidden !important;
@@ -72,7 +76,7 @@
     }
   </style>
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.228">
+  <meta name="app-version" content="v7.229">
   <script>
     (function () {
       if (window.innerWidth >= 1024) return;
