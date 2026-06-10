@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.209 — Fix: body height from visualViewport (--pe-vvh) kills blank band under nav on iOS; flex-shrink:0 on main column sections stops game board/chips crush — 2026-06-09 LIVE DEPLOY -->
+<!-- PropEdge v7.210 — Fix: mobile bottom nav from position:fixed to in-flow flex footer of 100dvh body column (iOS toolbar-collapse drift); app-layout/main-content flex content sizing so site-shell-main is the one scroller — 2026-06-09 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.209">
+  <meta name="app-version" content="v7.210">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -21180,7 +21180,7 @@ nav.tabs > button,
 
     async function fetchPropedgeMainCsv() {
       const directUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1351555262&_=${Date.now()}`;
-      const proxiedUrl = `/.netlify/functions/prop-feed?sheet=propedge-main`;
+      const proxiedUrl = `/.netlify/functions/prop-feed?sheet=propedge-main&t=${Date.now()}`;
       let response = await fetch(directUrl, { cache: 'no-store' });
       if (response.ok) {
         const csv = await response.text();
