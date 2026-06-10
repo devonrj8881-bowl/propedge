@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.212 — Fix iPhone gap below bottom nav (pe-vvh lock, no 100dvh overflow) — 2026-06-10 LIVE DEPLOY -->
+<!-- PropEdge v7.228 — Fix mobile shell grid regression (250px column squeeze) — 2026-06-10 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -11,9 +11,90 @@
   <link rel="alternate icon" type="image/png" href="/favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
-<meta name="theme-color" content="#ff6a00">
+<meta name="theme-color" content="#030812">
+  <style>
+    @media (max-width: 1023px) {
+      :root {
+        --bg-primary: rgb(3, 8, 18);
+        --bg-secondary: rgb(3, 8, 18);
+      }
+
+      /*
+       * iOS Safari viewport fix — the only reliable way to prevent content
+       * bleeding under the fixed bottom nav bar.
+       *
+       * Problem: iOS Safari's dynamic toolbar makes window.innerHeight and
+       * 100svh/100dvh report the *layout* viewport (full height with toolbar
+       * hidden), not the *visual* viewport (what the user actually sees).
+       * position:fixed elements anchor to the layout viewport, so the nav bar
+       * lands in the dead zone below the visible area.
+       *
+       * Fix: lock html+body to height:100% + overflow:hidden so the layout
+       * viewport cannot exceed the visual viewport. The shell becomes the
+       * single bounded flex column; .site-shell-main is the only scroller.
+       * The nav stays position:fixed but now lands exactly at the bottom of
+       * what the user sees.
+       */
+      html {
+        height: 100%;
+        overflow: hidden;
+        background: rgb(3, 8, 18) !important;
+      }
+
+      html, body {
+        background: rgb(3, 8, 18) !important;
+        background-image: none !important;
+        padding: 0 !important;
+        margin: 0;
+      }
+
+      body {
+        height: 100%;
+        overflow: hidden;
+        /* Fallback for very old iOS that doesn't honour height:100% on body */
+        min-height: -webkit-fill-available;
+      }
+
+      .site-rebuild-shell {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        /* Fill exactly the body height — no more, no less */
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        overflow: hidden !important;
+      }
+    }
+  </style>
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.212">
+  <meta name="app-version" content="v7.228">
+  <script>
+    (function () {
+      if (window.innerWidth >= 1024) return;
+      document.documentElement.classList.add('site-mobile-active');
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('pe-ios-mobile');
+      } else if (/Android/i.test(navigator.userAgent)) {
+        document.documentElement.classList.add('pe-android-mobile');
+      }
+      function markBodyMobile() {
+        if (!document.body) return;
+        document.body.classList.add('site-mobile-active');
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+          document.body.classList.add('pe-ios-mobile');
+        } else if (/Android/i.test(navigator.userAgent)) {
+          document.body.classList.add('pe-android-mobile');
+        }
+      }
+      if (document.body) markBodyMobile();
+      else document.addEventListener('DOMContentLoaded', markBodyMobile, { once: true });
+    })();
+  </script>
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -1476,37 +1557,48 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       -webkit-tap-highlight-color: transparent;
     }
 
+    @media (max-width: 1023px) {
+      :root {
+        --bg-primary: rgb(3, 8, 18);
+        --bg-secondary: rgb(3, 8, 18);
+      }
+
+      html {
+        background: rgb(3, 8, 18) !important;
+        overflow-x: hidden;
+      }
+
+      html,
+      body {
+        background: rgb(3, 8, 18) !important;
+        background-image: none !important;
+        padding-bottom: 0 !important;
+      }
+
+      body {
+        min-height: 100svh;
+        min-height: -webkit-fill-available;
+        overflow-x: hidden;
+        margin: 0;
+      }
+
+      .site-mobile-bottom-nav {
+        flex: 0 0 auto;
+        width: 100%;
+      }
+
+      html.site-mobile-active,
+      html.site-mobile-active body {
+        padding-bottom: 0 !important;
+      }
+    }
+
     .site-rebuild-shell {
       display: grid;
       grid-template-columns: 250px minmax(0, 1fr);
       gap: 24px;
       min-height: 100vh;
       padding: 18px;
-    }
-
-    /* iOS Safari: lock layout viewport to visual viewport so fixed nav lands correctly */
-    @media (max-width: 1023px) {
-      html.pe-ios-mobile {
-        height: 100%;
-        overflow: hidden;
-      }
-      html.pe-ios-mobile body {
-        height: 100%;
-        overflow: hidden;
-        min-height: 0;
-      }
-      html.pe-ios-mobile .site-rebuild-shell {
-        height: 100% !important;
-        max-height: 100% !important;
-        overflow: hidden !important;
-        min-height: 0 !important;
-      }
-      html.pe-ios-mobile .site-shell-main {
-        height: 0 !important;
-        flex: 1 1 auto !important;
-        overflow-y: auto !important;
-        padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px) !important;
-      }
     }
 
     .site-sidebar-shell {
@@ -2730,43 +2822,30 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     }
 
     @media (max-width: 1023px) {
-      html.site-mobile-active,
-      body.site-mobile-active {
-        background: #020617;
-        /* Lock to visual viewport — 100dvh min-height was extending past Safari toolbar */
-        height: var(--pe-vvh, 100svh);
-        min-height: var(--pe-vvh, 100svh);
-        max-height: var(--pe-vvh, 100svh);
-        overflow: hidden;
+      html.site-mobile-active {
+        background: rgb(3, 8, 18);
         overscroll-behavior: none;
       }
 
       body.site-mobile-active {
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        flex: 1;
-        padding-bottom: 0 !important;
-        overflow-y: hidden !important;
+        padding: 0 !important;
+        overscroll-behavior: none;
+        background: rgb(3, 8, 18) !important;
       }
 
       .site-rebuild-shell {
-        display: flex;
-        flex-direction: column;
-        padding: 0;
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow: hidden;
-      }
-
-      /* Nav lives in normal flow as a flex footer (iOS Safari fails to
-         reposition position:fixed elements when its toolbar collapses
-         during inner-scroller scroll). Shell flexes to fill remaining
-         height; --pe-vvh on body tracks the visible viewport. */
-      body.site-mobile-active .site-rebuild-shell {
-        height: auto;
-        flex: 1 1 auto;
-        min-height: 0;
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        position: relative;
+        overflow: hidden !important;
       }
 
       .site-sidebar-shell {
@@ -2774,16 +2853,25 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       }
 
       .site-shell-main {
+        flex: 1 1 auto;
         display: flex;
         flex-direction: column;
         gap: 0;
         min-width: 0;
-        flex: 1 1 auto;
         min-height: 0;
+        /* Let it grow to fill available flex space, never exceed it */
+        height: 0;
+        max-height: none;
         overflow-x: hidden;
         overflow-y: auto;
         overscroll-behavior-y: contain;
-        padding-bottom: 16px;
+        -webkit-overflow-scrolling: touch;
+        /*
+         * Since nav is now a flex child at the bottom of the shell (not fixed),
+         * .site-shell-main naturally sits above it. We don't need padding to
+         * clear the nav height anymore, just a little breathing room.
+         */
+        padding-bottom: 24px !important;
       }
 
       /* Size board columns to content so .site-shell-main stays the one
@@ -18097,7 +18185,7 @@ nav.tabs > button,
       }
 
       html.site-mobile-active {
-        scroll-padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 8px);
+        scroll-padding-bottom: 8px;
       }
 
       body.site-mobile-active {
@@ -18105,7 +18193,7 @@ nav.tabs > button,
       }
 
       body.site-mobile-active .site-shell-main {
-        scroll-padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 8px);
+        scroll-padding-bottom: 8px;
       }
 
       .nav-tabs {
@@ -18114,55 +18202,60 @@ nav.tabs > button,
 
       .site-mobile-bottom-nav {
         display: flex;
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        /* iOS Safari flex container layout — don't use position:fixed to avoid layout/visual viewport detached bottom edge */
+        position: relative;
         z-index: 120;
         align-items: stretch;
         justify-content: space-around;
         gap: 4px;
         padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
-        background: linear-gradient(180deg, rgba(4, 10, 22, 0.92), rgba(3, 8, 18, 0.98));
+        background-color: rgb(3, 8, 18);
+        background-image: linear-gradient(180deg, rgba(4, 10, 22, 0.98), rgba(3, 8, 18, 1));
         border-top: 1px solid rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
-      }
-
-      /* In-flow flex footer once the mobile shell is active — see
-         body.site-mobile-active flex column above. */
-      body.site-mobile-active .site-mobile-bottom-nav {
-        position: relative;
-        left: auto;
-        right: auto;
-        bottom: auto;
-        flex: 0 0 auto;
-        margin-top: auto;
+        flex-shrink: 0;
         width: 100%;
         box-sizing: border-box;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        /* Fills safe area nicely if flex column shifts slightly */
+        box-shadow: 0 48px 0 0 rgb(3, 8, 18);
       }
 
-      /* Fill iPhone home-indicator strip — prevents blue gap below nav */
-      body.site-mobile-active .site-mobile-bottom-nav::after {
-        content: '';
+      body.pe-ios-mobile .site-mobile-bottom-nav,
+      body.pe-android-mobile .site-mobile-bottom-nav {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+      }
+
+      body.site-mobile-active .site-mobile-more-row {
         position: absolute;
         left: 0;
         right: 0;
-        bottom: 0;
-        height: env(safe-area-inset-bottom, 0px);
-        background: rgba(3, 8, 18, 1);
-        pointer-events: none;
+        bottom: 100%; /* Anchor to top of relative nav container */
+        z-index: 121;
       }
 
-      /* Anchor the More popup to the body box (position:relative, 100dvh)
-         instead of the viewport — same iOS toolbar-collapse quirk as the
-         nav. Toast stays fixed: its hidden translateY state would overflow
-         the body box and create phantom scroll height. */
-      body.site-mobile-active .site-mobile-more-row {
-        position: absolute;
+      body.site-mobile-active .propai-page {
+        min-height: auto !important;
       }
+
+      body.site-mobile-active .site-mobile-bottom-nav::after {
+        display: none;
+      }
+
+      html.pe-ios-mobile,
+      body.pe-ios-mobile {
+        background: rgb(3, 8, 18) !important;
+      }
+
+      @media (min-width: 768px) and (max-width: 1023px) {
+        .site-mobile-bottom-nav {
+          padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px));
+          gap: 8px;
+        }
+      }
+
+      /* More popup anchored above in-grid nav */
 
       .site-mobile-nav-btn {
         flex: 1 1 0;
@@ -18241,7 +18334,7 @@ nav.tabs > button,
       }
 
       .toast {
-        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px);
+        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px) + 12px);
       }
 
       .app-layout,
@@ -18387,6 +18480,15 @@ nav.tabs > button,
     body.site-mobile-active {
       padding-top: 0;
       padding-bottom: 0 !important;
+    }
+
+    /* Keyboard open — keep grid shell stable */
+    body.site-mobile-keyboard-active.site-mobile-active {
+      overflow: hidden !important;
+    }
+
+    body.site-mobile-keyboard-active .site-rebuild-shell {
+      overflow: hidden;
     }
 
     body.site-mobile-active .header {
@@ -19531,39 +19633,39 @@ nav.tabs > button,
   </div> <!-- End .app-layout -->
       </div> <!-- End .site-shell-content -->
     </main>
-  </div>
+  </div> <!-- End .site-rebuild-shell -->
 
-  <div class="site-mobile-more-row" id="siteMobileMoreRow">
-    <button type="button" class="site-mobile-more-chip" data-target-view="games" onclick="triggerShellView('games'); toggleMobileMoreMenu(false);">Games</button>
-    <button type="button" class="site-mobile-more-chip" data-target-view="news" onclick="triggerShellView('news'); toggleMobileMoreMenu(false);">News</button>
-    <button type="button" class="site-mobile-more-chip" data-target-view="injuries" onclick="triggerShellView('injuries'); toggleMobileMoreMenu(false);">Injuries</button>
-    <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); showEmailModal();">Sign In</button>
-    <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); showEmailModal();">Settings</button>
-    <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); requestPushAlerts();">Alerts</button>
-  </div>
+    <div class="site-mobile-more-row" id="siteMobileMoreRow">
+      <button type="button" class="site-mobile-more-chip" data-target-view="games" onclick="triggerShellView('games'); toggleMobileMoreMenu(false);">Games</button>
+      <button type="button" class="site-mobile-more-chip" data-target-view="news" onclick="triggerShellView('news'); toggleMobileMoreMenu(false);">News</button>
+      <button type="button" class="site-mobile-more-chip" data-target-view="injuries" onclick="triggerShellView('injuries'); toggleMobileMoreMenu(false);">Injuries</button>
+      <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); showEmailModal();">Sign In</button>
+      <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); showEmailModal();">Settings</button>
+      <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); requestPushAlerts();">Alerts</button>
+    </div>
 
-  <nav class="site-mobile-bottom-nav" id="siteMobileBottomNav" aria-label="Main navigation">
-    <button type="button" class="site-mobile-nav-btn active" data-target-view="props" onclick="triggerShellView('props', this); toggleMobileMoreMenu(false);">
-      <span class="site-mobile-nav-icon" data-shell-icon="home"></span>
-      <span>Home</span>
-    </button>
-    <button type="button" class="site-mobile-nav-btn" data-target-view="markets" onclick="triggerShellView('markets', this); toggleMobileMoreMenu(false);">
-      <span class="site-mobile-nav-icon" data-shell-icon="markets"></span>
-      <span>Markets</span>
-    </button>
-    <button type="button" class="site-mobile-nav-btn" data-target-view="recommendations" onclick="triggerShellView('recommendations', this); toggleMobileMoreMenu(false);">
-      <span class="site-mobile-nav-icon" data-shell-icon="propai"></span>
-      <span>PropAI</span>
-    </button>
-    <button type="button" class="site-mobile-nav-btn" data-target-view="parlay" onclick="triggerShellView('parlay', this); toggleMobileMoreMenu(false);">
-      <span class="site-mobile-nav-icon" data-shell-icon="parlay"></span>
-      <span>Parlay</span>
-    </button>
-    <button type="button" class="site-mobile-nav-btn" data-target-view="more" id="siteMobileMoreBtn" onclick="toggleMobileMoreMenu()">
-      <span class="site-mobile-nav-icon" data-shell-icon="games"></span>
-      <span>More</span>
-    </button>
-  </nav>
+    <nav class="site-mobile-bottom-nav" id="siteMobileBottomNav" aria-label="Main navigation">
+      <button type="button" class="site-mobile-nav-btn active" data-target-view="props" onclick="triggerShellView('props', this); toggleMobileMoreMenu(false);">
+        <span class="site-mobile-nav-icon" data-shell-icon="home"></span>
+        <span>Home</span>
+      </button>
+      <button type="button" class="site-mobile-nav-btn" data-target-view="markets" onclick="triggerShellView('markets', this); toggleMobileMoreMenu(false);">
+        <span class="site-mobile-nav-icon" data-shell-icon="markets"></span>
+        <span>Markets</span>
+      </button>
+      <button type="button" class="site-mobile-nav-btn" data-target-view="recommendations" onclick="triggerShellView('recommendations', this); toggleMobileMoreMenu(false);">
+        <span class="site-mobile-nav-icon" data-shell-icon="propai"></span>
+        <span>PropAI</span>
+      </button>
+      <button type="button" class="site-mobile-nav-btn" data-target-view="parlay" onclick="triggerShellView('parlay', this); toggleMobileMoreMenu(false);">
+        <span class="site-mobile-nav-icon" data-shell-icon="parlay"></span>
+        <span>Parlay</span>
+      </button>
+      <button type="button" class="site-mobile-nav-btn" data-target-view="more" id="siteMobileMoreBtn" onclick="toggleMobileMoreMenu()">
+        <span class="site-mobile-nav-icon" data-shell-icon="games"></span>
+        <span>More</span>
+      </button>
+    </nav>
 
   <!-- Toast -->
   <div class="toast" id="toast"></div>
@@ -36045,12 +36147,17 @@ nav.tabs > button,
     function dockParlayToFeaturedPick() {
       // Only dock on non-wide-desktop (wide desktop uses the sidebar rail instead)
       if (window.innerWidth >= 1400) return;
+      // Dedicated Parlay tab — keep full-width at app-layout level (not inside hidden props/home)
+      if (state.view === 'parlay') {
+        undockParlay();
+        return;
+      }
       const parlay = document.getElementById('parlayContainer');
       if (!parlay) return;
 
       // Find the featured pick panel in the home dashboard
       const anchor = document.querySelector('.site-home-dashboard .site-home-featured-full');
-      if (!anchor || anchor.nextElementSibling === parlay) return; // already docked
+      if (!anchor || anchor.offsetParent === null || anchor.nextElementSibling === parlay) return;
 
       // Save original position so we can restore it later
       if (!_parlayOriginalParent) {
@@ -39402,9 +39509,13 @@ nav.tabs > button,
     function runGenerativeAnalysis() {
       var btn = document.getElementById('propedgeGenAnalyzeBtn');
       var resultEl = document.getElementById('propedgeGenResult');
-      var question = (document.getElementById('propedgeGenQuestion') || {}).value || '';
+      var questionEl = document.getElementById('propedgeGenQuestion');
+      var question = (questionEl || {}).value || '';
       question = question.trim();
       if (!btn || !resultEl) return;
+
+      if (questionEl && typeof questionEl.blur === 'function') questionEl.blur();
+      if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
 
       btn.textContent = 'Analyzing…';
       btn.disabled = true;
@@ -39422,6 +39533,7 @@ nav.tabs > button,
         btn.disabled = false;
         if (!d.ok) {
           resultEl.innerHTML = '<div style="color:#fca5a5;padding:14px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;font-size:13px">' + (d.error || 'Analysis failed') + '</div>';
+          if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
           return;
         }
         var a = d.analysis || {};
@@ -39438,11 +39550,13 @@ nav.tabs > button,
           html += '<div class="propai-gen-analysis-card"><div class="propai-gen-section-label">Key Variances &amp; Splits</div>' + _renderGenProse(a.key_numbers_breakdown) + '</div>';
         }
         resultEl.innerHTML = html;
+        if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
       })
       .catch(function(e) {
         btn.textContent = 'Analyze';
         btn.disabled = false;
         resultEl.innerHTML = '<div style="color:#fca5a5;padding:14px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;font-size:13px">' + e.message + '</div>';
+        if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
       });
     }
     // ── End Native Generative Analyst ─────────────────────────────────────────
@@ -40955,25 +41069,247 @@ nav.tabs > button,
       document.documentElement.style.setProperty('--pe-mobile-bottom-nav-h', `${navH || 64}px`);
     }
 
-    function syncMobileViewportHeight() {
+    function isMobileInputFocused() {
+      const el = document.activeElement;
+      if (!el) return false;
+      const tag = String(el.tagName || '').toUpperCase();
+      return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+    }
+
+    function isStandalonePWA() {
+      return !!(window.matchMedia && (
+        window.matchMedia('(display-mode: standalone)').matches
+        || window.matchMedia('(display-mode: fullscreen)').matches
+      )) || window.navigator.standalone === true;
+    }
+
+    function isIOSMobile() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
+
+    function isAndroidMobile() {
+      return /Android/i.test(navigator.userAgent);
+    }
+
+    function isTabletViewport() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const short = Math.min(w, h);
+      if (w >= 768 && w < 1024) return true;
+      if (isIOSMobile() && navigator.maxTouchPoints > 1 && short >= 744) return true;
+      return false;
+    }
+
+    /* Recommended viewport profiles — portrait logical px (2024–2026 devices) */
+    const PE_DEVICE_PROFILES = [
+      { id: 'iphone-17-pro-max', form: 'phone', platform: 'ios', w: 440, h: 956, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-17-pro', form: 'phone', platform: 'ios', w: 402, h: 874, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-17-air', form: 'phone', platform: 'ios', w: 420, h: 912, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-17', form: 'phone', platform: 'ios', w: 393, h: 852, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-16-pro-max', form: 'phone', platform: 'ios', w: 440, h: 956, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-16-pro', form: 'phone', platform: 'ios', w: 402, h: 874, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-16-plus', form: 'phone', platform: 'ios', w: 430, h: 932, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-16', form: 'phone', platform: 'ios', w: 393, h: 852, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-15-pro-max', form: 'phone', platform: 'ios', w: 430, h: 932, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-15-pro', form: 'phone', platform: 'ios', w: 393, h: 852, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-se', form: 'phone', platform: 'ios', w: 375, h: 667, safeTop: 20, safeBottom: 0, navH: 49 },
+      { id: 'pixel-9-pro-xl', form: 'phone', platform: 'android', w: 448, h: 997, safeTop: 24, safeBottom: 24, navH: 49 },
+      { id: 'pixel-9-pro', form: 'phone', platform: 'android', w: 412, h: 915, safeTop: 24, safeBottom: 24, navH: 49 },
+      { id: 'pixel-9', form: 'phone', platform: 'android', w: 412, h: 892, safeTop: 24, safeBottom: 24, navH: 49 },
+      { id: 'galaxy-s25-ultra', form: 'phone', platform: 'android', w: 412, h: 915, safeTop: 28, safeBottom: 20, navH: 49 },
+      { id: 'galaxy-s25-plus', form: 'phone', platform: 'android', w: 384, h: 854, safeTop: 28, safeBottom: 20, navH: 49 },
+      { id: 'galaxy-s25', form: 'phone', platform: 'android', w: 360, h: 780, safeTop: 28, safeBottom: 20, navH: 49 },
+      { id: 'galaxy-z-fold-cover', form: 'phone', platform: 'android', w: 374, h: 832, safeTop: 28, safeBottom: 20, navH: 49 },
+      { id: 'ipad-pro-13', form: 'tablet', platform: 'ios', w: 1032, h: 1376, safeTop: 24, safeBottom: 20, navH: 56 },
+      { id: 'ipad-pro-11', form: 'tablet', platform: 'ios', w: 834, h: 1194, safeTop: 24, safeBottom: 20, navH: 56 },
+      { id: 'ipad-air-11', form: 'tablet', platform: 'ios', w: 820, h: 1180, safeTop: 24, safeBottom: 20, navH: 56 },
+      { id: 'ipad-mini', form: 'tablet', platform: 'ios', w: 744, h: 1133, safeTop: 24, safeBottom: 20, navH: 56 },
+      { id: 'ipad-10', form: 'tablet', platform: 'ios', w: 820, h: 1180, safeTop: 24, safeBottom: 20, navH: 56 },
+      { id: 'galaxy-tab-s9', form: 'tablet', platform: 'android', w: 800, h: 1280, safeTop: 24, safeBottom: 16, navH: 56 },
+      { id: 'pixel-tablet', form: 'tablet', platform: 'android', w: 800, h: 1280, safeTop: 24, safeBottom: 16, navH: 56 },
+      { id: 'android-tablet-lg', form: 'tablet', platform: 'android', w: 900, h: 1440, safeTop: 24, safeBottom: 16, navH: 56 }
+    ];
+
+    function resolveDeviceProfile() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const short = Math.min(w, h);
+      const long = Math.max(w, h);
+      const tablet = isTabletViewport();
+      const ios = isIOSMobile();
+      const android = isAndroidMobile();
+      let best = null;
+      let bestScore = Infinity;
+      PE_DEVICE_PROFILES.forEach((p) => {
+        if (p.form === 'tablet' && !tablet) return;
+        if (p.form === 'phone' && tablet) return;
+        if (p.platform === 'ios' && !ios) return;
+        if (p.platform === 'android' && !android) return;
+        const score = Math.abs(short - p.w) + Math.abs(long - p.h);
+        if (score < bestScore) {
+          bestScore = score;
+          best = p;
+        }
+      });
+      if (best && bestScore > 120) best = null;
+      if (best) return best;
+      return {
+        id: tablet ? 'tablet-generic' : 'phone-generic',
+        form: tablet ? 'tablet' : 'phone',
+        platform: ios ? 'ios' : (android ? 'android' : 'any'),
+        w: short,
+        h: long,
+        safeTop: ios ? (short >= 390 ? 59 : 20) : 24,
+        safeBottom: ios ? (short >= 390 ? 34 : 0) : 20,
+        navH: tablet ? 56 : 49
+      };
+    }
+
+    function measureNavBottomGap() {
+      const nav = document.getElementById('siteMobileBottomNav');
+      if (!nav || window.innerWidth >= 1024) return 0;
+      const rect = nav.getBoundingClientRect();
+      const vv = window.visualViewport;
+      const visBottom = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
+      return Math.max(0, Math.round(visBottom - rect.bottom));
+    }
+
+    function readSafeAreaInset(which) {
+      try {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padding-' + which + ':env(safe-area-inset-' + which + ', 0px);';
+        document.documentElement.appendChild(probe);
+        const val = parseInt(getComputedStyle(probe).getPropertyValue('padding-' + which) || '0', 10);
+        probe.remove();
+        return isNaN(val) ? 0 : val;
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    function syncDeviceViewportProfile() {
       if (window.innerWidth >= 1024) {
-        document.documentElement.style.removeProperty('--pe-vvh');
-        document.body.style.removeProperty('--pe-vvh');
+        ['--pe-device-safe-bottom', '--pe-device-safe-top', '--pe-nav-bottom-gap', '--pe-device-id'].forEach((k) => {
+          document.documentElement.style.removeProperty(k);
+        });
+        delete document.documentElement.dataset.peNavGap;
+        delete document.documentElement.dataset.peSafeBottom;
+        document.body.classList.remove('pe-device-phone', 'pe-device-tablet');
+        delete document.body.dataset.peDevice;
         return;
       }
-      const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-      // Ignore large shrinks — soft keyboard, not Safari toolbar collapse.
-      const current = parseInt(document.documentElement.style.getPropertyValue('--pe-vvh') || '0', 10);
-      if (current > 0 && (current - h) > 150) return;
-      const px = `${Math.round(h)}px`;
-      document.documentElement.style.setProperty('--pe-vvh', px);
-      document.body.style.setProperty('--pe-vvh', px);
+      const profile = resolveDeviceProfile();
+      const innerH = Math.round(window.innerHeight || 0);
+      const vv = window.visualViewport;
+      const visH = vv && vv.height > 0 ? Math.round(vv.offsetTop + vv.height) : innerH;
+      const viewportH = Math.max(innerH, visH);
+      const safeBottomProbe = readSafeAreaInset('bottom');
+      const safeTopProbe = readSafeAreaInset('top');
+      const safeBottom = Math.max(profile.safeBottom, safeBottomProbe);
+      const safeTop = Math.max(profile.safeTop, safeTopProbe);
+
+      document.documentElement.style.setProperty('--pe-device-safe-bottom', safeBottom + 'px');
+      document.documentElement.style.setProperty('--pe-device-safe-top', safeTop + 'px');
+      document.documentElement.style.setProperty('--pe-device-id', profile.id);
+
+      document.body.classList.toggle('pe-device-phone', !isTabletViewport());
+      document.body.classList.toggle('pe-device-tablet', isTabletViewport());
+      document.body.dataset.peDevice = profile.id;
+
+      syncMobileBottomNavOffset();
+      const gap = measureNavBottomGap();
+      document.documentElement.style.setProperty('--pe-nav-bottom-gap', gap + 'px');
+      document.documentElement.dataset.peNavGap = String(gap);
+      document.documentElement.dataset.peSafeBottom = String(safeBottom);
+    }
+
+    function measureVisibleViewportHeight() {
+      const inner = Math.round(window.innerHeight || 0);
+      const vv = window.visualViewport;
+      if (!vv || vv.height <= 0) return inner;
+      const visual = Math.round(vv.height + (vv.offsetTop || 0));
+      if (isIOSMobile()) return Math.max(inner, visual);
+      return visual;
+    }
+
+    function clearMobileShellHeightLock() {
+      document.documentElement.style.removeProperty('--pe-vvh');
+      document.body.style.removeProperty('--pe-vvh');
+      const shell = document.querySelector('.site-rebuild-shell');
+      if (shell) shell.style.removeProperty('max-height');
+    }
+
+    function syncAppHeight() {
+      if (window.innerWidth >= 1024) {
+        clearMobileShellHeightLock();
+        return;
+      }
+      if (!document.body.classList.contains('site-mobile-keyboard-active')) {
+        clearMobileShellHeightLock();
+        return;
+      }
+      const shell = document.querySelector('.site-rebuild-shell');
+      const vv = window.visualViewport;
+      const h = vv && vv.height > 0 ? Math.round(vv.height) : Math.round(window.innerHeight || 0);
+      if (h < 200) return;
+      document.documentElement.style.setProperty('--pe-vvh', h + 'px');
+      if (shell) shell.style.maxHeight = h + 'px';
+    }
+
+    function syncMobileViewportHeight() {
+      if (window.innerWidth >= 1024) {
+        clearMobileShellHeightLock();
+        return;
+      }
+      clearMobileShellHeightLock();
+      syncDeviceViewportProfile();
+    }
+
+    function restoreMobileShellAfterKeyboard() {
+      if (window.innerWidth >= 1024) return;
+      document.body.classList.remove('site-mobile-keyboard-active');
+      window._peVvhLocked = null;
+      clearMobileShellHeightLock();
+      syncDeviceViewportProfile();
+      syncMobileStickyHeaderOffset();
+    }
+
+    function scheduleRestoreMobileShell() {
+      if (typeof restoreMobileShellAfterKeyboard !== 'function') return;
+      restoreMobileShellAfterKeyboard();
+      requestAnimationFrame(restoreMobileShellAfterKeyboard);
+      setTimeout(restoreMobileShellAfterKeyboard, 120);
+      setTimeout(restoreMobileShellAfterKeyboard, 400);
+    }
+
+    function initMobileKeyboardShellGuard() {
+      if (window._peMobileKeyboardGuardInit) return;
+      window._peMobileKeyboardGuardInit = true;
+
+      document.addEventListener('focusin', (e) => {
+        if (window.innerWidth >= 1024) return;
+        const t = e.target;
+        if (!t || !t.closest || !t.closest('input, textarea, [contenteditable="true"]')) return;
+        document.body.classList.add('site-mobile-keyboard-active');
+      }, true);
+
+      document.addEventListener('focusout', () => {
+        if (window.innerWidth >= 1024) return;
+        setTimeout(() => {
+          if (isMobileInputFocused()) return;
+          restoreMobileShellAfterKeyboard();
+        }, 360);
+      }, true);
     }
 
     function syncMobileShellLayout() {
       const isMobile = window.innerWidth < 1024;
       document.documentElement.classList.toggle('site-mobile-active', isMobile);
       document.body.classList.toggle('site-mobile-active', isMobile);
+      document.documentElement.classList.toggle('pe-ios-mobile', isMobile && isIOSMobile());
+      document.body.classList.toggle('pe-ios-mobile', isMobile && isIOSMobile());
+      document.documentElement.classList.toggle('pe-android-mobile', isMobile && isAndroidMobile());
+      document.body.classList.toggle('pe-android-mobile', isMobile && isAndroidMobile());
       // Detect iOS/Safari: disable content-visibility to prevent scroll position jumps
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -40981,7 +41317,7 @@ nav.tabs > button,
       if (!isMobile) toggleMobileMoreMenu(false);
       syncMobileViewportHeight();
       syncMobileStickyHeaderOffset();
-      syncMobileBottomNavOffset();
+      syncDeviceViewportProfile();
     }
 
     function toggleMobileMoreMenu(forceOpen) {
@@ -41121,6 +41457,7 @@ nav.tabs > button,
         // Desktop keeps the parlay sidebar next to props, but it should not cover
         // Injuries, Games, or other full-width views.
         parlayEl.classList.toggle('view-force-hidden', !showParlayRail);
+        parlayEl.classList.toggle('show', !!showParlayRail);
         parlayEl.style.display = showParlayRail ? 'block' : 'none';
       }
 
@@ -41130,6 +41467,7 @@ nav.tabs > button,
         syncMobileShellLayout();
         syncMobileStickyHeaderOffset();
         renderAIFastModeToggle();
+        if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
       };
       if (typeof requestIdleCallback !== 'undefined') {
         requestIdleCallback(deferShellChrome, { timeout: 100 });
@@ -41247,6 +41585,7 @@ nav.tabs > button,
           const scrollRoot = getMobileScrollRoot();
           if (scrollRoot && scrollRoot.scrollTop > 0) scrollRoot.scrollTo({ top: 0, behavior: 'auto' });
           applyViewVisibility();
+          if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
 
           runAfterPaint(() => {
             const view = state.view;
@@ -41255,11 +41594,11 @@ nav.tabs > button,
             if (view === 'news') { refreshLeagueNews(false); resumeTicker(); }
             if (view === 'injuries') { fetchAllInjuries(); resumeTicker(); }
             if (view === 'parlay') {
+              undockParlay();
               renderParlay();
               generateSuggestedParlays();
               // Defer heavy work so the tab switch stays responsive
               if (window.innerWidth >= 1024) queueUserPropsRender('parlay-view', 200);
-              dockParlayToFeaturedPick(); // deferred internally via requestIdleCallback
               resumeTicker();
             }
             if (view === 'strategy') { undockParlay(); renderStrategy(); resumeTicker(); }
@@ -41306,18 +41645,47 @@ nav.tabs > button,
       });
       syncMobileShellLayout();
       syncShellNavState();
-      // iOS Safari: --pe-vvh must track toolbar collapse/expand, which only
-      // visualViewport resize reports reliably (window resize can miss it).
+      initMobileKeyboardShellGuard();
+      window.addEventListener('resize', () => {
+        if (window.innerWidth < 1024) {
+          clearMobileShellHeightLock();
+          syncDeviceViewportProfile();
+        }
+      });
       if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', syncMobileViewportHeight);
-        window.visualViewport.addEventListener('scroll', syncMobileViewportHeight);
+        window.visualViewport.addEventListener('resize', () => {
+          if (window.innerWidth >= 1024) return;
+          if (document.body.classList.contains('site-mobile-keyboard-active')) {
+            syncAppHeight();
+          } else {
+            clearMobileShellHeightLock();
+            syncDeviceViewportProfile();
+          }
+        });
+        window.visualViewport.addEventListener('scroll', () => {
+          if (window.innerWidth < 1024 && !document.body.classList.contains('site-mobile-keyboard-active')) {
+            syncDeviceViewportProfile();
+          } else if (window.innerWidth < 1024 && document.body.classList.contains('site-mobile-keyboard-active')) {
+            syncAppHeight();
+          }
+        });
       }
       window.addEventListener('orientationchange', () => {
-        requestAnimationFrame(syncMobileViewportHeight);
+        clearMobileShellHeightLock();
+        if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
+      });
+      window.addEventListener('pageshow', (e) => {
+        if (e.persisted && typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && typeof scheduleRestoreMobileShell === 'function') {
+          scheduleRestoreMobileShell();
+        }
       });
       requestAnimationFrame(() => {
         syncMobileStickyHeaderOffset();
-        syncMobileBottomNavOffset();
+        syncDeviceViewportProfile();
+        if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
       });
     }
 
