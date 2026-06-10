@@ -1,5 +1,28 @@
 # PropEdge Session Notes
 
+
+## Session: 2026-06-10 (UI & Gambly Fixes)
+
+---
+
+### 1. iOS Safari Mobile Nav Bar Bleed
+**Problem:** The bottom nav bar on iPhone Safari floated above the bottom edge of the screen, leaving a visible gap where page content scrolled underneath it. This is a known iOS Safari issue where `100vh`/layout viewport is taller than the visual viewport due to the dynamic bottom toolbar.
+**Fix:** 
+- Switched `.site-rebuild-shell` away from relying on `position: fixed` for the bottom nav.
+- Locked `html` and `body` to `height: 100%` and `overflow: hidden` specifically for iOS mobile.
+- Made the main shell a `flex-direction: column` that takes exactly 100% height, making `.site-shell-main` a `flex: 1; overflow-y: auto` scroller, so the bottom nav sits flush at the bottom of the visual viewport naturally.
+- Synced these changes across all `index.html` variants and deployed live to Netlify.
+
+### 2. Gambly Integration - Stale Picks in Betslip
+**Problem:** Clicking "Get Betslip" or SMS texting the parlay to Gambly would keep accumulating picks across sessions. Generating a new ticket included all previously selected picks.
+**Fix:** 
+- Updated `textPicks()` (SMS) to wait 800ms (to allow the SMS app to open), then clear `state.parlay`, wipe local storage, and re-render the UI.
+- Updated `openGamblyBot()` (clipboard) to instantly clear the parlay upon a successful clipboard write.
+- Added a "Slip sent — parlay cleared" toast confirmation.
+
+### 3. Generative UI / PropAI "Kimi" Model 
+**Finding:** The user reported Kimi wasn't being pulled in for long complex analysis. Code review confirmed **Kimi is not in the codebase** and `ask-analyst.js` is Gemini-only (migrated previously in commit `3cef642f`). User to decide whether to tune Gemini prompts for deeper analysis or re-add Kimi integration later.
+
 ## Session: 2026-06-05 (Late Night)
 
 ---
@@ -244,3 +267,68 @@ com.propedge.outcomes-sync       ✅  Removed (orphaned)
 6. Markets tab: ML/Spread/Total/Alt chips from game-odds API.
 
 **Last Updated:** 2026-06-10
+
+---
+
+## Session: 2026-06-10 (Continued) — Mobile Nav Gap + Parlay + Kimi + v7.228
+
+### Production state
+- **Site:** https://propedgemasters.netlify.app — **v7.228**
+- **GitHub `main`:** `124a7503` — *Sync index.html across all deploy directories for iOS nav flex fix*
+- **All `index.html` copies synced** (identical MD5 `3d515d4b…`): root, `propedge-deploy/`, `propedge-final/`, `propedge-deploy-manual/`, `propedge-deploy-manual 2/`
+- **Remote:** `git push origin main` → Everything up-to-date (2026-06-10)
+
+### Shipped this session (v7.211 → v7.228)
+
+| Version / commit | What |
+|------------------|------|
+| **v7.211** (`be327a8d`, `49b6d326`) | Unify mobile/desktop home view; toast `pointer-events: none` so nav tabs stay clickable |
+| **v7.211+** (`73146aa9`, `5202ac55`) | Ignore keyboard-open shrink in `syncMobileViewportHeight`; mobile height/overflow stability |
+| **Kimi analyst** (`c66a8b86`, `cdc61a17`) | Generative analyst restored with full report outline; richer Kimi enrichment in `analyst-app/app/api/analyze/route.ts` |
+| **Parlay tab** (`cdc61a17`) | Fixed empty Parlay tab — undock + grid shell visibility |
+| **Gambly** (`f9cc8ca4`) | Clear parlay after `textPicks` / `openGamblyBot` so next ticket starts fresh |
+| **iOS nav attempts** (`44ceb3a4`, `b7b65647`, `124a7503`) | Multiple viewport strategies: html/body height lock, flex-column in-flow nav, device profiles (`PE_DEVICE_PROFILES`), measured `--pe-nav-bottom-gap`, opaque fixed nav + box-shadow fill, kill `#020617` bleed |
+| **v7.227 regression** | Removing mobile flex override left base grid `250px 1fr` active — `<main>` squeezed into 250px column on mobile |
+| **v7.228** (`124a7503`) | Restore `.site-rebuild-shell { display: flex !important; grid-template-columns: none !important; width: 100% }` on mobile — layout verified full-width in production |
+
+### Mobile nav gap — still open on real device
+
+**Symptom:** Blue/dark band below bottom nav on iPhone Safari + PWA (user: iPhone 17 Pro Max). Gap color matches `:root --bg-primary` (`#020617`), not mobile override `rgb(3, 8, 18)`.
+
+**What we tried (all failed on device):** fixed nav, in-flow flex footer, `--pe-vvh` / `visualViewport`, `-webkit-fill-available`, nav moved outside shell, device-specific safe-area profiles, opaque nav + 48px box-shadow extension, backdrop-filter removal on iOS.
+
+**Diagnostics on `<html>` / `<body>`:** `data-pe-nav-gap`, `data-pe-safe-bottom`, `body[data-pe-device]` — use on device to capture measured values.
+
+**Likely cause:** iOS WebKit visual viewport vs layout viewport gap outside normal CSS box model — not reproducible in Chromium emulation (gap = 0px there).
+
+### DOM structure (mobile, v7.225+)
+```
+body
+  .site-rebuild-shell          ← scroll area
+  .site-mobile-more-row
+  .site-mobile-bottom-nav      ← outside shell, position: fixed
+  .toast
+```
+
+### Key files touched
+| File | Purpose |
+|------|---------|
+| `propedge-deploy/index.html` | All mobile nav/layout iterations v7.211–v7.228 |
+| `index.html` (+ deploy mirrors) | Synced to match `propedge-deploy/index.html` |
+| `analyst-app/app/api/analyze/route.ts` | Kimi / generative analyst enrichment |
+
+### Deploy target reminder
+Netlify publishes **`propedge-deploy/`** only (`netlify.toml` → `publish = "propedge-deploy"`). Do not test root `index.html` in isolation expecting latest unless synced.
+
+### Uncommitted locally (non-blocking)
+- `.gitignore` — modified
+- `.DS_Store` — modified (do not commit)
+- `netlify/functions/enrich-pitcher-era.js` — untracked
+
+### Follow up
+- [ ] **iPhone verify v7.228:** full-width layout restored? Nav gap still present? Capture `document.body.dataset.peDevice`, `document.documentElement.dataset.peNavGap`
+- [ ] If nav gap persists: need real-device WebKit diagnostics — further height hacks unlikely to help
+- [ ] Optional: commit `enrich-pitcher-era.js` when ready
+- [ ] Bugbot backlog: empty Top Player Prop header in `route.ts`; pitcher ERA sheet placeholder in `enrich-pitcher-era.js`
+
+**Last Updated:** 2026-06-10 (evening)
