@@ -1,0 +1,921 @@
+{
+  "matrix": {
+    "generated_at": "2026-05-31T05:28:50.823Z",
+    "NBA": {
+      "DEN|pts_allowed": {
+        "rank": 1,
+        "paceRank": 1,
+        "raw": 0
+      },
+      "MIA|pts_allowed": {
+        "rank": 2,
+        "paceRank": 2,
+        "raw": 0
+      },
+      "SA|pts_allowed": {
+        "rank": 3,
+        "paceRank": 3,
+        "raw": 0
+      },
+      "CLE|pts_allowed": {
+        "rank": 4,
+        "paceRank": 4,
+        "raw": 0
+      },
+      "OKC|pts_allowed": {
+        "rank": 5,
+        "paceRank": 5,
+        "raw": 0
+      },
+      "ATL|pts_allowed": {
+        "rank": 6,
+        "paceRank": 6,
+        "raw": 0
+      },
+      "MIN|pts_allowed": {
+        "rank": 7,
+        "paceRank": 7,
+        "raw": 0
+      },
+      "DET|pts_allowed": {
+        "rank": 8,
+        "paceRank": 8,
+        "raw": 0
+      },
+      "UTAH|pts_allowed": {
+        "rank": 9,
+        "paceRank": 9,
+        "raw": 0
+      },
+      "NY|pts_allowed": {
+        "rank": 10,
+        "paceRank": 10,
+        "raw": 0
+      },
+      "LAL|pts_allowed": {
+        "rank": 11,
+        "paceRank": 11,
+        "raw": 0
+      },
+      "CHI|pts_allowed": {
+        "rank": 12,
+        "paceRank": 12,
+        "raw": 0
+      },
+      "CHA|pts_allowed": {
+        "rank": 13,
+        "paceRank": 13,
+        "raw": 0
+      },
+      "PHI|pts_allowed": {
+        "rank": 14,
+        "paceRank": 14,
+        "raw": 0
+      },
+      "ORL|pts_allowed": {
+        "rank": 15,
+        "paceRank": 15,
+        "raw": 0
+      },
+      "NO|pts_allowed": {
+        "rank": 16,
+        "paceRank": 16,
+        "raw": 0
+      },
+      "POR|pts_allowed": {
+        "rank": 17,
+        "paceRank": 17,
+        "raw": 0
+      },
+      "HOU|pts_allowed": {
+        "rank": 18,
+        "paceRank": 18,
+        "raw": 0
+      },
+      "BOS|pts_allowed": {
+        "rank": 19,
+        "paceRank": 19,
+        "raw": 0
+      },
+      "MEM|pts_allowed": {
+        "rank": 20,
+        "paceRank": 20,
+        "raw": 0
+      },
+      "TOR|pts_allowed": {
+        "rank": 21,
+        "paceRank": 21,
+        "raw": 0
+      },
+      "GS|pts_allowed": {
+        "rank": 22,
+        "paceRank": 22,
+        "raw": 0
+      },
+      "DAL|pts_allowed": {
+        "rank": 23,
+        "paceRank": 23,
+        "raw": 0
+      },
+      "LAC|pts_allowed": {
+        "rank": 24,
+        "paceRank": 24,
+        "raw": 0
+      },
+      "WSH|pts_allowed": {
+        "rank": 25,
+        "paceRank": 25,
+        "raw": 0
+      },
+      "PHX|pts_allowed": {
+        "rank": 26,
+        "paceRank": 26,
+        "raw": 0
+      },
+      "IND|pts_allowed": {
+        "rank": 27,
+        "paceRank": 27,
+        "raw": 0
+      },
+      "SAC|pts_allowed": {
+        "rank": 28,
+        "paceRank": 28,
+        "raw": 0
+      },
+      "MIL|pts_allowed": {
+        "rank": 29,
+        "paceRank": 29,
+        "raw": 0
+      },
+      "BKN|pts_allowed": {
+        "rank": 30,
+        "paceRank": 30,
+        "raw": 0
+      },
+      "DEN|reb_allowed": {
+        "rank": 1,
+        "paceRank": 1,
+        "raw": 0
+      },
+      "MIA|reb_allowed": {
+        "rank": 2,
+        "paceRank": 2,
+        "raw": 0
+      },
+      "SA|reb_allowed": {
+        "rank": 3,
+        "paceRank": 3,
+        "raw": 0
+      },
+      "CLE|reb_allowed": {
+        "rank": 4,
+        "paceRank": 4,
+        "raw": 0
+      },
+      "OKC|reb_allowed": {
+        "rank": 5,
+        "paceRank": 5,
+        "raw": 0
+      },
+      "ATL|reb_allowed": {
+        "rank": 6,
+        "paceRank": 6,
+        "raw": 0
+      },
+      "MIN|reb_allowed": {
+        "rank": 7,
+        "paceRank": 7,
+        "raw": 0
+      },
+      "DET|reb_allowed": {
+        "rank": 8,
+        "paceRank": 8,
+        "raw": 0
+      },
+      "UTAH|reb_allowed": {
+        "rank": 9,
+        "paceRank": 9,
+        "raw": 0
+      },
+      "NY|reb_allowed": {
+        "rank": 10,
+        "paceRank": 10,
+        "raw": 0
+      },
+      "LAL|reb_allowed": {
+        "rank": 11,
+        "paceRank": 11,
+        "raw": 0
+      },
+      "CHI|reb_allowed": {
+        "rank": 12,
+        "paceRank": 12,
+        "raw": 0
+      },
+      "CHA|reb_allowed": {
+        "rank": 13,
+        "paceRank": 13,
+        "raw": 0
+      },
+      "PHI|reb_allowed": {
+        "rank": 14,
+        "paceRank": 14,
+        "raw": 0
+      },
+      "ORL|reb_allowed": {
+        "rank": 15,
+        "paceRank": 15,
+        "raw": 0
+      },
+      "NO|reb_allowed": {
+        "rank": 16,
+        "paceRank": 16,
+        "raw": 0
+      },
+      "POR|reb_allowed": {
+        "rank": 17,
+        "paceRank": 17,
+        "raw": 0
+      },
+      "HOU|reb_allowed": {
+        "rank": 18,
+        "paceRank": 18,
+        "raw": 0
+      },
+      "BOS|reb_allowed": {
+        "rank": 19,
+        "paceRank": 19,
+        "raw": 0
+      },
+      "MEM|reb_allowed": {
+        "rank": 20,
+        "paceRank": 20,
+        "raw": 0
+      },
+      "TOR|reb_allowed": {
+        "rank": 21,
+        "paceRank": 21,
+        "raw": 0
+      },
+      "GS|reb_allowed": {
+        "rank": 22,
+        "paceRank": 22,
+        "raw": 0
+      },
+      "DAL|reb_allowed": {
+        "rank": 23,
+        "paceRank": 23,
+        "raw": 0
+      },
+      "LAC|reb_allowed": {
+        "rank": 24,
+        "paceRank": 24,
+        "raw": 0
+      },
+      "WSH|reb_allowed": {
+        "rank": 25,
+        "paceRank": 25,
+        "raw": 0
+      },
+      "PHX|reb_allowed": {
+        "rank": 26,
+        "paceRank": 26,
+        "raw": 0
+      },
+      "IND|reb_allowed": {
+        "rank": 27,
+        "paceRank": 27,
+        "raw": 0
+      },
+      "SAC|reb_allowed": {
+        "rank": 28,
+        "paceRank": 28,
+        "raw": 0
+      },
+      "MIL|reb_allowed": {
+        "rank": 29,
+        "paceRank": 29,
+        "raw": 0
+      },
+      "BKN|reb_allowed": {
+        "rank": 30,
+        "paceRank": 30,
+        "raw": 0
+      },
+      "DEN|ast_allowed": {
+        "rank": 1,
+        "paceRank": 1,
+        "raw": 0
+      },
+      "MIA|ast_allowed": {
+        "rank": 2,
+        "paceRank": 2,
+        "raw": 0
+      },
+      "SA|ast_allowed": {
+        "rank": 3,
+        "paceRank": 3,
+        "raw": 0
+      },
+      "CLE|ast_allowed": {
+        "rank": 4,
+        "paceRank": 4,
+        "raw": 0
+      },
+      "OKC|ast_allowed": {
+        "rank": 5,
+        "paceRank": 5,
+        "raw": 0
+      },
+      "ATL|ast_allowed": {
+        "rank": 6,
+        "paceRank": 6,
+        "raw": 0
+      },
+      "MIN|ast_allowed": {
+        "rank": 7,
+        "paceRank": 7,
+        "raw": 0
+      },
+      "DET|ast_allowed": {
+        "rank": 8,
+        "paceRank": 8,
+        "raw": 0
+      },
+      "UTAH|ast_allowed": {
+        "rank": 9,
+        "paceRank": 9,
+        "raw": 0
+      },
+      "NY|ast_allowed": {
+        "rank": 10,
+        "paceRank": 10,
+        "raw": 0
+      },
+      "LAL|ast_allowed": {
+        "rank": 11,
+        "paceRank": 11,
+        "raw": 0
+      },
+      "CHI|ast_allowed": {
+        "rank": 12,
+        "paceRank": 12,
+        "raw": 0
+      },
+      "CHA|ast_allowed": {
+        "rank": 13,
+        "paceRank": 13,
+        "raw": 0
+      },
+      "PHI|ast_allowed": {
+        "rank": 14,
+        "paceRank": 14,
+        "raw": 0
+      },
+      "ORL|ast_allowed": {
+        "rank": 15,
+        "paceRank": 15,
+        "raw": 0
+      },
+      "NO|ast_allowed": {
+        "rank": 16,
+        "paceRank": 16,
+        "raw": 0
+      },
+      "POR|ast_allowed": {
+        "rank": 17,
+        "paceRank": 17,
+        "raw": 0
+      },
+      "HOU|ast_allowed": {
+        "rank": 18,
+        "paceRank": 18,
+        "raw": 0
+      },
+      "BOS|ast_allowed": {
+        "rank": 19,
+        "paceRank": 19,
+        "raw": 0
+      },
+      "MEM|ast_allowed": {
+        "rank": 20,
+        "paceRank": 20,
+        "raw": 0
+      },
+      "TOR|ast_allowed": {
+        "rank": 21,
+        "paceRank": 21,
+        "raw": 0
+      },
+      "GS|ast_allowed": {
+        "rank": 22,
+        "paceRank": 22,
+        "raw": 0
+      },
+      "DAL|ast_allowed": {
+        "rank": 23,
+        "paceRank": 23,
+        "raw": 0
+      },
+      "LAC|ast_allowed": {
+        "rank": 24,
+        "paceRank": 24,
+        "raw": 0
+      },
+      "WSH|ast_allowed": {
+        "rank": 25,
+        "paceRank": 25,
+        "raw": 0
+      },
+      "PHX|ast_allowed": {
+        "rank": 26,
+        "paceRank": 26,
+        "raw": 0
+      },
+      "IND|ast_allowed": {
+        "rank": 27,
+        "paceRank": 27,
+        "raw": 0
+      },
+      "SAC|ast_allowed": {
+        "rank": 28,
+        "paceRank": 28,
+        "raw": 0
+      },
+      "MIL|ast_allowed": {
+        "rank": 29,
+        "paceRank": 29,
+        "raw": 0
+      },
+      "BKN|ast_allowed": {
+        "rank": 30,
+        "paceRank": 30,
+        "raw": 0
+      }
+    },
+    "NHL": {
+      "BOS|goals_allowed": {
+        "rank": 1,
+        "paceRank": 1,
+        "raw": 0
+      },
+      "BUF|goals_allowed": {
+        "rank": 2,
+        "paceRank": 2,
+        "raw": 0
+      },
+      "CGY|goals_allowed": {
+        "rank": 3,
+        "paceRank": 3,
+        "raw": 0
+      },
+      "CHI|goals_allowed": {
+        "rank": 4,
+        "paceRank": 4,
+        "raw": 0
+      },
+      "DET|goals_allowed": {
+        "rank": 5,
+        "paceRank": 5,
+        "raw": 0
+      },
+      "EDM|goals_allowed": {
+        "rank": 6,
+        "paceRank": 6,
+        "raw": 0
+      },
+      "CAR|goals_allowed": {
+        "rank": 7,
+        "paceRank": 7,
+        "raw": 0
+      },
+      "LA|goals_allowed": {
+        "rank": 8,
+        "paceRank": 8,
+        "raw": 0
+      },
+      "DAL|goals_allowed": {
+        "rank": 9,
+        "paceRank": 9,
+        "raw": 0
+      },
+      "MTL|goals_allowed": {
+        "rank": 10,
+        "paceRank": 10,
+        "raw": 0
+      },
+      "NJ|goals_allowed": {
+        "rank": 11,
+        "paceRank": 11,
+        "raw": 0
+      },
+      "NYI|goals_allowed": {
+        "rank": 12,
+        "paceRank": 12,
+        "raw": 0
+      },
+      "NYR|goals_allowed": {
+        "rank": 13,
+        "paceRank": 13,
+        "raw": 0
+      },
+      "OTT|goals_allowed": {
+        "rank": 14,
+        "paceRank": 14,
+        "raw": 0
+      },
+      "PHI|goals_allowed": {
+        "rank": 15,
+        "paceRank": 15,
+        "raw": 0
+      },
+      "PIT|goals_allowed": {
+        "rank": 16,
+        "paceRank": 16,
+        "raw": 0
+      },
+      "COL|goals_allowed": {
+        "rank": 17,
+        "paceRank": 17,
+        "raw": 0
+      },
+      "SJ|goals_allowed": {
+        "rank": 18,
+        "paceRank": 18,
+        "raw": 0
+      },
+      "STL|goals_allowed": {
+        "rank": 19,
+        "paceRank": 19,
+        "raw": 0
+      },
+      "TB|goals_allowed": {
+        "rank": 20,
+        "paceRank": 20,
+        "raw": 0
+      },
+      "TOR|goals_allowed": {
+        "rank": 21,
+        "paceRank": 21,
+        "raw": 0
+      },
+      "VAN|goals_allowed": {
+        "rank": 22,
+        "paceRank": 22,
+        "raw": 0
+      },
+      "WSH|goals_allowed": {
+        "rank": 23,
+        "paceRank": 23,
+        "raw": 0
+      },
+      "ANA|goals_allowed": {
+        "rank": 24,
+        "paceRank": 24,
+        "raw": 0
+      },
+      "FLA|goals_allowed": {
+        "rank": 25,
+        "paceRank": 25,
+        "raw": 0
+      },
+      "NSH|goals_allowed": {
+        "rank": 26,
+        "paceRank": 26,
+        "raw": 0
+      },
+      "WPG|goals_allowed": {
+        "rank": 27,
+        "paceRank": 27,
+        "raw": 0
+      },
+      "CBJ|goals_allowed": {
+        "rank": 28,
+        "paceRank": 28,
+        "raw": 0
+      },
+      "MIN|goals_allowed": {
+        "rank": 29,
+        "paceRank": 29,
+        "raw": 0
+      },
+      "VGK|goals_allowed": {
+        "rank": 30,
+        "paceRank": 30,
+        "raw": 0
+      },
+      "SEA|goals_allowed": {
+        "rank": 31,
+        "paceRank": 31,
+        "raw": 0
+      },
+      "UTA|goals_allowed": {
+        "rank": 32,
+        "paceRank": 32,
+        "raw": 0
+      }
+    },
+    "MLB": {
+      "BAL|runs_allowed": {
+        "rank": 1,
+        "paceRank": 1,
+        "raw": 0
+      },
+      "BOS|runs_allowed": {
+        "rank": 2,
+        "paceRank": 2,
+        "raw": 0
+      },
+      "LAA|runs_allowed": {
+        "rank": 3,
+        "paceRank": 3,
+        "raw": 0
+      },
+      "CHW|runs_allowed": {
+        "rank": 4,
+        "paceRank": 4,
+        "raw": 0
+      },
+      "CLE|runs_allowed": {
+        "rank": 5,
+        "paceRank": 5,
+        "raw": 0
+      },
+      "DET|runs_allowed": {
+        "rank": 6,
+        "paceRank": 6,
+        "raw": 0
+      },
+      "KC|runs_allowed": {
+        "rank": 7,
+        "paceRank": 7,
+        "raw": 0
+      },
+      "MIL|runs_allowed": {
+        "rank": 8,
+        "paceRank": 8,
+        "raw": 0
+      },
+      "MIN|runs_allowed": {
+        "rank": 9,
+        "paceRank": 9,
+        "raw": 0
+      },
+      "NYY|runs_allowed": {
+        "rank": 10,
+        "paceRank": 10,
+        "raw": 0
+      },
+      "ATH|runs_allowed": {
+        "rank": 11,
+        "paceRank": 11,
+        "raw": 0
+      },
+      "SEA|runs_allowed": {
+        "rank": 12,
+        "paceRank": 12,
+        "raw": 0
+      },
+      "TEX|runs_allowed": {
+        "rank": 13,
+        "paceRank": 13,
+        "raw": 0
+      },
+      "TOR|runs_allowed": {
+        "rank": 14,
+        "paceRank": 14,
+        "raw": 0
+      },
+      "ATL|runs_allowed": {
+        "rank": 15,
+        "paceRank": 15,
+        "raw": 0
+      },
+      "CHC|runs_allowed": {
+        "rank": 16,
+        "paceRank": 16,
+        "raw": 0
+      },
+      "CIN|runs_allowed": {
+        "rank": 17,
+        "paceRank": 17,
+        "raw": 0
+      },
+      "HOU|runs_allowed": {
+        "rank": 18,
+        "paceRank": 18,
+        "raw": 0
+      },
+      "LAD|runs_allowed": {
+        "rank": 19,
+        "paceRank": 19,
+        "raw": 0
+      },
+      "WSH|runs_allowed": {
+        "rank": 20,
+        "paceRank": 20,
+        "raw": 0
+      },
+      "NYM|runs_allowed": {
+        "rank": 21,
+        "paceRank": 21,
+        "raw": 0
+      },
+      "PHI|runs_allowed": {
+        "rank": 22,
+        "paceRank": 22,
+        "raw": 0
+      },
+      "PIT|runs_allowed": {
+        "rank": 23,
+        "paceRank": 23,
+        "raw": 0
+      },
+      "STL|runs_allowed": {
+        "rank": 24,
+        "paceRank": 24,
+        "raw": 0
+      },
+      "SD|runs_allowed": {
+        "rank": 25,
+        "paceRank": 25,
+        "raw": 0
+      },
+      "SF|runs_allowed": {
+        "rank": 26,
+        "paceRank": 26,
+        "raw": 0
+      },
+      "COL|runs_allowed": {
+        "rank": 27,
+        "paceRank": 27,
+        "raw": 0
+      },
+      "MIA|runs_allowed": {
+        "rank": 28,
+        "paceRank": 28,
+        "raw": 0
+      },
+      "ARI|runs_allowed": {
+        "rank": 29,
+        "paceRank": 29,
+        "raw": 0
+      },
+      "TB|runs_allowed": {
+        "rank": 30,
+        "paceRank": 30,
+        "raw": 0
+      },
+      "BAL|k_allowed": {
+        "rank": 1,
+        "paceRank": 1,
+        "raw": 0
+      },
+      "BOS|k_allowed": {
+        "rank": 2,
+        "paceRank": 2,
+        "raw": 0
+      },
+      "LAA|k_allowed": {
+        "rank": 3,
+        "paceRank": 3,
+        "raw": 0
+      },
+      "CHW|k_allowed": {
+        "rank": 4,
+        "paceRank": 4,
+        "raw": 0
+      },
+      "CLE|k_allowed": {
+        "rank": 5,
+        "paceRank": 5,
+        "raw": 0
+      },
+      "DET|k_allowed": {
+        "rank": 6,
+        "paceRank": 6,
+        "raw": 0
+      },
+      "KC|k_allowed": {
+        "rank": 7,
+        "paceRank": 7,
+        "raw": 0
+      },
+      "MIL|k_allowed": {
+        "rank": 8,
+        "paceRank": 8,
+        "raw": 0
+      },
+      "MIN|k_allowed": {
+        "rank": 9,
+        "paceRank": 9,
+        "raw": 0
+      },
+      "NYY|k_allowed": {
+        "rank": 10,
+        "paceRank": 10,
+        "raw": 0
+      },
+      "ATH|k_allowed": {
+        "rank": 11,
+        "paceRank": 11,
+        "raw": 0
+      },
+      "SEA|k_allowed": {
+        "rank": 12,
+        "paceRank": 12,
+        "raw": 0
+      },
+      "TEX|k_allowed": {
+        "rank": 13,
+        "paceRank": 13,
+        "raw": 0
+      },
+      "TOR|k_allowed": {
+        "rank": 14,
+        "paceRank": 14,
+        "raw": 0
+      },
+      "ATL|k_allowed": {
+        "rank": 15,
+        "paceRank": 15,
+        "raw": 0
+      },
+      "CHC|k_allowed": {
+        "rank": 16,
+        "paceRank": 16,
+        "raw": 0
+      },
+      "CIN|k_allowed": {
+        "rank": 17,
+        "paceRank": 17,
+        "raw": 0
+      },
+      "HOU|k_allowed": {
+        "rank": 18,
+        "paceRank": 18,
+        "raw": 0
+      },
+      "LAD|k_allowed": {
+        "rank": 19,
+        "paceRank": 19,
+        "raw": 0
+      },
+      "WSH|k_allowed": {
+        "rank": 20,
+        "paceRank": 20,
+        "raw": 0
+      },
+      "NYM|k_allowed": {
+        "rank": 21,
+        "paceRank": 21,
+        "raw": 0
+      },
+      "PHI|k_allowed": {
+        "rank": 22,
+        "paceRank": 22,
+        "raw": 0
+      },
+      "PIT|k_allowed": {
+        "rank": 23,
+        "paceRank": 23,
+        "raw": 0
+      },
+      "STL|k_allowed": {
+        "rank": 24,
+        "paceRank": 24,
+        "raw": 0
+      },
+      "SD|k_allowed": {
+        "rank": 25,
+        "paceRank": 25,
+        "raw": 0
+      },
+      "SF|k_allowed": {
+        "rank": 26,
+        "paceRank": 26,
+        "raw": 0
+      },
+      "COL|k_allowed": {
+        "rank": 27,
+        "paceRank": 27,
+        "raw": 0
+      },
+      "MIA|k_allowed": {
+        "rank": 28,
+        "paceRank": 28,
+        "raw": 0
+      },
+      "ARI|k_allowed": {
+        "rank": 29,
+        "paceRank": 29,
+        "raw": 0
+      },
+      "TB|k_allowed": {
+        "rank": 30,
+        "paceRank": 30,
+        "raw": 0
+      }
+    }
+  }
+}

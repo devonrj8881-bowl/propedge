@@ -179,4 +179,32 @@ com.propedge.outcomes-sync       ✅  Removed (orphaned)
 - ✅ Live at `https://propedgemasters.netlify.app`
 
 ---
-**Last Updated:** 2026-06-03
+**Last Updated:** 2026-06-08
+
+## Session: 2026-06-08 (Midnight Scoring & UX Restoration)
+
+### 1. UX & League Restoration
+- **WNBA Support**: Fully restored WNBA sport tabs in main navigation, Markets sidebar, and PropAI sidebar. Added WNBA to live ESPN scoreboard sync and internal state management.
+- **Odds API (MultiBook)**: Re-injected `MultiBookOddsProvider` class and `createGameLevelPropsFromOdds()` logic.
+- **New Markets**: Added UI filters and rendering support for Moneyline, Totals, Spreads, and Alternate lines (Q1/1H) pulled from the Odds API.
+
+### 2. Scoring & Math Upgrades
+- **Unit Sizing**: Integrated bankroll management directly into prop cards (e.g., `🔒 LOCK • 💰 2.0u`).
+- **True Probability (Devig)**: Replaced hardcoded `0.952` with dynamic additive devig math to remove vig/juice more accurately.
+- **Multi-Book Edge**: Logic now compares DraftKings and FanDuel lines and calculates model edge based on the best available price.
+- **Home/Away Splits**: Updated `run-enrichment.js` to compute home/road variance. Frontend now applies a ±6 pt PropIQ modifier based on elite/poor split performance.
+
+### 3. Automation & Infra
+- **CLV Tracking**: Built `capture-closing-lines.js` to snapshot odds at game-tip for Closing Line Value tracking. 
+- **Launchd job**: Registered `com.propedge.capture-closing-lines` to run daily at 7:00 PM ET.
+- **Netlify Fix**: Patched `netlify.toml` to remove strict `framework` constraints causing CLI crashes.
+
+### 4. Deployment
+- **GitHub**: Pushed logic-only updates to `redesign-scoring-v2`.
+- **Production**: Successfully deployed v7.207 to propedgemasters.netlify.app.
+
+### 5. Odds API Alt Markets Patch (Addendum)
+- **Alt Spread UI**: Added Alt Spread market chip to both Markets and PropAI filters.
+- **Lazy-load trigger**: Selecting Alt Total/Alt Spread/1H/1Q now fetches `alt=true` game-odds and refreshes the board.
+- **Expanded ALT markets**: Added alternate_spreads + 1H/1Q ML/Spread markets to the per-event Odds API call.
+- **Game-bet mapping**: Categorizes 1H/1Q totals/spreads/ML under the correct filter chips.

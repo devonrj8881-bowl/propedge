@@ -12,7 +12,7 @@
   cron = "0 12 * * *"  # 12 UTC = 8 AM ET
 
 [dev]
-  framework = "none"
+  # framework = "none"
   port = 8888
 
 [[redirects]]

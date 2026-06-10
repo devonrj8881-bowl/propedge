@@ -1,0 +1,29 @@
+[Unit]
+Description=PropEdge Outcomes Sync Service
+Documentation=file:///opt/propedge/ARCHITECTURE.md
+After=network.target
+
+[Service]
+Type=simple
+User=propedge
+WorkingDirectory=/opt/propedge
+Environment="NODE_ENV=production"
+Environment="PORT=3001"
+ExecStart=/usr/bin/node /opt/propedge/outcomes-sync.js
+Restart=on-failure
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=outcomes-sync
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/propedge/outcomes.json
+
+[Install]
+WantedBy=multi-user.target

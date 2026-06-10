@@ -1,0 +1,435 @@
+{
+  "generated_at": "2026-05-31T05:28:47.662Z",
+  "NBA": {
+    "OKC": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-31T00:00:00.000Z",
+      "revengeVs": {
+        "SA": true
+      }
+    },
+    "SA": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-31T00:00:00.000Z",
+      "revengeVs": {
+        "OKC": false
+      }
+    },
+    "CLE": {
+      "daysRest": 5,
+      "isB2b": false,
+      "restPlus": true,
+      "lastGameEnded": "2026-05-26T00:00:00.000Z",
+      "revengeVs": {
+        "NY": true
+      }
+    },
+    "NY": {
+      "daysRest": 5,
+      "isB2b": false,
+      "restPlus": true,
+      "lastGameEnded": "2026-05-26T00:00:00.000Z",
+      "revengeVs": {
+        "CLE": false
+      }
+    }
+  },
+  "NHL": {
+    "CAR": {
+      "daysRest": 1,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T00:00:00.000Z",
+      "revengeVs": {
+        "MTL": false
+      }
+    },
+    "MTL": {
+      "daysRest": 1,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T00:00:00.000Z",
+      "revengeVs": {
+        "CAR": true
+      }
+    },
+    "VGK": {
+      "daysRest": 4,
+      "isB2b": false,
+      "restPlus": true,
+      "lastGameEnded": "2026-05-27T01:00:00.000Z",
+      "revengeVs": {
+        "COL": false
+      }
+    },
+    "COL": {
+      "daysRest": 4,
+      "isB2b": false,
+      "restPlus": true,
+      "lastGameEnded": "2026-05-27T01:00:00.000Z",
+      "revengeVs": {
+        "VGK": true
+      }
+    }
+  },
+  "MLB": {
+    "SEA": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-31T02:10:00.000Z",
+      "revengeVs": {
+        "ARI": false,
+        "ATH": false,
+        "KC": true,
+        "CHW": false
+      }
+    },
+    "ARI": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-31T02:10:00.000Z",
+      "revengeVs": {
+        "SEA": true,
+        "SF": false,
+        "COL": false
+      }
+    },
+    "LAD": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-31T02:10:00.000Z",
+      "revengeVs": {
+        "PHI": true,
+        "COL": false,
+        "MIL": false,
+        "SD": false
+      }
+    },
+    "PHI": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-31T02:10:00.000Z",
+      "revengeVs": {
+        "LAD": false,
+        "SD": false,
+        "CLE": true,
+        "CIN": true
+      }
+    },
+    "ATH": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-31T02:05:00.000Z",
+      "revengeVs": {
+        "NYY": false,
+        "SEA": true,
+        "SD": false,
+        "LAA": false
+      }
+    },
+    "NYY": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-31T02:05:00.000Z",
+      "revengeVs": {
+        "ATH": true,
+        "KC": false,
+        "TB": false,
+        "TOR": true
+      }
+    },
+    "COL": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-31T01:10:00.000Z",
+      "revengeVs": {
+        "SF": false,
+        "LAD": true,
+        "ARI": true,
+        "TEX": true
+      }
+    },
+    "SF": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-31T01:10:00.000Z",
+      "revengeVs": {
+        "COL": true,
+        "ARI": true,
+        "CHW": false
+      }
+    },
+    "CIN": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T23:15:00.000Z",
+      "revengeVs": {
+        "ATL": true,
+        "NYM": true,
+        "STL": true,
+        "PHI": false
+      }
+    },
+    "ATL": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T23:15:00.000Z",
+      "revengeVs": {
+        "CIN": false,
+        "BOS": false,
+        "WSH": true,
+        "MIA": false
+      }
+    },
+    "STL": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T23:15:00.000Z",
+      "revengeVs": {
+        "CHC": true,
+        "MIL": true,
+        "CIN": true,
+        "PIT": true
+      }
+    },
+    "CHC": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T23:15:00.000Z",
+      "revengeVs": {
+        "STL": false,
+        "PIT": false,
+        "HOU": true,
+        "MIL": true
+      }
+    },
+    "TB": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:10:00.000Z",
+      "revengeVs": {
+        "LAA": true,
+        "BAL": true,
+        "NYY": true
+      }
+    },
+    "LAA": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:10:00.000Z",
+      "revengeVs": {
+        "TB": false,
+        "DET": false,
+        "TEX": false,
+        "ATH": true
+      }
+    },
+    "CLE": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:10:00.000Z",
+      "revengeVs": {
+        "BOS": true,
+        "WSH": false,
+        "PHI": false,
+        "DET": false
+      }
+    },
+    "BOS": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:10:00.000Z",
+      "revengeVs": {
+        "CLE": false,
+        "ATL": true,
+        "MIN": true,
+        "KC": false
+      }
+    },
+    "NYM": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:10:00.000Z",
+      "revengeVs": {
+        "MIA": false,
+        "CIN": false,
+        "WSH": false
+      }
+    },
+    "MIA": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:10:00.000Z",
+      "revengeVs": {
+        "NYM": true,
+        "TOR": true,
+        "ATL": true
+      }
+    },
+    "HOU": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:10:00.000Z",
+      "revengeVs": {
+        "MIL": false,
+        "TEX": false,
+        "CHC": false,
+        "MIN": true
+      }
+    },
+    "MIL": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:10:00.000Z",
+      "revengeVs": {
+        "HOU": true,
+        "STL": false,
+        "LAD": true,
+        "CHC": false
+      }
+    },
+    "PIT": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:05:00.000Z",
+      "revengeVs": {
+        "MIN": false,
+        "CHC": true,
+        "TOR": false,
+        "STL": false
+      }
+    },
+    "MIN": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:05:00.000Z",
+      "revengeVs": {
+        "PIT": true,
+        "CHW": true,
+        "BOS": false,
+        "HOU": false
+      }
+    },
+    "WSH": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:05:00.000Z",
+      "revengeVs": {
+        "SD": false,
+        "CLE": true,
+        "ATL": false,
+        "NYM": true
+      }
+    },
+    "SD": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:05:00.000Z",
+      "revengeVs": {
+        "WSH": true,
+        "PHI": true,
+        "ATH": true,
+        "LAD": true
+      }
+    },
+    "BAL": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:05:00.000Z",
+      "revengeVs": {
+        "TOR": false,
+        "TB": false,
+        "DET": true
+      }
+    },
+    "TOR": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:05:00.000Z",
+      "revengeVs": {
+        "BAL": true,
+        "MIA": false,
+        "PIT": true,
+        "NYY": false
+      }
+    },
+    "TEX": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:05:00.000Z",
+      "revengeVs": {
+        "KC": false,
+        "HOU": true,
+        "LAA": true,
+        "COL": false
+      }
+    },
+    "KC": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T20:05:00.000Z",
+      "revengeVs": {
+        "TEX": true,
+        "NYY": true,
+        "SEA": false,
+        "BOS": true
+      }
+    },
+    "CHW": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T18:10:00.000Z",
+      "revengeVs": {
+        "DET": false,
+        "MIN": false,
+        "SF": true,
+        "SEA": true
+      }
+    },
+    "DET": {
+      "daysRest": 0,
+      "isB2b": true,
+      "restPlus": false,
+      "lastGameEnded": "2026-05-30T18:10:00.000Z",
+      "revengeVs": {
+        "CHW": true,
+        "LAA": true,
+        "BAL": false,
+        "CLE": true
+      }
+    }
+  }
+}
