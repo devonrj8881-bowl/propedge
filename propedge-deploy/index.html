@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.206 — Markets tab: sort by PropIQ (comparePropIQProps) not blended buildPropAIScore — 2026-06-07 LIVE DEPLOY -->
+<!-- PropEdge v7.207 — Fix: remove -webkit-overflow-scrolling:touch from site-shell-main; fixes mobile bottom nav drifting mid-screen on iOS Safari scroll — 2026-06-09 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.206">
+  <meta name="app-version" content="v7.207">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -2755,7 +2755,6 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         min-height: 0;
         overflow-x: hidden;
         overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: contain;
         padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px);
       }
