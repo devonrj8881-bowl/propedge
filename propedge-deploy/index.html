@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.208 — Fix: mobile bottom nav from position:fixed to in-flow flex footer of 100dvh body column (iOS toolbar-collapse drift); app-layout/main-content flex content sizing so site-shell-main is the one scroller — 2026-06-09 LIVE DEPLOY -->
+<!-- PropEdge v7.209 — Fix: body height from visualViewport (--pe-vvh) kills blank band under nav on iOS; flex-shrink:0 on main column sections stops game board/chips crush — 2026-06-09 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.208">
+  <meta name="app-version" content="v7.209">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -2719,6 +2719,10 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         position: relative;
         height: 100svh;
         height: 100dvh;
+        /* JS-measured visual viewport height — iOS Safari's dvh lags or
+           mismatches the real visible area around toolbar/safe-area, which
+           left a blank band under the nav. */
+        height: var(--pe-vvh, 100dvh);
         min-height: 0;
       }
 
@@ -2769,6 +2773,16 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         flex: 0 0 auto;
         height: auto;
         min-height: 0;
+      }
+
+      /* Every section in the main scroll column keeps its content height.
+         Without this the column's huge negative free space crushes the
+         shrinkable items (game board, sport tabs, filter row) into
+         overlapping slivers. .site-shell-content is display:contents, so
+         its children are the real flex items. */
+      .site-shell-main > *,
+      .site-shell-content > * {
+        flex-shrink: 0;
       }
 
       .site-shell-content {
@@ -28352,47 +28366,21 @@ nav.tabs > button,
         ...(state.games.NBA || []), ...(state.games.NHL || []),
         ...(state.games.MLB || []), ...(state.games.NFL || [])
       ];
-      if (!allGames.length || !Array.isArray(state.props) || !state.props.length) return;
+      if (!allGames.length) return;
 
-      const normalizeT = t => String(t || '').toUpperCase().trim();
+      // Non-destructive: never delete props from state.props.
+      // renderProps() / markets board already handle completed-game suppression at render time.
+      const anyFinal = allGames.some(g =>
+        g.isCompleted || g.status === 'final' ||
+        /final|completed|ended|post/i.test(g.statusText || g.statusDisplay || g.status || '')
+      );
 
-      // Build set of teams with active (non-final) games
-      const activeTeams = {}; // { LEAGUE: Set<team> }
-      const hasAnyGameForLeague = {}; // track which leagues have any ESPN data today
-      allGames.forEach(g => {
-        const league = String(g.league || '').toUpperCase();
-        if (!hasAnyGameForLeague[league]) hasAnyGameForLeague[league] = true;
-        const isFinal = g.isCompleted || g.status === 'final' ||
-          /final|completed|ended|post/i.test(g.statusText || g.statusDisplay || g.status || '');
-        if (!isFinal) {
-          if (!activeTeams[league]) activeTeams[league] = new Set();
-          activeTeams[league].add(normalizeTeam(g.homeTeam));
-          activeTeams[league].add(normalizeTeam(g.awayTeam));
-        }
-      });
+      if (!anyFinal) return;
 
-      // Cache normalizeTeam results — avoids alias-table scan for every one of ~7k props
-      const _teamNormCache = {};
-      const normT = t => _teamNormCache[t] !== undefined ? _teamNormCache[t] : (_teamNormCache[t] = normalizeTeam(t));
-
-      const before = state.props.length;
-      state.props = state.props.filter(p => {
-        const league = String(p.league || '').toUpperCase();
-        // If ESPN has no data for this league today, keep all props for it
-        if (!hasAnyGameForLeague[league]) return true;
-        const team = normT(p.team);
-        const active = activeTeams[league];
-        // If all games for this league are final, active will be empty set
-        return active && active.has(team);
-      });
-
-      const removed = before - state.props.length;
-      if (removed > 0) {
-        console.log(`[game-status-filter] Removed ${removed} props for completed games`);
-        updateStats();
-        schedulePropsRender('game-status-filter', 200);
-        if (typeof renderMarketsView === 'function') renderMarketsView();
-      }
+      console.log('[game-status-filter] Detected final game(s) — triggering re-render (props preserved)');
+      updateStats();
+      schedulePropsRender('game-status-filter', 200);
+      if (typeof renderMarketsView === 'function') renderMarketsView();
     }
 
     async function applyEspnGameFilter() {
@@ -28402,31 +28390,17 @@ nav.tabs > button,
         const data = await res.json();
         if (!data.ok || !data.activeTeams) return;
 
+        // Keep this for downstream odds fetching, but do NOT delete props from state.props.
         window.propEdgeActiveTeams = data.activeTeams;
         window.propEdgeActiveGames = data.games || [];
 
-        const before = state.props.length;
-        state.props = state.props.filter(p => {
-          const league = (p.league || '').toUpperCase();
-          const team = normalizeTeam(p.team || p.Team || '');
-          const opp  = normalizeTeam(p.opponent || p.opp || '');
-          const active = data.activeTeams[league];
-          if (!active || !active.length) return false; // no games today for league → hide props
-          // Normalize active team abbrs too (ESPN sometimes returns short forms like SA, NY)
-          const activeNorm = active.map(a => normalizeTeam(a));
-          return activeNorm.includes(team) || (opp && activeNorm.includes(opp));
-        });
+        const mlbTeams = (data.activeTeams['MLB'] || []).length;
+        const nbaTeams = (data.activeTeams['NBA'] || []).length;
+        console.log('[game-filter] ESPN slate teams (non-destructive): MLB=' + mlbTeams + ' NBA=' + nbaTeams);
 
-        const removed = before - state.props.length;
-        if (removed > 0) {
-          console.log(`[game-filter] ✅ Removed ${removed} props for teams not playing today`);
-          updateStats(); // refresh stat-bar counts after slate filtering
-          schedulePropsRender('espn-game-filter', 100);
-          if (typeof renderMarketsView === 'function') renderMarketsView();
-          showToast(`🏟️ Filtered ${removed} props — teams not playing today`);
-        } else {
-          console.log('[game-filter] ✅ All props have active games today');
-        }
+        // Trigger a re-render so any UI that depends on slate data updates.
+        schedulePropsRender('espn-game-filter', 100);
+        if (typeof renderMarketsView === 'function') renderMarketsView();
       } catch (e) {
         console.warn('[game-filter] ESPN fetch failed:', e.message);
       }
@@ -40918,6 +40892,15 @@ nav.tabs > button,
       nav.style.bottom = '0';
     }
 
+    function syncMobileViewportHeight() {
+      if (window.innerWidth >= 1024) {
+        document.documentElement.style.removeProperty('--pe-vvh');
+        return;
+      }
+      const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      document.documentElement.style.setProperty('--pe-vvh', `${Math.round(h)}px`);
+    }
+
     function syncMobileShellLayout() {
       const isMobile = window.innerWidth < 1024;
       document.documentElement.classList.toggle('site-mobile-active', isMobile);
@@ -40927,6 +40910,7 @@ nav.tabs > button,
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
       document.body.classList.toggle('no-content-visibility', isIOS || isSafari || isMobile);
       if (!isMobile) toggleMobileMoreMenu(false);
+      syncMobileViewportHeight();
       syncMobileStickyHeaderOffset();
       syncMobileBottomNavOffset();
     }
@@ -41253,6 +41237,15 @@ nav.tabs > button,
       });
       syncMobileShellLayout();
       syncShellNavState();
+      // iOS Safari: --pe-vvh must track toolbar collapse/expand, which only
+      // visualViewport resize reports reliably (window resize can miss it).
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', syncMobileViewportHeight);
+        window.visualViewport.addEventListener('scroll', syncMobileViewportHeight);
+      }
+      window.addEventListener('orientationchange', () => {
+        requestAnimationFrame(syncMobileViewportHeight);
+      });
       requestAnimationFrame(() => {
         syncMobileStickyHeaderOffset();
         syncMobileBottomNavOffset();
