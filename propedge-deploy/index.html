@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.207 — Fix: remove -webkit-overflow-scrolling:touch from site-shell-main; fixes mobile bottom nav drifting mid-screen on iOS Safari scroll — 2026-06-09 LIVE DEPLOY -->
+<!-- PropEdge v7.208 — Fix: mobile bottom nav from position:fixed to in-flow flex footer of 100dvh body column (iOS toolbar-collapse drift); app-layout/main-content flex content sizing so site-shell-main is the one scroller — 2026-06-09 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.207">
+  <meta name="app-version" content="v7.208">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -2728,8 +2728,12 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       }
 
       body.site-mobile-active {
-        min-height: 100svh;
-        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        height: 100svh;
+        height: 100dvh;
+        min-height: 0;
       }
 
       .site-rebuild-shell {
@@ -2740,6 +2744,16 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         height: 100dvh;
         min-height: 0;
         overflow: hidden;
+      }
+
+      /* Nav lives in normal flow as a flex footer (iOS Safari fails to
+         reposition position:fixed elements when its toolbar collapses
+         during inner-scroller scroll). Shell flexes to fill remaining
+         height; 100dvh on body tracks the toolbar. */
+      body.site-mobile-active .site-rebuild-shell {
+        height: auto;
+        flex: 1 1 auto;
+        min-height: 0;
       }
 
       .site-sidebar-shell {
@@ -2756,7 +2770,19 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         overflow-x: hidden;
         overflow-y: auto;
         overscroll-behavior-y: contain;
-        padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px);
+        padding-bottom: 16px;
+      }
+
+      /* Size board columns to content so .site-shell-main stays the one
+         scroller. Their auto overflow makes min-height:auto resolve to 0,
+         so as flex:1 items Chromium collapses them to slivers with an
+         internal scrollbar; flex-basis:auto + shrink 0 forces content
+         height in every engine. */
+      .site-shell-content .app-layout,
+      .app-layout .main-content {
+        flex: 0 0 auto;
+        height: auto;
+        min-height: 0;
       }
 
       .site-shell-content {
@@ -18095,6 +18121,26 @@ nav.tabs > button,
         -webkit-backdrop-filter: blur(14px);
         transform: translateZ(0);
         -webkit-transform: translateZ(0);
+      }
+
+      /* In-flow flex footer once the mobile shell is active — see
+         body.site-mobile-active flex column above. */
+      body.site-mobile-active .site-mobile-bottom-nav {
+        position: relative;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        flex: 0 0 auto;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      /* Anchor the More popup to the body box (position:relative, 100dvh)
+         instead of the viewport — same iOS toolbar-collapse quirk as the
+         nav. Toast stays fixed: its hidden translateY state would overflow
+         the body box and create phantom scroll height. */
+      body.site-mobile-active .site-mobile-more-row {
+        position: absolute;
       }
 
       .site-mobile-nav-btn {
