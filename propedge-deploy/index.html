@@ -35132,7 +35132,7 @@ nav.tabs > button,
         return;
       }
 
-      const isDesktopHome = window.matchMedia('(min-width: 1024px)').matches;
+      const isDesktopHome = true;
       const currentLimit = state.propDisplayLimit || 100;
       const displayProps = props.slice(0, currentLimit);
       const hasMore = props.length > currentLimit;
