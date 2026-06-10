@@ -10898,13 +10898,26 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       contain: none !important;
     }
 
-    /* Mobile: always paint prop cards — content-visibility leaves blue gaps mid-scroll */
+    /* Mobile: always paint prop cards — content-visibility/backface leave blue gaps mid-scroll */
     @media (max-width: 1023px) {
+      .props-container,
+      .props-grid,
+      .site-mobile-props-board,
       .prop-card,
       .propai-market-row--deck {
         content-visibility: visible !important;
         contain-intrinsic-size: none !important;
         contain: none !important;
+        backface-visibility: visible !important;
+        -webkit-backface-visibility: visible !important;
+        transform: none !important;
+        -webkit-transform: none !important;
+        will-change: auto !important;
+      }
+
+      .site-mobile-nav-btn:not(.active) {
+        background: transparent !important;
+        color: var(--text-muted) !important;
       }
     }
 
@@ -17062,13 +17075,16 @@ nav.tabs > button,
     }
 
     /* v7.56 — Home dashboard: fix blank panels (Safari paint + grid stretch) */
-    .props-container:has(.site-home-dashboard) {
+    .props-container:has(.site-home-dashboard),
+    .props-container:has(.site-mobile-props-board) {
       backface-visibility: visible;
       -webkit-backface-visibility: visible;
     }
 
     .site-home-dashboard,
-    .site-home-dashboard * {
+    .site-home-dashboard *,
+    .site-mobile-props-board,
+    .site-mobile-props-board * {
       backface-visibility: visible;
       -webkit-backface-visibility: visible;
     }
@@ -35148,10 +35164,10 @@ nav.tabs > button,
         return;
       }
 
+      const isDesktopHome = window.matchMedia('(min-width: 1024px)').matches;
       const currentLimit = state.propDisplayLimit || 100;
       const displayProps = props.slice(0, currentLimit);
       const hasMore = props.length > currentLimit;
-      const isDesktopHome = window.matchMedia('(min-width: 1024px)').matches;
       const propsBoardSig = [
         props.length,
         currentLimit,
@@ -35161,7 +35177,8 @@ nav.tabs > button,
         state.gameFilter?.id || '',
         state.propDisplayLimit,
       ].join('|');
-      if (!isDesktopHome && state.view === 'props' && document.getElementById('propsGridList') && propsBoardSig === _lastPropsBoardSig) {
+      const existingGrid = document.getElementById('propsGridList');
+      if (!isDesktopHome && state.view === 'props' && existingGrid && existingGrid.children.length > 0 && propsBoardSig === _lastPropsBoardSig) {
         return;
       }
 
@@ -40957,15 +40974,16 @@ nav.tabs > button,
     }
 
     function syncShellNavState() {
+      const view = state.view || 'props';
       document.querySelectorAll('.site-shell-nav[data-target-view]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.targetView === state.view);
+        btn.classList.toggle('active', btn.dataset.targetView === view);
       });
       document.querySelectorAll('.site-mobile-nav-btn[data-target-view]').forEach(btn => {
-        if (btn.dataset.targetView === 'more') {
-          btn.classList.remove('active');
-          return;
-        }
-        btn.classList.toggle('active', btn.dataset.targetView === state.view);
+        btn.classList.remove('active');
+      });
+      document.querySelectorAll('.site-mobile-nav-btn[data-target-view]').forEach(btn => {
+        if (btn.dataset.targetView === 'more') return;
+        if (btn.dataset.targetView === view) btn.classList.add('active');
       });
       document.querySelectorAll('.site-mobile-more-chip[data-target-view]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.targetView === state.view);
@@ -41005,9 +41023,10 @@ nav.tabs > button,
       if (!tab) return;
       if (typeof window._propedgeSwitchView === 'function') {
         window._propedgeSwitchView(tab);
-        return;
+      } else {
+        tab.click();
       }
-      tab.click();
+      syncShellNavState();
     }
 
     function triggerShellLeague(league) {
@@ -41440,6 +41459,7 @@ nav.tabs > button,
     }
 
     function showLoading() {
+      _lastPropsBoardSig = '';
       document.getElementById('propsContainer').innerHTML = `
         <div class="loading">
           <div class="spinner"></div>
