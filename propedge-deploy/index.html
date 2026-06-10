@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.218 — Fix Parlay tab empty (undock from hidden props) — 2026-06-10 -->
+<!-- PropEdge v7.227 — iOS nav: opaque fixed bar + kill #020617 bleed (systematic fix) — 2026-06-10 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -11,9 +11,78 @@
   <link rel="alternate icon" type="image/png" href="/favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
-<meta name="theme-color" content="#ff6a00">
+<meta name="theme-color" content="#030812">
+  <style>
+    @media (max-width: 1023px) {
+      html {
+        height: 100%;
+        height: 100svh;
+        height: -webkit-fill-available;
+        min-height: 100%;
+        min-height: 100svh;
+        min-height: -webkit-fill-available;
+        overflow: hidden;
+        background: rgb(3, 8, 18) !important;
+      }
+      html, body {
+        background: rgb(3, 8, 18) !important;
+        background-image: none !important;
+        padding-bottom: 0 !important;
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: var(--pe-device-viewport-h, 100svh);
+        max-height: var(--pe-device-viewport-h, 100svh);
+        overflow: hidden;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        min-height: 0 !important;
+        margin: 0;
+      }
+      .site-rebuild-shell {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        overflow: hidden;
+        width: 100%;
+      }
+      body.pe-ios-mobile .site-mobile-bottom-nav {
+        flex: 0 0 auto;
+        width: 100%;
+      }
+    }
+  </style>
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.218">
+  <meta name="app-version" content="v7.226">
+  <script>
+    (function () {
+      if (window.innerWidth >= 1024) return;
+      document.documentElement.classList.add('site-mobile-active');
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('pe-ios-mobile');
+      } else if (/Android/i.test(navigator.userAgent)) {
+        document.documentElement.classList.add('pe-android-mobile');
+      }
+      function markBodyMobile() {
+        if (!document.body) return;
+        document.body.classList.add('site-mobile-active');
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+          document.body.classList.add('pe-ios-mobile');
+        } else if (/Android/i.test(navigator.userAgent)) {
+          document.body.classList.add('pe-android-mobile');
+        }
+      }
+      if (document.body) markBodyMobile();
+      else document.addEventListener('DOMContentLoaded', markBodyMobile, { once: true });
+    })();
+  </script>
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -1477,9 +1546,37 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     }
 
     @media (max-width: 1023px) {
+      :root {
+        --bg-primary: rgb(3, 8, 18);
+        --bg-secondary: rgb(3, 8, 18);
+      }
+
+      html {
+        background: rgb(3, 8, 18) !important;
+        overflow-x: hidden;
+      }
+
+      html,
+      body {
+        background: rgb(3, 8, 18) !important;
+        background-image: none !important;
+        padding-bottom: 0 !important;
+      }
+
+      body {
+        min-height: 100svh;
+        min-height: -webkit-fill-available;
+        overflow-x: hidden;
+        margin: 0;
+      }
+
+      .site-mobile-bottom-nav {
+        flex: 0 0 auto;
+        width: 100%;
+      }
+
       html.site-mobile-active,
       html.site-mobile-active body {
-        min-height: 0 !important;
         padding-bottom: 0 !important;
       }
     }
@@ -2714,35 +2811,18 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
     @media (max-width: 1023px) {
       html.site-mobile-active {
-        height: var(--app-height, 100dvh);
-        min-height: var(--app-height, 100dvh);
-        max-height: var(--app-height, 100dvh);
-        background: #020617;
-        overflow: hidden;
+        background: rgb(3, 8, 18);
         overscroll-behavior: none;
       }
 
       body.site-mobile-active {
-        display: block;
-        height: var(--app-height, 100dvh);
-        min-height: var(--app-height, 100dvh);
-        max-height: var(--app-height, 100dvh);
         padding: 0 !important;
-        margin: 0;
-        overflow: hidden !important;
         overscroll-behavior: none;
-        background: #020617;
+        background: rgb(3, 8, 18) !important;
       }
 
       .site-rebuild-shell {
-        display: grid;
-        grid-template-rows: minmax(0, 1fr) auto;
-        grid-template-columns: minmax(0, 1fr);
-        padding: 0;
-        height: var(--app-height, 100dvh);
-        min-height: var(--app-height, 100dvh);
-        max-height: var(--app-height, 100dvh);
-        overflow: hidden;
+        position: relative;
       }
 
       .site-sidebar-shell {
@@ -2750,8 +2830,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       }
 
       .site-shell-main {
-        grid-row: 1;
-        grid-column: 1;
+        flex: 1 1 auto;
         display: flex;
         flex-direction: column;
         gap: 0;
@@ -2763,7 +2842,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         overflow-y: auto;
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
-        padding-bottom: 16px !important;
+        padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px) + 12px) !important;
       }
 
       /* Size board columns to content so .site-shell-main stays the one
@@ -18077,7 +18156,7 @@ nav.tabs > button,
       }
 
       html.site-mobile-active {
-        scroll-padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 8px);
+        scroll-padding-bottom: 8px;
       }
 
       body.site-mobile-active {
@@ -18085,7 +18164,7 @@ nav.tabs > button,
       }
 
       body.site-mobile-active .site-shell-main {
-        scroll-padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 8px);
+        scroll-padding-bottom: 8px;
       }
 
       .nav-tabs {
@@ -18094,43 +18173,29 @@ nav.tabs > button,
 
       .site-mobile-bottom-nav {
         display: flex;
-        grid-row: 2;
-        grid-column: 1;
         position: relative;
-        left: auto;
-        right: auto;
-        bottom: auto;
+        flex: 0 0 auto;
+        order: 100;
         z-index: 120;
         align-items: stretch;
         justify-content: space-around;
         gap: 4px;
-        padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+        margin-top: auto;
+        padding: 8px 10px calc(8px + var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px));
         background: linear-gradient(180deg, rgba(4, 10, 22, 0.98), rgba(3, 8, 18, 1));
         border-top: 1px solid rgba(255, 255, 255, 0.08);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
         flex-shrink: 0;
         width: 100%;
         box-sizing: border-box;
       }
 
-      body.site-mobile-active .site-mobile-bottom-nav {
-        position: relative !important;
-        left: auto !important;
-        right: auto !important;
-        bottom: auto !important;
-        margin-top: 0 !important;
-      }
-
       body.site-mobile-active .site-mobile-more-row {
-        grid-row: 2;
-        grid-column: 1;
-        position: absolute;
+        position: fixed;
         left: 0;
         right: 0;
-        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px));
+        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px));
         z-index: 121;
       }
 
@@ -18138,16 +18203,41 @@ nav.tabs > button,
         min-height: auto !important;
       }
 
-      /* Home-indicator strip inside nav padding */
       body.site-mobile-active .site-mobile-bottom-nav::after {
         content: '';
         position: absolute;
         left: 0;
         right: 0;
-        bottom: 0;
-        height: env(safe-area-inset-bottom, 0px);
+        bottom: calc(-1 * var(--pe-nav-bottom-gap, 0px));
+        height: calc(var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px));
         background: rgb(3, 8, 18);
         pointer-events: none;
+      }
+
+      html.pe-ios-mobile,
+      body.pe-ios-mobile {
+        background: rgb(3, 8, 18) !important;
+      }
+
+      .site-mobile-bottom-nav {
+        flex: 0 0 auto;
+        flex-shrink: 0;
+        width: 100%;
+      }
+
+      /* Tablet bottom nav — iPad mini/Air/Pro 11 portrait, Android tablets */
+      @media (min-width: 768px) and (max-width: 1023px) {
+        .site-mobile-bottom-nav {
+          padding: 10px 20px calc(10px + var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px));
+          gap: 8px;
+        }
+        .site-mobile-nav-btn {
+          font-size: 11px;
+        }
+        .site-mobile-nav-icon svg {
+          width: 22px;
+          height: 22px;
+        }
       }
 
       /* More popup anchored above in-grid nav */
@@ -18229,7 +18319,7 @@ nav.tabs > button,
       }
 
       .toast {
-        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px);
+        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px) + 12px);
       }
 
       .app-layout,
@@ -19528,6 +19618,7 @@ nav.tabs > button,
   </div> <!-- End .app-layout -->
       </div> <!-- End .site-shell-content -->
     </main>
+  </div> <!-- End .site-rebuild-shell -->
 
     <div class="site-mobile-more-row" id="siteMobileMoreRow">
       <button type="button" class="site-mobile-more-chip" data-target-view="games" onclick="triggerShellView('games'); toggleMobileMoreMenu(false);">Games</button>
@@ -19560,7 +19651,6 @@ nav.tabs > button,
         <span>More</span>
       </button>
     </nav>
-  </div>
 
   <!-- Toast -->
   <div class="toast" id="toast"></div>
@@ -36608,13 +36698,17 @@ nav.tabs > button,
         `${p.player} ${p.direction} ${p.line} ${p.prop}`
       ).join(', ');
       
-      // Copy to clipboard first
+      // Copy to clipboard first, then clear slip
       navigator.clipboard.writeText(picks).then(() => {
         showToast('Picks copied! Paste in Gambly chat');
-        // Open Gambly bot page
         window.open('https://gambly.com/gambly-bot', '_blank');
+        // Clear parlay so next ticket starts fresh
+        state.parlay = [];
+        saveParlay();
+        renderParlay();
+        renderProps();
       }).catch(() => {
-        // If clipboard fails, just open Gambly
+        // If clipboard fails, just open Gambly (don't clear — user may need to retry)
         window.open('https://gambly.com/', '_blank');
         showToast('Opening Gambly...');
       });
@@ -36652,6 +36746,15 @@ nav.tabs > button,
       const smsUrl = `sms:+${phoneNumber}${separator}body=${encodeURIComponent(message)}`;
       window.location.href = smsUrl;
       showToast(`Opening Gambly Bot for ${label}...`);
+
+      // Clear parlay after sending so next slip starts fresh
+      setTimeout(function() {
+        state.parlay = [];
+        saveParlay();
+        renderParlay();
+        renderProps();
+        showToast('Slip sent — parlay cleared for next ticket');
+      }, 800);
     }
 
     function logParlay() {
@@ -40969,41 +41072,187 @@ nav.tabs > button,
       return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     }
 
-    function syncAppHeight() {
+    function isAndroidMobile() {
+      return /Android/i.test(navigator.userAgent);
+    }
+
+    function isTabletViewport() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const short = Math.min(w, h);
+      if (w >= 768 && w < 1024) return true;
+      if (isIOSMobile() && navigator.maxTouchPoints > 1 && short >= 744) return true;
+      return false;
+    }
+
+    /* Recommended viewport profiles — portrait logical px (2024–2026 devices) */
+    const PE_DEVICE_PROFILES = [
+      { id: 'iphone-17-pro-max', form: 'phone', platform: 'ios', w: 440, h: 956, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-17-pro', form: 'phone', platform: 'ios', w: 402, h: 874, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-17-air', form: 'phone', platform: 'ios', w: 420, h: 912, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-17', form: 'phone', platform: 'ios', w: 393, h: 852, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-16-pro-max', form: 'phone', platform: 'ios', w: 440, h: 956, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-16-pro', form: 'phone', platform: 'ios', w: 402, h: 874, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-16-plus', form: 'phone', platform: 'ios', w: 430, h: 932, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-16', form: 'phone', platform: 'ios', w: 393, h: 852, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-15-pro-max', form: 'phone', platform: 'ios', w: 430, h: 932, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-15-pro', form: 'phone', platform: 'ios', w: 393, h: 852, safeTop: 59, safeBottom: 34, navH: 49 },
+      { id: 'iphone-se', form: 'phone', platform: 'ios', w: 375, h: 667, safeTop: 20, safeBottom: 0, navH: 49 },
+      { id: 'pixel-9-pro-xl', form: 'phone', platform: 'android', w: 448, h: 997, safeTop: 24, safeBottom: 24, navH: 49 },
+      { id: 'pixel-9-pro', form: 'phone', platform: 'android', w: 412, h: 915, safeTop: 24, safeBottom: 24, navH: 49 },
+      { id: 'pixel-9', form: 'phone', platform: 'android', w: 412, h: 892, safeTop: 24, safeBottom: 24, navH: 49 },
+      { id: 'galaxy-s25-ultra', form: 'phone', platform: 'android', w: 412, h: 915, safeTop: 28, safeBottom: 20, navH: 49 },
+      { id: 'galaxy-s25-plus', form: 'phone', platform: 'android', w: 384, h: 854, safeTop: 28, safeBottom: 20, navH: 49 },
+      { id: 'galaxy-s25', form: 'phone', platform: 'android', w: 360, h: 780, safeTop: 28, safeBottom: 20, navH: 49 },
+      { id: 'galaxy-z-fold-cover', form: 'phone', platform: 'android', w: 374, h: 832, safeTop: 28, safeBottom: 20, navH: 49 },
+      { id: 'ipad-pro-13', form: 'tablet', platform: 'ios', w: 1032, h: 1376, safeTop: 24, safeBottom: 20, navH: 56 },
+      { id: 'ipad-pro-11', form: 'tablet', platform: 'ios', w: 834, h: 1194, safeTop: 24, safeBottom: 20, navH: 56 },
+      { id: 'ipad-air-11', form: 'tablet', platform: 'ios', w: 820, h: 1180, safeTop: 24, safeBottom: 20, navH: 56 },
+      { id: 'ipad-mini', form: 'tablet', platform: 'ios', w: 744, h: 1133, safeTop: 24, safeBottom: 20, navH: 56 },
+      { id: 'ipad-10', form: 'tablet', platform: 'ios', w: 820, h: 1180, safeTop: 24, safeBottom: 20, navH: 56 },
+      { id: 'galaxy-tab-s9', form: 'tablet', platform: 'android', w: 800, h: 1280, safeTop: 24, safeBottom: 16, navH: 56 },
+      { id: 'pixel-tablet', form: 'tablet', platform: 'android', w: 800, h: 1280, safeTop: 24, safeBottom: 16, navH: 56 },
+      { id: 'android-tablet-lg', form: 'tablet', platform: 'android', w: 900, h: 1440, safeTop: 24, safeBottom: 16, navH: 56 }
+    ];
+
+    function resolveDeviceProfile() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const short = Math.min(w, h);
+      const long = Math.max(w, h);
+      const tablet = isTabletViewport();
+      const ios = isIOSMobile();
+      const android = isAndroidMobile();
+      let best = null;
+      let bestScore = Infinity;
+      PE_DEVICE_PROFILES.forEach((p) => {
+        if (p.form === 'tablet' && !tablet) return;
+        if (p.form === 'phone' && tablet) return;
+        if (p.platform === 'ios' && !ios) return;
+        if (p.platform === 'android' && !android) return;
+        const score = Math.abs(short - p.w) + Math.abs(long - p.h);
+        if (score < bestScore) {
+          bestScore = score;
+          best = p;
+        }
+      });
+      if (best && bestScore > 120) best = null;
+      if (best) return best;
+      return {
+        id: tablet ? 'tablet-generic' : 'phone-generic',
+        form: tablet ? 'tablet' : 'phone',
+        platform: ios ? 'ios' : (android ? 'android' : 'any'),
+        w: short,
+        h: long,
+        safeTop: ios ? (short >= 390 ? 59 : 20) : 24,
+        safeBottom: ios ? (short >= 390 ? 34 : 0) : 20,
+        navH: tablet ? 56 : 49
+      };
+    }
+
+    function measureNavBottomGap() {
+      const nav = document.getElementById('siteMobileBottomNav');
+      if (!nav || window.innerWidth >= 1024) return 0;
+      const rect = nav.getBoundingClientRect();
+      const vv = window.visualViewport;
+      const visBottom = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
+      return Math.max(0, Math.round(visBottom - rect.bottom));
+    }
+
+    function readSafeAreaInset(which) {
+      try {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padding-' + which + ':env(safe-area-inset-' + which + ', 0px);';
+        document.documentElement.appendChild(probe);
+        const val = parseInt(getComputedStyle(probe).getPropertyValue('padding-' + which) || '0', 10);
+        probe.remove();
+        return isNaN(val) ? 0 : val;
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    function syncDeviceViewportProfile() {
       if (window.innerWidth >= 1024) {
-        document.documentElement.style.removeProperty('--app-height');
+        ['--pe-device-viewport-h', '--pe-device-safe-bottom', '--pe-device-safe-top', '--pe-nav-bottom-gap', '--pe-device-id'].forEach((k) => {
+          document.documentElement.style.removeProperty(k);
+        });
+        document.body.classList.remove('pe-device-phone', 'pe-device-tablet');
+        delete document.body.dataset.peDevice;
         return;
       }
-      if (document.body.classList.contains('site-mobile-keyboard-active')) return;
-      const h = Math.round(window.innerHeight || 0);
+      const profile = resolveDeviceProfile();
+      const innerH = Math.round(window.innerHeight || 0);
+      const vv = window.visualViewport;
+      const visH = vv && vv.height > 0 ? Math.round(vv.offsetTop + vv.height) : innerH;
+      const viewportH = Math.max(innerH, visH);
+      const safeBottomProbe = readSafeAreaInset('bottom');
+      const safeTopProbe = readSafeAreaInset('top');
+      const safeBottom = Math.max(profile.safeBottom, safeBottomProbe);
+      const safeTop = Math.max(profile.safeTop, safeTopProbe);
+
+      document.documentElement.style.setProperty('--pe-device-viewport-h', viewportH + 'px');
+      document.documentElement.style.setProperty('--pe-device-safe-bottom', safeBottom + 'px');
+      document.documentElement.style.setProperty('--pe-device-safe-top', safeTop + 'px');
+      document.documentElement.style.setProperty('--pe-device-id', profile.id);
+
+      document.body.classList.toggle('pe-device-phone', !isTabletViewport());
+      document.body.classList.toggle('pe-device-tablet', isTabletViewport());
+      document.body.dataset.peDevice = profile.id;
+
+      syncMobileBottomNavOffset();
+      const gap = measureNavBottomGap();
+      document.documentElement.style.setProperty('--pe-nav-bottom-gap', gap + 'px');
+    }
+
+    function measureVisibleViewportHeight() {
+      const inner = Math.round(window.innerHeight || 0);
+      const vv = window.visualViewport;
+      if (!vv || vv.height <= 0) return inner;
+      const visual = Math.round(vv.height + (vv.offsetTop || 0));
+      if (isIOSMobile()) return Math.max(inner, visual);
+      return visual;
+    }
+
+    function clearMobileShellHeightLock() {
+      document.documentElement.style.removeProperty('--pe-vvh');
+      document.body.style.removeProperty('--pe-vvh');
+      const shell = document.querySelector('.site-rebuild-shell');
+      if (shell) shell.style.removeProperty('max-height');
+    }
+
+    function syncAppHeight() {
+      if (window.innerWidth >= 1024) {
+        clearMobileShellHeightLock();
+        return;
+      }
+      if (!document.body.classList.contains('site-mobile-keyboard-active')) {
+        clearMobileShellHeightLock();
+        return;
+      }
+      const shell = document.querySelector('.site-rebuild-shell');
+      const vv = window.visualViewport;
+      const h = vv && vv.height > 0 ? Math.round(vv.height) : Math.round(window.innerHeight || 0);
       if (h < 200) return;
-      const prev = parseInt(document.documentElement.style.getPropertyValue('--app-height') || '0', 10);
-      // Ignore keyboard shrink; always accept growth when Safari toolbar collapses.
-      if (prev > 0 && (prev - h) > 140) return;
-      document.documentElement.style.setProperty('--app-height', h + 'px');
+      document.documentElement.style.setProperty('--pe-vvh', h + 'px');
+      if (shell) shell.style.maxHeight = h + 'px';
     }
 
     function syncMobileViewportHeight() {
       if (window.innerWidth >= 1024) {
-        document.documentElement.style.removeProperty('--pe-vvh');
-        document.documentElement.style.removeProperty('--app-height');
-        document.body.style.removeProperty('--pe-vvh');
+        clearMobileShellHeightLock();
         return;
       }
-      document.documentElement.style.removeProperty('--pe-vvh');
-      document.body.style.removeProperty('--pe-vvh');
-      syncAppHeight();
-      syncMobileBottomNavOffset();
+      clearMobileShellHeightLock();
+      syncDeviceViewportProfile();
     }
 
     function restoreMobileShellAfterKeyboard() {
       if (window.innerWidth >= 1024) return;
       document.body.classList.remove('site-mobile-keyboard-active');
       window._peVvhLocked = null;
-      document.documentElement.style.removeProperty('--pe-vvh');
-      document.body.style.removeProperty('--pe-vvh');
-      syncAppHeight();
-      syncMobileBottomNavOffset();
+      clearMobileShellHeightLock();
+      syncDeviceViewportProfile();
       syncMobileStickyHeaderOffset();
     }
 
@@ -41041,6 +41290,8 @@ nav.tabs > button,
       document.body.classList.toggle('site-mobile-active', isMobile);
       document.documentElement.classList.toggle('pe-ios-mobile', isMobile && isIOSMobile());
       document.body.classList.toggle('pe-ios-mobile', isMobile && isIOSMobile());
+      document.documentElement.classList.toggle('pe-android-mobile', isMobile && isAndroidMobile());
+      document.body.classList.toggle('pe-android-mobile', isMobile && isAndroidMobile());
       // Detect iOS/Safari: disable content-visibility to prevent scroll position jumps
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -41048,7 +41299,7 @@ nav.tabs > button,
       if (!isMobile) toggleMobileMoreMenu(false);
       syncMobileViewportHeight();
       syncMobileStickyHeaderOffset();
-      syncMobileBottomNavOffset();
+      syncDeviceViewportProfile();
     }
 
     function toggleMobileMoreMenu(forceOpen) {
@@ -41378,17 +41629,31 @@ nav.tabs > button,
       syncShellNavState();
       initMobileKeyboardShellGuard();
       window.addEventListener('resize', () => {
-        if (window.innerWidth < 1024) syncAppHeight();
+        if (window.innerWidth < 1024) {
+          clearMobileShellHeightLock();
+          syncDeviceViewportProfile();
+        }
       });
       if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
+          if (window.innerWidth >= 1024) return;
+          if (document.body.classList.contains('site-mobile-keyboard-active')) {
+            syncAppHeight();
+          } else {
+            clearMobileShellHeightLock();
+            syncDeviceViewportProfile();
+          }
+        });
+        window.visualViewport.addEventListener('scroll', () => {
           if (window.innerWidth < 1024 && !document.body.classList.contains('site-mobile-keyboard-active')) {
+            syncDeviceViewportProfile();
+          } else if (window.innerWidth < 1024 && document.body.classList.contains('site-mobile-keyboard-active')) {
             syncAppHeight();
           }
         });
       }
       window.addEventListener('orientationchange', () => {
-        document.documentElement.style.removeProperty('--app-height');
+        clearMobileShellHeightLock();
         if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
       });
       window.addEventListener('pageshow', (e) => {
@@ -41401,7 +41666,7 @@ nav.tabs > button,
       });
       requestAnimationFrame(() => {
         syncMobileStickyHeaderOffset();
-        syncMobileBottomNavOffset();
+        syncDeviceViewportProfile();
         if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
       });
     }

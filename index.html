@@ -36581,13 +36581,17 @@ nav.tabs > button,
         `${p.player} ${p.direction} ${p.line} ${p.prop}`
       ).join(', ');
       
-      // Copy to clipboard first
+      // Copy to clipboard first, then clear slip
       navigator.clipboard.writeText(picks).then(() => {
         showToast('Picks copied! Paste in Gambly chat');
-        // Open Gambly bot page
         window.open('https://gambly.com/gambly-bot', '_blank');
+        // Clear parlay so next ticket starts fresh
+        state.parlay = [];
+        saveParlay();
+        renderParlay();
+        renderProps();
       }).catch(() => {
-        // If clipboard fails, just open Gambly
+        // If clipboard fails, just open Gambly (don't clear — user may need to retry)
         window.open('https://gambly.com/', '_blank');
         showToast('Opening Gambly...');
       });
@@ -36625,6 +36629,15 @@ nav.tabs > button,
       const smsUrl = `sms:+${phoneNumber}${separator}body=${encodeURIComponent(message)}`;
       window.location.href = smsUrl;
       showToast(`Opening Gambly Bot for ${label}...`);
+
+      // Clear parlay after sending so next slip starts fresh
+      setTimeout(function() {
+        state.parlay = [];
+        saveParlay();
+        renderParlay();
+        renderProps();
+        showToast('Slip sent — parlay cleared for next ticket');
+      }, 800);
     }
 
     function logParlay() {
