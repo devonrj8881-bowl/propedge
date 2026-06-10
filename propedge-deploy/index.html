@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.210 — Fix: mobile bottom nav from position:fixed to in-flow flex footer of 100dvh body column (iOS toolbar-collapse drift); app-layout/main-content flex content sizing so site-shell-main is the one scroller — 2026-06-09 LIVE DEPLOY -->
+<!-- PropEdge v7.208 — Fix: mobile bottom nav from position:fixed to in-flow flex footer of 100dvh body column (iOS toolbar-collapse drift); app-layout/main-content flex content sizing so site-shell-main is the one scroller — 2026-06-09 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.210">
+  <meta name="app-version" content="v7.208">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -435,6 +435,23 @@ const TEAM_ALIASES = {
       ['TB', 'Tampa Bay Buccaneers',['tampa bay','tampa','buccaneers','bucs','tb','tbb']],
       ['TEN','Tennessee Titans',['tennessee','titans','ten']],
       ['WAS','Washington Commanders',['washington','commanders','wsh','was']]
+    ],
+    WNBA: [
+      ['ATL', 'Atlanta Dream',           ['atlanta', 'dream', 'atl']],
+      ['CHI', 'Chicago Sky',             ['chicago', 'sky', 'chi']],
+      ['CON', 'Connecticut Sun',         ['connecticut', 'sun', 'con', 'ct', 'conn']],
+      ['DAL', 'Dallas Wings',            ['dallas', 'wings', 'dal']],
+      ['GSV', 'Golden State Valkyries',  ['golden state', 'valkyries', 'gsv', 'gs']],
+      ['IND', 'Indiana Fever',           ['indiana', 'fever', 'ind']],
+      ['LV',  'Las Vegas Aces',          ['las vegas', 'aces', 'lv', 'lva']],
+      ['LAS', 'Los Angeles Sparks',      ['los angeles', 'la sparks', 'sparks', 'la', 'las']],
+      ['MIN', 'Minnesota Lynx',          ['minnesota', 'lynx', 'min']],
+      ['NY',  'New York Liberty',        ['new york', 'liberty', 'ny', 'nyl']],
+      ['PDX', 'Portland Fire',           ['portland', 'fire', 'pdx', 'por']],
+      ['PHX', 'Phoenix Mercury',         ['phoenix', 'mercury', 'phx']],
+      ['SEA', 'Seattle Storm',           ['seattle', 'storm', 'sea']],
+      ['TOR', 'Toronto Tempo',           ['toronto', 'tempo', 'tor']],
+      ['WAS', 'Washington Mystics',      ['washington', 'mystics', 'wsh', 'was']]
     ]
   };
 
@@ -1496,8 +1513,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       position: sticky;
       top: 18px;
       align-self: start;
-      /* Own GPU layer — prevents iframe repaints from invalidating sidebar paint region */
-      transform: translateZ(0);
+      isolation: isolate;
       width: 100%;
       min-height: calc(100vh - 36px);
       min-height: calc(100dvh - 36px);
@@ -1612,7 +1628,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       text-align: left;
       cursor: pointer;
       position: relative;
-      transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.14s ease;
+      transition: none;
     }
 
     .propai-tool-nav {
@@ -2328,14 +2344,12 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       background: linear-gradient(180deg, #7dff98, #39d98a);
       opacity: 0;
       transform: scaleY(0.45);
-      transition: opacity 0.18s ease, transform 0.18s ease;
     }
 
     .site-shell-nav:hover {
       color: var(--text-primary);
       background: rgba(34, 197, 94, 0.08);
       border-color: rgba(34, 197, 94, 0.12);
-      transform: translateX(2px);
     }
 
     .site-shell-nav:hover .site-shell-nav-icon,
@@ -2719,10 +2733,6 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         position: relative;
         height: 100svh;
         height: 100dvh;
-        /* JS-measured visual viewport height — iOS Safari's dvh lags or
-           mismatches the real visible area around toolbar/safe-area, which
-           left a blank band under the nav. */
-        height: var(--pe-vvh, 100dvh);
         min-height: 0;
       }
 
@@ -2773,16 +2783,6 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         flex: 0 0 auto;
         height: auto;
         min-height: 0;
-      }
-
-      /* Every section in the main scroll column keeps its content height.
-         Without this the column's huge negative free space crushes the
-         shrinkable items (game board, sport tabs, filter row) into
-         overlapping slivers. .site-shell-content is display:contents, so
-         its children are the real flex items. */
-      .site-shell-main > *,
-      .site-shell-content > * {
-        flex-shrink: 0;
       }
 
       .site-shell-content {
@@ -6146,6 +6146,45 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       box-sizing: border-box;
     }
 
+    /* ── Game-Bet card styles ─────────────────────────── */
+    .game-bet-logos {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      width: 56px;
+      flex-shrink: 0;
+      justify-content: center;
+    }
+    .game-bet-logos img,
+    .game-bet-logos .team-logo-fallback {
+      width: 22px !important;
+      height: 22px !important;
+      min-width: 22px;
+      border-radius: 3px;
+      object-fit: contain;
+      font-size: 0.55rem;
+    }
+    .game-bet-logo-vs {
+      font-size: 0.55rem;
+      color: #64748b;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .game-bet-odds-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      padding: 6px 14px;
+      min-width: 56px;
+    }
+    .game-bet-odds-badge.game-bet-juice--sharp  { background: rgba(52,211,153,0.18); border: 1px solid rgba(52,211,153,0.4); }
+    .game-bet-odds-badge.game-bet-juice--fair   { background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.35); }
+    .game-bet-odds-badge.game-bet-juice--heavy  { background: rgba(239,68,68,0.12);  border: 1px solid rgba(239,68,68,0.3); }
+    .game-bet-odds-num   { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; }
+    .game-bet-odds-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+
     @media (max-width: 1023px) {
       body.markets-mode .propai-league-tabs,
       body.markets-mode .propai-browser-tabs {
@@ -9356,13 +9395,11 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     /* Desktop: show iframe, hide native UI */
     .propai-generative-frame {
       width: 100%;
-      min-height: 720px;
+      height: calc(100svh - 300px);
+      min-height: 580px;
       border: 0;
       border-radius: 12px;
       background: var(--bg-primary, #1a1d2e);
-      /* Isolate iframe paint so height changes don't repaint the sidebar */
-      contain: layout;
-      transform: translateZ(0);
     }
     .propai-gen-native { display: none; }
 
@@ -18198,7 +18235,6 @@ nav.tabs > button,
       #portfolioContainer,
       #parlayContainer,
       .props-container {
-        padding-top: 160px;
         padding-bottom: 16px;
       }
 
@@ -18540,10 +18576,6 @@ nav.tabs > button,
       <div class="stat-value purple" id="statValue">--</div>
       <div class="stat-label">Value</div>
     </div>
-    <div class="stat-box">
-      <div class="stat-value" id="statVigFree" style="color:var(--accent-blue)">--</div>
-      <div class="stat-label">Vig-Free</div>
-    </div>
   </div>
 
   <!-- Timestamp -->
@@ -18579,8 +18611,8 @@ nav.tabs > button,
     <div class="sport-tab" data-league="NBA">🏀 NBA</div>
     <div class="sport-tab" data-league="NHL">🏒 NHL</div>
     <div class="sport-tab" data-league="MLB">⚾ MLB</div>
-    <div class="sport-tab" data-league="WNBA">🏀 WNBA</div>
     <div class="sport-tab" data-league="NFL">🏈 NFL</div>
+    <div class="sport-tab" data-league="WNBA">🏀 WNBA</div>
   </div>
 
   <!-- Navigation Tabs -->
@@ -18878,7 +18910,6 @@ nav.tabs > button,
         <button class="pace-filter-btn" data-league="NBA" onclick="filterPaceByLeague('NBA')">🏀 NBA</button>
         <button class="pace-filter-btn" data-league="NHL" onclick="filterPaceByLeague('NHL')">🏒 NHL</button>
         <button class="pace-filter-btn" data-league="MLB" onclick="filterPaceByLeague('MLB')">⚾ MLB</button>
-        <button class="pace-filter-btn" data-league="WNBA" onclick="filterPaceByLeague('WNBA')">🏀 WNBA</button>
         <button class="pace-filter-btn" data-league="NFL" onclick="filterPaceByLeague('NFL')">🏈 NFL</button>
       </div>
     </div>
@@ -19087,13 +19118,6 @@ nav.tabs > button,
                 <button class="propai-market-tab" type="button" data-market="TB" onclick="setPropAIMarketFilter('TB')">Tot. Bases</button>
                 <button class="propai-market-tab" type="button" data-market="Strikeouts" onclick="setPropAIMarketFilter('Strikeouts')">Strikeouts</button>
                 <button class="propai-market-tab" type="button" data-market="Goals" onclick="setPropAIMarketFilter('Goals')">Goals</button>
-                <button class="propai-market-tab" type="button" data-market="Moneyline" onclick="setPropAIMarketFilter('Moneyline')">ML</button>
-                <button class="propai-market-tab" type="button" data-market="Spread" onclick="setPropAIMarketFilter('Spread')">Spread</button>
-                <button class="propai-market-tab" type="button" data-market="Totals" onclick="setPropAIMarketFilter('Totals')">Total</button>
-                <button class="propai-market-tab" type="button" data-market="Alt Total" onclick="setPropAIMarketFilter('Alt Total')">Alt Total</button>
-                <button class="propai-market-tab" type="button" data-market="Alt Spread" onclick="setPropAIMarketFilter('Alt Spread')">Alt Spread</button>
-                <button class="propai-market-tab" type="button" data-market="1H" onclick="setPropAIMarketFilter('1H')">1H</button>
-                <button class="propai-market-tab" type="button" data-market="1Q" onclick="setPropAIMarketFilter('1Q')">1Q</button>
                 </div>
               </div>
             </div>
@@ -19161,10 +19185,10 @@ nav.tabs > button,
                 <div class="propai-gen-league-row" id="propedgeGenLeagueRow">
                   <button type="button" class="propai-gen-league-btn active" data-gen-league="ALL" onclick="setGenLeague('ALL')">ALL</button>
                   <button type="button" class="propai-gen-league-btn" data-gen-league="MLB" onclick="setGenLeague('MLB')">MLB</button>
-                  <button type="button" class="propai-gen-league-btn" data-gen-league="WNBA" onclick="setGenLeague('WNBA')">WNBA</button>
                   <button type="button" class="propai-gen-league-btn" data-gen-league="NBA" onclick="setGenLeague('NBA')">NBA</button>
                   <button type="button" class="propai-gen-league-btn" data-gen-league="NHL" onclick="setGenLeague('NHL')">NHL</button>
                   <button type="button" class="propai-gen-league-btn" data-gen-league="NFL" onclick="setGenLeague('NFL')">NFL</button>
+                  <button type="button" class="propai-gen-league-btn" data-gen-league="WNBA" onclick="setGenLeague('WNBA')">WNBA</button>
                 </div>
                 <div class="propai-gen-search-row">
                   <input id="propedgeGenQuestion" class="propai-gen-question" type="text"
@@ -19204,12 +19228,12 @@ nav.tabs > button,
           <div class="propai-board-meta-label">League</div>
           <div class="propai-league-tabs">
             <button class="propai-league-tab active" type="button" data-league="ALL" onclick="toggleMarketsLeague('ALL')">All</button>
-                  <button class="propai-league-tab" type="button" data-league="NBA" onclick="toggleMarketsLeague('NBA')">🏀 NBA</button>
-                  <button class="propai-league-tab" type="button" data-league="NHL" onclick="toggleMarketsLeague('NHL')">🏒 NHL</button>
-                  <button class="propai-league-tab" type="button" data-league="MLB" onclick="toggleMarketsLeague('MLB')">⚾ MLB</button>
-                  <button class="propai-league-tab" type="button" data-league="NFL" onclick="toggleMarketsLeague('NFL')">🏈 NFL</button>
-                  <button class="propai-league-tab" type="button" data-league="WNBA" onclick="toggleMarketsLeague('WNBA')">🏀 WNBA</button>
-                </div>
+            <button class="propai-league-tab" type="button" data-league="NBA" onclick="toggleMarketsLeague('NBA')">🏀 NBA</button>
+            <button class="propai-league-tab" type="button" data-league="NHL" onclick="toggleMarketsLeague('NHL')">🏒 NHL</button>
+            <button class="propai-league-tab" type="button" data-league="MLB" onclick="toggleMarketsLeague('MLB')">⚾ MLB</button>
+            <button class="propai-league-tab" type="button" data-league="NFL" onclick="toggleMarketsLeague('NFL')">🏈 NFL</button>
+            <button class="propai-league-tab" type="button" data-league="WNBA" onclick="toggleMarketsLeague('WNBA')">🏀 WNBA</button>
+          </div>
         </div>
         <div class="propai-browser-search">
           <span class="propai-browser-search-icon">⌕</span>
@@ -19237,10 +19261,10 @@ nav.tabs > button,
           <button class="propai-market-tab" type="button" data-market="Goals" onclick="setPropAIMarketFilter('Goals')">Goals</button>
           <button class="propai-market-tab" type="button" data-market="Moneyline" onclick="setPropAIMarketFilter('Moneyline')">ML</button>
           <button class="propai-market-tab" type="button" data-market="Spread" onclick="setPropAIMarketFilter('Spread')">Spread</button>
-          <button class="propai-market-tab" type="button" data-market="Totals" onclick="setPropAIMarketFilter('Totals')">Total</button>
+          <button class="propai-market-tab" type="button" data-market="Total" onclick="setPropAIMarketFilter('Total')">Total</button>
           <button class="propai-market-tab" type="button" data-market="Alt Total" onclick="setPropAIMarketFilter('Alt Total')">Alt Total</button>
-          <button class="propai-market-tab" type="button" data-market="1H" onclick="setPropAIMarketFilter('1H')">1H</button>
           <button class="propai-market-tab" type="button" data-market="1Q" onclick="setPropAIMarketFilter('1Q')">1Q</button>
+          <button class="propai-market-tab" type="button" data-market="1H" onclick="setPropAIMarketFilter('1H')">1H</button>
           </div>
         </div>
       </div>
@@ -19587,18 +19611,19 @@ nav.tabs > button,
     const THRESHOLDS = { prime: 70, strong: 55, solid: 40, spec: 0 }; // v5: unified 0-100 scale, aligned with computeBetScore() action thresholds
 
     const ESPN_APIS = {
-      NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-      NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-      MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
-      NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+      NBA:  'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+      NHL:  'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+      MLB:  'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
+      NFL:  'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
       WNBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard'
     };
 
     // Live team stats APIs — used for pace ranking + opponent defense context
     const TEAM_STATS_APIS = {
-      NBA: 'https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byteam?season=2026&seasontype=2&limit=32',
-      NHL: 'https://site.web.api.espn.com/apis/common/v3/sports/hockey/nhl/statistics/byteam?season=2026&seasontype=2&limit=32',
-      MLB: 'https://site.web.api.espn.com/apis/common/v3/sports/baseball/mlb/statistics/byteam?season=2026&seasontype=2&limit=32'
+      NBA:  'https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byteam?season=2026&seasontype=2&limit=32',
+      NHL:  'https://site.web.api.espn.com/apis/common/v3/sports/hockey/nhl/statistics/byteam?season=2026&seasontype=2&limit=32',
+      MLB:  'https://site.web.api.espn.com/apis/common/v3/sports/baseball/mlb/statistics/byteam?season=2026&seasontype=2&limit=32',
+      WNBA: 'https://site.web.api.espn.com/apis/common/v3/sports/basketball/wnba/statistics/byteam?season=2026&seasontype=2&limit=16'
     };
 
     // Live player game log — for recent form validation
@@ -19640,8 +19665,9 @@ nav.tabs > button,
             window._teamStats[league][abbr] = statMap;
           });
 
-          // Build pace rank (NBA: possessions/game or PPG proxy; NHL: goals/game; MLB: runs/game)
-          const paceKey = league === 'NBA' ? ['pace','possessionspergame','avgpossessions','pointspergame']
+          // Build pace rank (NBA/WNBA: possessions/game or PPG proxy; NHL: goals/game; MLB: runs/game)
+          const paceKey = (league === 'NBA' || league === 'WNBA')
+                        ? ['pace','possessionspergame','avgpossessions','pointspergame']
                         : league === 'NHL' ? ['goalspergame','goalsfor','gf/g']
                         : ['runspergame','runsscored','r/g'];
           const getPaceVal = row => {
@@ -19664,10 +19690,11 @@ nav.tabs > button,
 
     async function fetchLiveGameLocations() {
       const SCOREBOARD_APIS = {
-        NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-        NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-        MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
-        NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
+        NBA:  'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+        NHL:  'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+        MLB:  'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
+        NFL:  'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+        WNBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard'
       };
       for (const [league, url] of Object.entries(SCOREBOARD_APIS)) {
         try {
@@ -19696,10 +19723,11 @@ nav.tabs > button,
     }
 
     const INJURY_APIS = {
-      NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries',
-      NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/injuries',
-      MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/injuries',
-      NFL: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries'
+      NBA:  'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries',
+      NHL:  'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/injuries',
+      MLB:  'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/injuries',
+      NFL:  'https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries',
+      WNBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/injuries'
     };
 
     /**
@@ -19777,7 +19805,6 @@ nav.tabs > button,
     // STATE
     // ==========================================
     const state = {
-      gameOdds: {}, // Restored for game-level ML/Totals/Spreads/Alts
       props: [],
       filteredProps: [],
       parlay: [],
@@ -20133,7 +20160,7 @@ nav.tabs > button,
     async function fetchTeamRoster(team, league) {
       try {
         // Map league to ESPN sport/league path
-        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : 'baseball/mlb';
+        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : league === 'WNBA' ? 'basketball/wnba' : 'baseball/mlb';
         const url = `https://site.api.espn.com/apis/site/v2/sports/${leaguePath}/teams/${team.toLowerCase()}`;
         const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) return null;
@@ -20150,7 +20177,7 @@ nav.tabs > button,
     async function fetchRecentGames(team, league, limit = 5) {
       try {
         // Map league to ESPN sport/league path
-        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : 'baseball/mlb';
+        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : league === 'WNBA' ? 'basketball/wnba' : 'baseball/mlb';
         const url = `https://site.api.espn.com/apis/site/v2/sports/${leaguePath}/teams/${team.toLowerCase()}/schedule`;
         const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) return null;
@@ -20184,38 +20211,6 @@ nav.tabs > button,
 
     state.multiBookOdds = state.multiBookOdds || {}; // { "player|propType|line": { dk: -110, betmgm: -115, fd: -110 } }
 
-    // MULTIBOOK ODDS PROVIDER (Restored)
-    class MultiBookOddsProvider {
-      constructor(apiKey) {
-        this.apiKey = apiKey;
-        this.baseUrl = 'https://api.the-odds-api.com/v4/sports';
-        this.sportsMap = {
-          'NBA': 'basketball_nba',
-          'NHL': 'hockey_nhl',
-          'MLB': 'baseball_mlb',
-          'NFL': 'americanfootball_nfl',
-          'WNBA': 'basketball_wnba'
-        };
-      }
-
-      async fetchPlayerProps(league, eventId) {
-        if (!this.sportsMap[league]) return null;
-        try {
-          // Add alternate totals/lines to markets
-          const markets = 'player_points,player_rebounds,player_assists,player_threes,player_blocks,player_steals,player_points_rebounds_assists,alternate_player_points,alternate_player_rebounds,alternate_player_assists';
-          const url = `${this.baseUrl}/${this.sportsMap[league]}/events/${eventId}/odds?apiKey=${this.apiKey}&regions=us&markets=${markets}&oddsFormat=american`;
-          
-          const response = await fetch(url);
-          if (!response.ok) return null;
-          return await response.json();
-        } catch(e) {
-          console.warn('[MultiBook] Failed to fetch odds:', e);
-          return null;
-        }
-      }
-    }
-    
-    // Fallback to existing logic if odds API is rate-limited
     async function fetchMultiBookOdds(player, propType, team, league) {
       try {
         const cacheKey = `${player}|${propType}|${team}`;
@@ -20297,7 +20292,7 @@ nav.tabs > button,
           return state.rotowireCache[cacheKey];
         }
 
-        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : 'baseball/mlb';
+        const leaguePath = league === 'NBA' ? 'basketball/nba' : league === 'NHL' ? 'hockey/nhl' : league === 'WNBA' ? 'basketball/wnba' : 'baseball/mlb';
         const rotoUrl = `https://www.rotowire.com/${leaguePath}/depth-chart`;
 
         // Note: Full RotoWire scraping requires browser rendering; using API alternative
@@ -21180,7 +21175,7 @@ nav.tabs > button,
 
     async function fetchPropedgeMainCsv() {
       const directUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1351555262&_=${Date.now()}`;
-      const proxiedUrl = `/.netlify/functions/prop-feed?sheet=propedge-main&t=${Date.now()}`;
+      const proxiedUrl = `/.netlify/functions/prop-feed?sheet=propedge-main`;
       let response = await fetch(directUrl, { cache: 'no-store' });
       if (response.ok) {
         const csv = await response.text();
@@ -21317,39 +21312,21 @@ nav.tabs > button,
 
         let allProps = [];
         const csv = await fetchPropedgeMainCsv();
-        
-        // --- RESTORED: Fetch Game-Level Odds (ML, Totals, Spreads) ---
-        try {
-          console.log('[PropEdge] Fetching game-level odds from Odds API...');
-          const activeLeagues = ['NBA', 'MLB', 'NHL', 'WNBA', 'NFL'].join(',');
-          const oddsResp = await fetch(`/.netlify/functions/game-odds?leagues=${activeLeagues}&alt=false`, { cache: 'no-store' });
-          if (oddsResp.ok) {
-            const oddsData = await oddsResp.json();
-            state.gameOdds = oddsData.props || [];
-            state.gameOddsAltLoaded = false;
-            console.log(`[PropEdge] Loaded ${(state.gameOdds || []).length} game odds entries`);
-          }
-        } catch (e) {
-          console.warn('[PropEdge] Game-level odds fetch failed:', e);
-        }
-        // ------------------------------------------------------------------
         if (csv) {
           console.log(`[PropEdge] propedge-main received ${csv.length} bytes`);
           const _csvLines = csv.split('\n');
-          console.log(`[PropEdge] ✅ propedge-main sheet: ${_csvLines.length} lines`);
+          console.log(`[PropEdge] ✅ propedge-main sheet: ${_csvLines.length} lines | header: ${_csvLines[0].substring(0, 200)}`);
           writePropFeedCache(csv);
           allProps = parseCSV(csv, 'UNIFIED');
-          console.log(`[PropEdge] ✅ propedge-main: parsed ${allProps.length} props`);
-          
-          // SAFETY: Only update state.props if we actually got data
-          if (allProps.length > 0) {
-            state.props = allProps;
-          } else {
-            console.error('[PropEdge] ⚠️ Sheet fetched but parse returned 0 props — keeping existing state');
-          }
+          console.log(`[PropEdge] ✅ propedge-main: parsed ${allProps.length} props with enrichment data`);
         } else {
-          console.error('[PropEdge] ❌ propedge-main feed unavailable');
+          console.error('[PropEdge] ❌ propedge-main feed unavailable (not CSV or network blocked)');
+          allProps = [];
         }
+
+        console.log(`[PropEdge] Data load complete: ${allProps.length} total props loaded`);
+
+        state.props = allProps;
         // Invalidate memoized scores so cachedPropScore recomputes on next render
         allProps.forEach(p => { delete p._cachedScore; });
         syncUnifiedScores(); // v5: align prop.modelScore + prop.tier with computeBetScore() engine
@@ -21370,6 +21347,8 @@ nav.tabs > button,
         applyEspnGameFilter().catch(e => console.warn('[game-filter] ESPN filter failed silently:', e.message));
         // Also apply local game-status filter (uses state.games, works offline/instantly)
         applyLocalGameStatusFilter();
+        // Async game-odds: load game-level bets (ML/spread/total/alt/1Q) from Odds API
+        loadGameOdds().catch(e => console.warn('[game-odds] fetch failed silently:', e.message));
         if (typeof renderMarketsView === 'function') renderMarketsView();
         window.clearTimeout(window.__propLoadWatchdog);
         window.__propLoadRetryCount = 0;
@@ -21573,8 +21552,6 @@ nav.tabs > button,
         per_min_avg: headers.findIndex(h => h && h.toLowerCase().includes('l10 per-min')),
         per_min_l5: headers.findIndex(h => h && h.toLowerCase().includes('l5') && h.toLowerCase().includes('per-min')),
         per_min_l10: headers.findIndex(h => h && h.toLowerCase().includes('l10') && h.toLowerCase().includes('per-min')),
-        per_min_home: headers.findIndex(h => h && h.toLowerCase().includes('per_min_home')),
-        per_min_away: headers.findIndex(h => h && h.toLowerCase().includes('per_min_away')),
         confidence_pct: headers.findIndex(h => h && h.toLowerCase().includes('confidence')),
         matchup_rank: headers.findIndex(h => h && h.toLowerCase().includes('matchup rank')),
         matchup_scalar: headers.findIndex(h => h && h.toLowerCase().includes('matchup scalar')),
@@ -21639,8 +21616,6 @@ nav.tabs > button,
         const perMinAvg = parseFloat(getValue(cols.per_min_avg)) || 0;
         const perMinL5 = parseFloat(getValue(cols.per_min_l5)) || 0;
         const perMinL10 = parseFloat(getValue(cols.per_min_l10)) || 0;
-        const perMinHome = parseFloat(getValue(cols.per_min_home)) || 0;
-        const perMinAway = parseFloat(getValue(cols.per_min_away)) || 0;
         const confidenceScore = calculatePropConfidence({
           l5Pct, l10Pct, l20Pct,
           l5Samples: l5Meta.samples, l10Samples: l10Meta.samples, l20Samples: l20Meta.samples,
@@ -21661,8 +21636,6 @@ nav.tabs > button,
         const consensusLine = parseFloat(getValue(cols.consensus_line)) || null;
         const dkLineSheet = parseFloat(getValue(cols.dk_line)) || null;
         const fdLineSheet = parseFloat(getValue(cols.fd_line_live)) || null;
-        
-        
         const bookDeltaSheet = parseFloat(getValue(cols.book_delta_col)) || null;
         const defMatchupRank = parseInt(getValue(cols.def_matchup_rank), 10) || null;
 
@@ -21672,25 +21645,9 @@ nav.tabs > button,
 
         const oddsStr = getValue(cols.odds);
         const odds = parseInt(oddsStr.replace(/[^0-9\-]/g, '')) || -110;
-        
-        // MULTI-BOOK BEST ODDS (Priority 1)
-        let bestOdds = odds;
-        let bestBook = 'FD';
-        if (dkLineSheet && fdLineSheet) {
-            if (dkLineSheet > fdLineSheet) { bestOdds = dkLineSheet; bestBook = 'DK'; }
-            else if (fdLineSheet > dkLineSheet) { bestOdds = fdLineSheet; bestBook = 'FD'; }
-        } else if (dkLineSheet && dkLineSheet > odds) { bestOdds = dkLineSheet; bestBook = 'DK'; }
-        else if (fdLineSheet && fdLineSheet > odds) { bestOdds = fdLineSheet; bestBook = 'FD'; }
-        
-        const rawImplied = bestOdds < 0 ? Math.abs(bestOdds) / (Math.abs(bestOdds) + 100) : 100 / (bestOdds + 100);
-        
         // PropIQ v2: devig implied probability — remove bookmaker overround before comparing to hit rate.
-        // rawImplied already calculated using bestOdds above
-        // PropEdge Devig Math (Additive Method) - Replaced fixed 0.952 with true proportional devig
-        // Assuming symmetric -110 juice as baseline if opposing side isn't known yet
-        const impliedProb = odds < 0 
-          ? (rawImplied / (rawImplied + (100/(110+100))))
-          : (rawImplied / (rawImplied + (110/(110+100)))); // devig factor for standard ~4.8% vig market
+        const rawImplied = odds < 0 ? Math.abs(odds) / (Math.abs(odds) + 100) : 100 / (odds + 100);
+        const impliedProb = rawImplied * 0.952; // devig factor for standard ~4.8% vig market
 
         // ── PropIQ v4 — SHARP INTELLIGENCE PATCH (Volatility + Velocity + Variance) ──
         
@@ -21742,18 +21699,6 @@ nav.tabs > button,
         } else if (Math.abs(l5Pct - l10Pct) >= 30) {
             modelScore -= 10;
             propFactors.push('⚠️ Extreme Recency Volatility');
-        }
-
-        // 3.5 Home/Away Split Modifier (Priority 6)
-        if (gameLoc === 'home' && perMinHome > 0 && perMinL10 > 0 && (perMinHome - perMinL10)/perMinL10 >= 0.15) {
-            modelScore += 6;
-            propFactors.push('🏠 Elite Home Court Split');
-        } else if (gameLoc === 'away' && perMinAway > 0 && perMinL10 > 0 && (perMinAway - perMinL10)/perMinL10 >= 0.15) {
-            modelScore += 6;
-            propFactors.push('✈️ Road Warrior Split');
-        } else if (gameLoc === 'home' && perMinHome > 0 && perMinL10 > 0 && (perMinL10 - perMinHome)/perMinL10 >= 0.20) {
-            modelScore -= 6;
-            propFactors.push('⚠️ Negative Home Split');
         }
 
         // 4. Stat-Type Variance Filter (Risk Mitigation)
@@ -21946,6 +21891,18 @@ nav.tabs > button,
             } else if (sznMatchup >= 27 && direction === 'UNDER' && isGoalScoringProp) {
                modelScore -= 4;
                propFactors.push('⚠️ Leaky Goalie — fights UNDER');
+            }
+        } else if (actualLeague === 'WNBA') {
+            // WNBA: B2B fatigue applies same as NBA (compressed schedule, basketball volume props)
+            const isB2bWNBA = isB2b || oppDetails.toLowerCase().includes('b2b') || oppDetails.toLowerCase().includes('back-to-back');
+            if (isB2bWNBA) {
+               modelScore -= 10;
+               propFactors.push('🔋 Fatigue (Back-to-Back)');
+            }
+            // Rest bonus: well-rested WNBA players hit volume props at higher rate
+            if (!isB2bWNBA && daysRest != null && daysRest >= 3 && direction === 'OVER') {
+               modelScore += 3;
+               propFactors.push(`💪 Well-Rested (${daysRest}d rest)`);
             }
         }
 
@@ -22279,10 +22236,15 @@ nav.tabs > button,
           trueProb *= injuryMultiplier;
         }
 
-        // ── P2.2: Injury Impact Modifier — reduce trueProb if player's team missing starters ────────
+        // ── P2.2: Injury Impact Modifier — direction-aware ────────
+        // Teammate out → this player gets more usage/shots.
+        // OVER: more usage = more likely to hit OVER → boost trueProb
+        // UNDER: more usage = harder to go under → cut trueProb
         const teamImpactInjuries = getImpactInjuries(teamAbbr, actualLeague);
         if (teamImpactInjuries && teamImpactInjuries.length > 0) {
-          trueProb *= 0.90; // 10% reduction when key teammates are out
+          trueProb = direction === 'OVER'
+            ? Math.min(0.88, trueProb * 1.10)
+            : Math.max(0.12, trueProb * 0.90);
         }
 
         // ── P2.3: Back-to-back Fatigue — direction-aware ────────
@@ -22500,7 +22462,7 @@ nav.tabs > button,
       }
       if (startIndex === 0) console.log('[PropEdge] Loading archive data for trends...');
       try {
-        const leagues = ['NBA', 'NHL', 'MLB', 'WNBA', 'NFL'];
+        const leagues = ['NBA', 'NHL', 'MLB'];
         let totalArchiveRows = Object.values(window._archiveData || {}).reduce((sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0), 0);
 
         for (let idx = startIndex; idx < leagues.length; idx++) {
@@ -22794,7 +22756,7 @@ nav.tabs > button,
 
     function mergeApiSportsInjuriesIfNeeded(bundle) {
       if (!bundle?.injuries || typeof _injState === 'undefined') return;
-      ['NBA', 'NHL', 'MLB', 'WNBA', 'NFL'].forEach((league) => {
+      ['NBA', 'NHL', 'MLB', 'NFL'].forEach((league) => {
         if ((_injState.injuries[league] || []).length) return;
         const list = bundle.injuries[league];
         if (Array.isArray(list) && list.length) _injState.injuries[league] = list;
@@ -23110,6 +23072,23 @@ nav.tabs > button,
       return upper;
     }
 
+    // Reverse lookup: abbreviation → full team name for search (e.g. "SEA" → "Seattle Mariners")
+    function teamAbbrToSearchText(abbr, league) {
+      if (!abbr) return '';
+      const upper = abbr.toUpperCase().trim();
+      // Check the prop's own league first so shared abbrs (CHI, IND, MIN, TOR…)
+      // resolve to the correct team name (e.g. CHI+WNBA → "Chicago Sky", not "Chicago Bulls")
+      if (league && TEAM_ALIASES[league.toUpperCase()]) {
+        const found = TEAM_ALIASES[league.toUpperCase()].find(([a]) => a === upper);
+        if (found) return found[1];
+      }
+      for (const lg of Object.values(TEAM_ALIASES)) {
+        const found = lg.find(([a]) => a === upper);
+        if (found) return found[1];
+      }
+      return '';
+    }
+
     const ESPN_BASE = 'https://a.espncdn.com/i/teamlogos';
     const TEAM_LOGOS = {
       // NBA Teams
@@ -23369,6 +23348,29 @@ nav.tabs > button,
         OTT: `${ESPN_BASE}/nhl/500/ott.png`,
         MIA: `${ESPN_BASE}/nhl/500/fla.png`,
       },
+      WNBA: {
+        // Keyed by both ESPN raw abbr (from parseGame) and PropFinder canonical (from prop cards)
+        ATL: `${ESPN_BASE}/wnba/500/atl.png`,
+        CHI: `${ESPN_BASE}/wnba/500/chi.png`,
+        CON: `${ESPN_BASE}/wnba/500/conn.png`,   // PropFinder canonical
+        CONN:`${ESPN_BASE}/wnba/500/conn.png`,   // ESPN raw
+        DAL: `${ESPN_BASE}/wnba/500/dal.png`,
+        GSV: `${ESPN_BASE}/wnba/500/gs.png`,     // PropFinder canonical
+        GS:  `${ESPN_BASE}/wnba/500/gs.png`,     // ESPN raw
+        IND: `${ESPN_BASE}/wnba/500/ind.png`,
+        LV:  `${ESPN_BASE}/wnba/500/lv.png`,
+        LAS: `${ESPN_BASE}/wnba/500/la.png`,     // PropFinder canonical
+        LA:  `${ESPN_BASE}/wnba/500/la.png`,     // ESPN raw
+        MIN: `${ESPN_BASE}/wnba/500/min.png`,
+        NY:  `${ESPN_BASE}/wnba/500/ny.png`,
+        PDX: `${ESPN_BASE}/wnba/500/por.png`,    // PropFinder canonical (Portland Fire)
+        POR: `${ESPN_BASE}/wnba/500/por.png`,    // ESPN raw (Portland Fire)
+        PHX: `${ESPN_BASE}/wnba/500/phx.png`,
+        SEA: `${ESPN_BASE}/wnba/500/sea.png`,
+        TOR: `${ESPN_BASE}/wnba/500/tor.png`,
+        WAS: `${ESPN_BASE}/wnba/500/wsh.png`,    // PropFinder canonical
+        WSH: `${ESPN_BASE}/wnba/500/wsh.png`,    // ESPN raw
+      },
     };
 
     const TEAM_LOGO_SPORT_BY_LEAGUE = {
@@ -23376,6 +23378,7 @@ nav.tabs > button,
       NFL: 'nfl',
       MLB: 'mlb',
       NHL: 'nhl',
+      WNBA: 'wnba',
     };
 
     const TEAM_LOGO_SLUG_OVERRIDES = {
@@ -27871,7 +27874,7 @@ nav.tabs > button,
 
     function espnHeadshotLeagueSlug(league) {
       const lg = String(league || '').toUpperCase();
-      return lg === 'MLB' ? 'mlb' : lg === 'NHL' ? 'nhl' : lg === 'NFL' ? 'nfl' : 'nba';
+      return lg === 'MLB' ? 'mlb' : lg === 'NHL' ? 'nhl' : lg === 'NFL' ? 'nfl' : lg === 'WNBA' ? 'wnba' : 'nba';
     }
 
     function playerInitials(playerName) {
@@ -27989,9 +27992,10 @@ nav.tabs > button,
     }
 
     const ESPN_SCOREBOARD_BY_LEAGUE = {
-      NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
-      NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-      MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'
+      NBA:  'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+      NHL:  'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+      MLB:  'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
+      WNBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard'
     };
 
     function _espnDateParam(d) {
@@ -28002,9 +28006,9 @@ nav.tabs > button,
     }
 
     async function refreshTeamSituationalContext() {
-      const leagues = ['NBA', 'NHL', 'MLB'];
-      const teamLastGame = { NBA: {}, NHL: {}, MLB: {} };
-      const teamLastVsOpp = { NBA: {}, NHL: {}, MLB: {} };
+      const leagues = ['NBA', 'NHL', 'MLB', 'WNBA'];
+      const teamLastGame = { NBA: {}, NHL: {}, MLB: {}, WNBA: {} };
+      const teamLastVsOpp = { NBA: {}, NHL: {}, MLB: {}, WNBA: {} };
 
       for (const league of leagues) {
         const recentGames = [];
@@ -28371,23 +28375,49 @@ nav.tabs > button,
     function applyLocalGameStatusFilter() {
       const allGames = [
         ...(state.games.NBA || []), ...(state.games.NHL || []),
-        ...(state.games.MLB || []), ...(state.games.NFL || [])
+        ...(state.games.MLB || []), ...(state.games.NFL || []), ...(state.games.WNBA || [])
       ];
-      if (!allGames.length) return;
+      if (!allGames.length || !Array.isArray(state.props) || !state.props.length) return;
 
-      // Non-destructive: never delete props from state.props.
-      // renderProps() / markets board already handle completed-game suppression at render time.
-      const anyFinal = allGames.some(g =>
-        g.isCompleted || g.status === 'final' ||
-        /final|completed|ended|post/i.test(g.statusText || g.statusDisplay || g.status || '')
-      );
+      const normalizeT = t => String(t || '').toUpperCase().trim();
 
-      if (!anyFinal) return;
+      // Build set of teams with active (non-final) games
+      const activeTeams = {}; // { LEAGUE: Set<team> }
+      const hasAnyGameForLeague = {}; // track which leagues have any ESPN data today
+      allGames.forEach(g => {
+        const league = String(g.league || '').toUpperCase();
+        if (!hasAnyGameForLeague[league]) hasAnyGameForLeague[league] = true;
+        const isFinal = g.isCompleted || g.status === 'final' ||
+          /final|completed|ended|post/i.test(g.statusText || g.statusDisplay || g.status || '');
+        if (!isFinal) {
+          if (!activeTeams[league]) activeTeams[league] = new Set();
+          activeTeams[league].add(normalizeTeam(g.homeTeam));
+          activeTeams[league].add(normalizeTeam(g.awayTeam));
+        }
+      });
 
-      console.log('[game-status-filter] Detected final game(s) — triggering re-render (props preserved)');
-      updateStats();
-      schedulePropsRender('game-status-filter', 200);
-      if (typeof renderMarketsView === 'function') renderMarketsView();
+      // Cache normalizeTeam results — avoids alias-table scan for every one of ~7k props
+      const _teamNormCache = {};
+      const normT = t => _teamNormCache[t] !== undefined ? _teamNormCache[t] : (_teamNormCache[t] = normalizeTeam(t));
+
+      const before = state.props.length;
+      state.props = state.props.filter(p => {
+        const league = String(p.league || '').toUpperCase();
+        // If ESPN has no data for this league today, keep all props for it
+        if (!hasAnyGameForLeague[league]) return true;
+        const team = normT(p.team);
+        const active = activeTeams[league];
+        // If all games for this league are final, active will be empty set
+        return active && active.has(team);
+      });
+
+      const removed = before - state.props.length;
+      if (removed > 0) {
+        console.log(`[game-status-filter] Removed ${removed} props for completed games`);
+        updateStats();
+        schedulePropsRender('game-status-filter', 200);
+        if (typeof renderMarketsView === 'function') renderMarketsView();
+      }
     }
 
     async function applyEspnGameFilter() {
@@ -28397,63 +28427,95 @@ nav.tabs > button,
         const data = await res.json();
         if (!data.ok || !data.activeTeams) return;
 
-        // Keep this for downstream odds fetching, but do NOT delete props from state.props.
         window.propEdgeActiveTeams = data.activeTeams;
         window.propEdgeActiveGames = data.games || [];
 
-        const mlbTeams = (data.activeTeams['MLB'] || []).length;
-        const nbaTeams = (data.activeTeams['NBA'] || []).length;
-        console.log('[game-filter] ESPN slate teams (non-destructive): MLB=' + mlbTeams + ' NBA=' + nbaTeams);
+        const before = state.props.length;
+        state.props = state.props.filter(p => {
+          const league = (p.league || '').toUpperCase();
+          const team = normalizeTeam(p.team || p.Team || '');
+          const opp  = normalizeTeam(p.opponent || p.opp || '');
+          const active = data.activeTeams[league];
+          if (!active || !active.length) return false; // no games today for league → hide props
+          // Normalize active team abbrs too (ESPN sometimes returns short forms like SA, NY)
+          const activeNorm = active.map(a => normalizeTeam(a));
+          return activeNorm.includes(team) || (opp && activeNorm.includes(opp));
+        });
 
-        // Trigger a re-render so any UI that depends on slate data updates.
-        schedulePropsRender('espn-game-filter', 100);
-        if (typeof renderMarketsView === 'function') renderMarketsView();
+        const removed = before - state.props.length;
+        if (removed > 0) {
+          console.log(`[game-filter] ✅ Removed ${removed} props for teams not playing today`);
+          updateStats(); // refresh stat-bar counts after slate filtering
+          schedulePropsRender('espn-game-filter', 100);
+          if (typeof renderMarketsView === 'function') renderMarketsView();
+          showToast(`🏟️ Filtered ${removed} props — teams not playing today`);
+        } else {
+          console.log('[game-filter] ✅ All props have active games today');
+        }
       } catch (e) {
         console.warn('[game-filter] ESPN fetch failed:', e.message);
+      }
+    }
+
+    // ── Game-Odds: load game-level bets (ML/spread/total/alt/1Q) from Odds API ──
+    async function loadGameOdds() {
+      try {
+        // Only request leagues that have games today (from propEdgeActiveTeams)
+        const activeLeagues = window.propEdgeActiveTeams
+          ? Object.keys(window.propEdgeActiveTeams).filter(l => (window.propEdgeActiveTeams[l] || []).length > 0)
+          : ['NBA', 'WNBA', 'MLB', 'NHL', 'NFL'];
+        if (!activeLeagues.length) return;
+
+        // alt=false: bulk only (ML/spread/total) — saves ~50% API credits on page load
+        const url = `/.netlify/functions/game-odds?leagues=${activeLeagues.join(',')}&alt=false`;
+        const res = await propEdgeNativeFetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok || !Array.isArray(data.props) || !data.props.length) return;
+
+        state.props = state.props.filter(p => !p.isGameBet);
+        state.props.push(...data.props);
+        state.gameOddsAltLoaded = false; // reset — alt not loaded yet
+        console.log(`[game-odds] ✅ Loaded ${data.props.length} game bets (ML/spread/total)`);
+
+        delete state.props._cachedScore;
+        state.props.forEach(p => { delete p._cachedScore; });
+        if (typeof renderMarketsView === 'function') renderMarketsView();
+      } catch (e) {
+        console.warn('[game-odds] fetch failed:', e.message);
+      }
+    }
+
+    // Lazy-loads alt/period markets (Alt Total, 1H, 1Q) only when user requests them.
+    // Called by toggleMarketsMarket when an alt-market chip is selected.
+    async function loadGameOddsAlt() {
+      if (state.gameOddsAltLoaded) return; // already loaded this session
+      try {
+        const activeLeagues = window.propEdgeActiveTeams
+          ? Object.keys(window.propEdgeActiveTeams).filter(l => (window.propEdgeActiveTeams[l] || []).length > 0)
+          : ['NBA', 'WNBA', 'MLB', 'NHL', 'NFL'];
+        if (!activeLeagues.length) return;
+        const url = `/.netlify/functions/game-odds?leagues=${activeLeagues.join(',')}&alt=true`;
+        const res = await propEdgeNativeFetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok || !Array.isArray(data.props)) return;
+        // Replace all game bets with the full set (includes alt markets)
+        state.props = state.props.filter(p => !p.isGameBet);
+        state.props.push(...data.props);
+        state.gameOddsAltLoaded = true;
+        console.log(`[game-odds-alt] ✅ Loaded ${data.props.length} game bets incl. alt/period markets`);
+        delete state.props._cachedScore;
+        state.props.forEach(p => { delete p._cachedScore; });
+        if (typeof renderMarketsView === 'function') renderMarketsView();
+      } catch (e) {
+        console.warn('[game-odds-alt] fetch failed:', e.message);
       }
     }
 
     // Called once after CSV parse completes; rescoreSharpMoney() re-runs
     // on top of the unified base when line movement data arrives.
     // ==========================================
-    
-    function createGameLevelPropsFromOdds() {
-      if (!state.gameOdds || !Array.isArray(state.gameOdds) || state.gameOdds.length === 0) return [];
-      // game-odds function already returns properly formatted props, just pass through
-      return (state.gameOdds || []).map(p => ({
-        ...p,
-        isGameBet: p.isGameBet || true,  // mark as game-level, not player prop
-        modelScore: 0,  // game-level props don't have scoring; let user decide via book odds
-        confidence: 0,
-        l5Pct: null,
-        l10Pct: null
-      }));
-    }
-
-    async function loadGameOddsAlt() {
-      if (state.gameOddsAltLoaded) return;
-      try {
-        const activeLeagues = ['NBA', 'MLB', 'NHL', 'WNBA', 'NFL'].join(',');
-        const oddsResp = await fetch(`/.netlify/functions/game-odds?leagues=${activeLeagues}&alt=true`, { cache: 'no-store' });
-        if (!oddsResp.ok) return;
-        const oddsData = await oddsResp.json();
-        if (!oddsData || !Array.isArray(oddsData.props) || !oddsData.props.length) return;
-        state.gameOdds = oddsData.props;
-        state.gameOddsAltLoaded = true;
-        if (Array.isArray(state.props)) {
-          state.props = state.props.filter(p => !p.isGameBet);
-          const gameLevelProps = createGameLevelPropsFromOdds();
-          if (gameLevelProps.length) {
-            state.props = [...state.props, ...gameLevelProps];
-          }
-        }
-        console.log(`[PropEdge] Loaded ${state.gameOdds.length} game odds entries (alt markets)`);
-        if (typeof renderMarketsView === 'function') renderMarketsView();
-      } catch (e) {
-        console.warn('[PropEdge] Alt market odds fetch failed:', e.message);
-      }
-    }
-
     function syncUnifiedScores() {
       if (!state.props || state.props.length === 0) return;
       let synced = 0;
@@ -28484,14 +28546,6 @@ nav.tabs > button,
 
         synced++;
       });
-      
-      // --- RESTORED: Inject Game-Level Props (ML, Totals, Spreads) ---
-      const gameLevelProps = createGameLevelPropsFromOdds();
-      if (gameLevelProps.length > 0) {
-        state.props = [...state.props, ...gameLevelProps];
-        console.log(`[PropEdge] Injected ${gameLevelProps.length} game-level props from Odds API`);
-      }
-      // --------------------------------------------------------------
       console.log(`[PropEdge v5] syncUnifiedScores: aligned ${synced} props to computeBetScore() engine`);
     }
 
@@ -28506,7 +28560,7 @@ nav.tabs > button,
         ticker.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
       }
 
-      const leagues = ['NBA', 'NHL', 'MLB', 'WNBA', 'NFL'];
+      const leagues = ['NBA', 'NHL', 'MLB', 'NFL', 'WNBA'];
       let allGames = [];
 
       // Force today-only by passing dates=YYYYMMDD to ESPN
@@ -28551,7 +28605,7 @@ nav.tabs > button,
       }));
       allGames = leagueResults.flatMap(result => result.status === 'fulfilled' ? result.value : []);
       if (state.apiSportsBundle) mergeApiSportsGamesIfNeeded(state.apiSportsBundle);
-      allGames = ['NBA', 'NHL', 'MLB', 'NFL'].flatMap((league) => state.games[league] || []);
+      allGames = ['NBA', 'NHL', 'MLB', 'NFL', 'WNBA'].flatMap((league) => state.games[league] || []);
       console.log(`[PropEdge] FINAL: state.games =`, state.games);
 
       // ── ALWAYS render ticker with all games (live + upcoming)
@@ -28639,11 +28693,15 @@ nav.tabs > button,
       // Stale-data tracking — mark when we last saw a live update
       const lastUpdate = isLive ? Date.now() : null;
 
+      // WNBA: remap ESPN abbreviations → PropFinder canonical so game chips match prop cards
+      const WNBA_ESPN_NORM = { LA: 'LAS', GS: 'GSV', CONN: 'CON', POR: 'PDX', WSH: 'WAS' };
+      const _normWNBA = (abbr) => (league === 'WNBA' && WNBA_ESPN_NORM[abbr]) ? WNBA_ESPN_NORM[abbr] : abbr;
+
       return {
         id: event.id,
         league,
-        homeTeam: home.team?.abbreviation || 'HOME',
-        awayTeam: away.team?.abbreviation || 'AWAY',
+        homeTeam: _normWNBA(home.team?.abbreviation || 'HOME'),
+        awayTeam: _normWNBA(away.team?.abbreviation || 'AWAY'),
         homeName: home.team?.displayName   || '',
         awayName: away.team?.displayName   || '',
         homeScore: parseInt(home.score) || 0,
@@ -28694,6 +28752,7 @@ nav.tabs > button,
         ...(state.games.NBA || []),
         ...(state.games.NHL || []),
         ...(state.games.MLB || []),
+        ...(state.games.WNBA || []),
       ];
 
       console.log(`[Auto-Track] Checking ${allGames.length} games for final transitions`);
@@ -28770,7 +28829,7 @@ nav.tabs > button,
     async function _fetchFinalGameStats(game) {
       try {
         const sport = game.league.toLowerCase();
-        const url = `https://site.api.espn.com/apis/site/v2/sports/${sport === 'nhl' ? 'hockey/nhl' : sport === 'mlb' ? 'baseball/mlb' : 'basketball/nba'}/scoreboard?_=${Date.now()}`;
+        const url = `https://site.api.espn.com/apis/site/v2/sports/${sport === 'nhl' ? 'hockey/nhl' : sport === 'mlb' ? 'baseball/mlb' : sport === 'wnba' ? 'basketball/wnba' : 'basketball/nba'}/scoreboard?_=${Date.now()}`;
         const r = await fetch(url).catch(() => null);
         if (!r || !r.ok) return null;
 
@@ -28906,6 +28965,7 @@ nav.tabs > button,
         ...(state.games.NHL || []),
         ...(state.games.MLB || []),
         ...(state.games.NFL || []),
+        ...(state.games.WNBA || []),
       ];
       const liveGames = allGames.filter(g => g.status === 'live' && g.league !== 'MLB');
 
@@ -32103,10 +32163,11 @@ nav.tabs > button,
     };
 
     const ESPN_SPORT_MAP = {
-      NBA: { sport:'basketball', league:'nba', season:2026 },
-      NHL: { sport:'hockey',     league:'nhl', season:2026 },
-      MLB: { sport:'baseball',   league:'mlb', season:2026 },
-      NFL: { sport:'football',   league:'nfl', season:2025 },
+      NBA:  { sport:'basketball', league:'nba',  season:2026 },
+      NHL:  { sport:'hockey',     league:'nhl',  season:2026 },
+      MLB:  { sport:'baseball',   league:'mlb',  season:2026 },
+      NFL:  { sport:'football',   league:'nfl',  season:2025 },
+      WNBA: { sport:'basketball', league:'wnba', season:2026 },
     };
 
     // ── Sub-tab switching ───────────────────────
@@ -33746,7 +33807,7 @@ nav.tabs > button,
       const restPlus = p.restPlus === true || teamCtx.restPlus;
       const revengeFlag = p.revengeFlag === true || teamCtx.revengeVs?.[normalizeTeam(p.opponent || p.opp)?.toUpperCase()];
 
-      if (isB2b && (p.league === 'NBA' || p.league === 'NHL')) {
+      if (isB2b && (p.league === 'NBA' || p.league === 'NHL' || p.league === 'WNBA')) {
         if (direction === 'OVER') {
           multiplier *= 0.88;
           againstFactors.push('🕰️ Back-to-back fatigue (volume risk on OVER)');
@@ -34290,10 +34351,17 @@ nav.tabs > button,
       }
 
       // ── 15. SENTINEL: ALIGNMENT BONUS (±8 pts) ───────────────────
-      // Bonus when Vegas, Model, and Momentum all align.
-      if (_edge >= 6 && l10 >= 65 && opening > 0 && current >= opening && p.direction === 'OVER') {
-        score += 8;
-        forFactors.push('🎯 Triple-Alignment: Vegas, Model & Momentum converged');
+      // Bonus when Vegas, Model, and Momentum all align (direction-aware).
+      // OVER: line moved up (opening → current) — sharps pricing it higher
+      // UNDER: line moved down (opening → current) — sharps pricing it lower
+      if (_edge >= 6 && l10 >= 65 && opening > 0) {
+        if (p.direction === 'OVER' && current >= opening) {
+          score += 8;
+          forFactors.push('🎯 Triple-Alignment: Vegas, Model & Momentum converged (OVER)');
+        } else if (p.direction === 'UNDER' && current <= opening) {
+          score += 8;
+          forFactors.push('🎯 Triple-Alignment: Vegas, Model & Momentum converged (UNDER)');
+        }
       }
 
       // ── 16. PROPIQ REALISM GATE — restore older conservative calibration ─────
@@ -34327,6 +34395,12 @@ nav.tabs > button,
 
       if (l5Gate !== null && l10Gate !== null && l5Gate <= 60 && l10Gate <= 40) {
         capScore(58, `📉 Hit-Rate Gate: L5 ${l5Gate.toFixed(0)}% / L10 ${l10Gate.toFixed(0)}% is not premium form`);
+      }
+
+      // Standalone L10 gate: sub-40% L10 hit rate blocks premium scoring regardless of edge or L5.
+      // e.g. Brunson O32.5 @ 2/10 L10 (20%) → should never score 83+.
+      if (l10Gate !== null && l10Gate < 40) {
+        capScore(55, `🥶 L10 Hit-Rate Gate: ${l10Gate.toFixed(0)}% L10 hit rate — below threshold for premium grade`);
       }
 
       if (confidenceGate !== null && confidenceGate < 45) {
@@ -34510,7 +34584,7 @@ nav.tabs > button,
     // ── ELITE HELPER MODULES for v3.0 SCORING ──
 
     function calculateElitePaceFactor(p) {
-      if (p.league !== 'NBA' && p.league !== 'NHL') return { score: 0, label: null };
+      if (p.league !== 'NBA' && p.league !== 'NHL' && p.league !== 'WNBA') return { score: 0, label: null };
       const teamStats = window._teamStats?.[p.league] || {};
       if (Object.keys(teamStats).length === 0) return { score: 0, label: null };
 
@@ -34581,8 +34655,8 @@ nav.tabs > button,
     // ── OMEGA INTELLIGENCE MODULES v4.0 ──
 
     function calculateOmegaFatigue(p) {
-      if (p.league !== 'NBA' && p.league !== 'NHL') return { score: 0, label: null };
-      
+      if (p.league !== 'NBA' && p.league !== 'NHL' && p.league !== 'WNBA') return { score: 0, label: null };
+
       const team = normalizeTeam(p.team)?.toUpperCase();
       const ctx = state.teamSituational?.[p.league]?.[team];
       const isB2B = p.isB2b || p.backToBackFlag || ctx?.isB2b;
@@ -34637,20 +34711,22 @@ nav.tabs > button,
       if (baseline === 0) return { score: 0, label: null };
       const delta = l10 - baseline;
 
+      // Reversion applies to both OVER and UNDER — hit rates are direction-specific,
+      // so the same thresholds are valid regardless of bet direction.
       // Tier 1 — Extreme outlier: strong regression risk, only bet with high edge
-      if (l10 >= 85 && delta > 25 && edge < 4 && p.direction === 'OVER') {
+      if (l10 >= 85 && delta > 25 && edge < 4) {
         return { score: -10, label: `⚖️ Mean Reversion Alert: Extreme L10 (${l10}%) vs baseline (${baseline}%)` };
       }
-      // Tier 2 — Elevated: meaningful overperformance gap, flag if edge is thin (delta lowered 20→15)
-      if (l10 >= 75 && delta > 15 && edge < 5 && p.direction === 'OVER') {
+      // Tier 2 — Elevated: meaningful overperformance gap, flag if edge is thin
+      if (l10 >= 75 && delta > 15 && edge < 5) {
         return { score: -6, label: `⚠️ Regression Risk: Hot L10 (${l10}%) well above baseline (${baseline}%)` };
       }
-      // Tier 3 — Moderate: L10 significantly outpacing baseline (delta lowered 30→20 — catches mid-range overperformers)
-      if (l10 >= 65 && delta > 20 && p.direction === 'OVER') {
+      // Tier 3 — Moderate: L10 significantly outpacing baseline
+      if (l10 >= 65 && delta > 20) {
         return { score: -3, label: `📊 Trend Gap: L10 (${l10}%) significantly exceeds baseline (${baseline}%)` };
       }
-      // Buy-low signal: cold spell but model sees genuine edge (delta 20→15, edge 6→5)
-      if (l10 <= 35 && (baseline - l10) > 15 && edge >= 5 && p.direction === 'OVER') {
+      // Buy-low signal: cold spell but model sees genuine edge
+      if (l10 <= 35 && (baseline - l10) > 15 && edge >= 5) {
         return { score: 6, label: `💎 Sentinel Buy-Low: Model edge on underperforming player (${l10}% L10 vs ${baseline}% baseline)` };
       }
       return { score: 0, label: null };
@@ -34826,7 +34902,7 @@ nav.tabs > button,
         const otherOver = other.direction === 'OVER';
         if (!isOver || !otherOver) continue;
 
-        if (p.league === 'NBA') {
+        if (p.league === 'NBA' || p.league === 'WNBA') {
           const pType = p.propType?.toLowerCase() || '';
           const oType = other.propType?.toLowerCase() || '';
           if ((pType.includes('ast') && oType.includes('pts')) || (pType.includes('pts') && oType.includes('ast'))) {
@@ -35326,7 +35402,7 @@ nav.tabs > button,
           const driftIcon  = drift > 1 ? '↗' : drift < -2 ? '↘' : '→';
           // Risk flags
           const riskFlags = [];
-          if (p.league === 'NBA' && gameInfo.period >= 4) riskFlags.push('Late game — DNP risk');
+          if ((p.league === 'NBA' || p.league === 'WNBA') && gameInfo.period >= 4) riskFlags.push('Late game — DNP risk');
           if (p.league === 'MLB' && gameInfo.outs !== null && gameInfo.inning >= 7) riskFlags.push('Late innings');
           if (p.league === 'NFL' && gameInfo.isRedZone) riskFlags.push('Red zone — RB spike risk');
           valueDriftHtml = `
@@ -36090,12 +36166,12 @@ nav.tabs > button,
           return `
             <div class="parlay-leg" style="border-left: 3px solid ${propColor};">
               <div class="parlay-leg-info">
-                <div class="parlay-leg-player">${p.player}</div>
+                <div class="parlay-leg-player">${p.isGameBet ? (p.gameLabel || `${p.team} @ ${p.opponent}`) : p.player}</div>
                 <div class="site-parlay-leg-meta">
                   <span class="site-parlay-leg-chip" style="color: ${propColor}; border-color: rgba(${parseInt(propColor.slice(1,3),16)},${parseInt(propColor.slice(3,5),16)},${parseInt(propColor.slice(5,7),16)},0.28); background: rgba(${parseInt(propColor.slice(1,3),16)},${parseInt(propColor.slice(3,5),16)},${parseInt(propColor.slice(5,7),16)},0.12);">${propType}</span>
                   <span class="site-parlay-leg-chip">${p.league}</span>
                 </div>
-                <div class="parlay-leg-prop">${p.direction} ${p.line} ${p.prop} vs ${p.team}</div>
+                <div class="parlay-leg-prop">${p.isGameBet ? `${p.prop}${p.line != null ? ' ' + p.line : ''} · ${p.direction}` : `${p.direction} ${p.line} ${p.prop} vs ${p.team}`}</div>
               </div>
               <div class="parlay-leg-odds" style="color: ${(p.edge || 0) > 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${p.oddsStr || (p.odds > 0 ? '+' + p.odds : p.odds)}</div>
               <button class="parlay-leg-remove" onclick="removeFromParlay('${p.id}')">×</button>
@@ -36113,8 +36189,9 @@ nav.tabs > button,
         const dkParlayBtn = document.getElementById('parlayBtnDk');
         if (state.parlay.length > 0) {
           const p = state.parlay[0];
-          if (fdParlayBtn) fdParlayBtn.href = `https://sportsbook.fanduel.com/search?q=${encodeURIComponent(p.player)}`;
-          if (dkParlayBtn) dkParlayBtn.href = `https://sportsbook.draftkings.com/search?q=${encodeURIComponent(p.player)}`;
+          const searchQ = p.isGameBet ? (p.gameLabel || p.team || '') : (p.player || '');
+          if (fdParlayBtn) fdParlayBtn.href = `https://sportsbook.fanduel.com/search?q=${encodeURIComponent(searchQ)}`;
+          if (dkParlayBtn) dkParlayBtn.href = `https://sportsbook.draftkings.com/search?q=${encodeURIComponent(searchQ)}`;
         }
       }
 
@@ -36318,8 +36395,7 @@ nav.tabs > button,
         ...(state.games.NBA || []),
         ...(state.games.NHL || []),
         ...(state.games.MLB || []),
-        ...(state.games.NFL || []),
-        ...(state.games.WNBA || [])
+        ...(state.games.NFL || [])
       ];
 
       if (todayGames.length === 0) {
@@ -36340,7 +36416,7 @@ nav.tabs > button,
       });
 
       // Render by league order: NBA, NHL, MLB, NFL
-      const leagueOrder = ['NBA', 'NHL', 'MLB', 'WNBA', 'NFL'];
+      const leagueOrder = ['NBA', 'NHL', 'MLB', 'NFL'];
       const orderedLeagues = leagueOrder.filter(league => gamesByLeague[league]);
 
       // Build prop lookup by team for inline counts
@@ -38516,16 +38592,18 @@ nav.tabs > button,
     }
 
     function propAIMarketCategory(prop) {
-      // Game-level market types (from game-odds function) — check prop.prop field directly
-      if (['1Q Total', '1Q Spread', '1Q ML'].includes(prop.prop)) return '1Q';
-      if (['1H Total', '1H Spread', '1H ML'].includes(prop.prop)) return '1H';
-      if (prop.prop === 'Alt Total') return 'Alt Total';
-      if (prop.prop === 'Alt Spread') return 'Alt Spread';
-      if (prop.prop === 'Moneyline') return 'Moneyline';
-      if (prop.prop === 'Spread') return 'Spread';
-      if (prop.prop === 'Total') return 'Totals';
-
-      // Player prop market types (from CSV)
+      // Game-level bets get their own category based on market type
+      if (prop.isGameBet) {
+        const p = (prop.prop || '').toLowerCase();
+        if (p.includes('moneyline') || p.includes('ml')) return 'Moneyline';
+        if (p.includes('1q') || p.includes('1st quarter')) return '1Q';
+        if (p.includes('1h') || p.includes('1st half')) return '1H';
+        if (p.includes('alt total')) return 'Alt Total';
+        if (p.includes('alt spread')) return 'Alt Spread';
+        if (p.includes('spread')) return 'Spread';
+        if (p.includes('total')) return 'Total';
+        return 'Game';
+      }
       const market = normalizeLiveOddsText(propMarketText(prop));
       if (market.includes('points rebounds assists') || market.includes('pts reb ast') || market.includes('pra')) return 'PRA';
       if (market.includes('3 pointers') || market.includes('three') || market.includes('3pt')) return '3PM';
@@ -38547,9 +38625,6 @@ nav.tabs > button,
       if (market.includes('saves')) return 'Saves';
       if (market.includes('blocks')) return 'Blocks';
       if (market.includes('steals')) return 'Steals';
-      if (market.includes('moneyline') || market.includes('h2h')) return 'Moneyline';
-      if (market.includes('total') || market.includes('o/u')) return 'Totals';
-      if (market.includes('spread')) return 'Spread';
       return 'ALL';
     }
 
@@ -38559,7 +38634,8 @@ nav.tabs > button,
       // Remove props for teams whose game is already final/completed
       const allGames = [
         ...(state.games.NBA || []), ...(state.games.NHL || []),
-        ...(state.games.MLB || []), ...(state.games.NFL || [])
+        ...(state.games.MLB || []), ...(state.games.NFL || []),
+        ...(state.games.WNBA || [])
       ];
       if (allGames.length) {
         const normalizeT = t => String(t || '').toUpperCase().trim();
@@ -38597,24 +38673,24 @@ nav.tabs > button,
           const blob = [
             p.player,
             p.team,
+            teamAbbrToSearchText(p.team, p.league),
             p.opponent,
-            p.gameLabel,      // game-bet props: "SAS @ NYK"
-            p.betLabel,       // game-bet props: "Over", "Chicago Bulls"
+            teamAbbrToSearchText(p.opponent, p.league),
             propMarketText(p),
             propLineText(p),
             p.league
-          ].filter(Boolean).map(normalizeLiveOddsText).join(' ');
+          ].map(normalizeLiveOddsText).join(' ');
           return blob.includes(search);
         });
       }
-      return filtered.sort((a, b) => cachedPropScore(b) - cachedPropScore(a));
+      return filtered.sort(comparePropIQProps);
     }
 
     function getMarketsSlateGames() {
       // Use marketsLeagues multi-select; fall back to global state.league
       const leagues = state.marketsLeagues.length
         ? state.marketsLeagues
-        : (state.league && state.league !== 'ALL' ? [state.league] : ['NBA', 'NHL', 'MLB', 'NFL']);
+        : (state.league && state.league !== 'ALL' ? [state.league] : ['NBA', 'NHL', 'MLB', 'NFL', 'WNBA']);
       // ESPN API already fetches ?dates=TODAY — no date re-filter needed
       const allGames = leagues.flatMap(l => (state.games[l.toUpperCase()] || []).filter(Boolean));
       const sorted = allGames
@@ -38671,16 +38747,23 @@ nav.tabs > button,
         ? `<span class="markets-game-chip-score">${escapeHTML(String(game.awayScore ?? 0))}–${escapeHTML(String(game.homeScore ?? 0))}</span>`
         : '';
       const tapHint = isActive ? '<span class="markets-game-chip-hint">tap again → live view</span>' : '';
+      // WNBA: use short team name (first word) to distinguish from NBA teams with same abbreviation
+      const awayLabel = game.league === 'WNBA'
+        ? (game.awayName ? game.awayName.split(' ').slice(-1)[0] : game.awayTeam)
+        : game.awayTeam;
+      const homeLabel = game.league === 'WNBA'
+        ? (game.homeName ? game.homeName.split(' ').slice(-1)[0] : game.homeTeam)
+        : game.homeTeam;
       return `
         <button class="markets-game-chip ${isActive ? 'active' : ''}" type="button"
           data-gameid="${escapeHTML(String(game.id))}" data-league="${escapeHTML(game.league || '')}"
           onclick="selectMarketsGame(this.dataset.gameid, this.dataset.league, event)">
           <div class="markets-game-chip-logos">
-            <span title="${escapeHTML(game.awayTeam)}">${awayLogo}</span>
+            <span title="${escapeHTML(game.awayName || game.awayTeam)}">${awayLogo}</span>
             <span class="markets-game-chip-matchup">@</span>
-            <span title="${escapeHTML(game.homeTeam)}">${homeLogo}</span>
+            <span title="${escapeHTML(game.homeName || game.homeTeam)}">${homeLogo}</span>
           </div>
-          <div class="markets-game-chip-matchup">${escapeHTML(game.awayTeam)} @ ${escapeHTML(game.homeTeam)}${scoreHtml}</div>
+          <div class="markets-game-chip-matchup">${escapeHTML(awayLabel)} @ ${escapeHTML(homeLabel)}${scoreHtml}</div>
           <div class="markets-game-chip-meta">${badge}${escapeHTML(timeLabel)} · ${escapeHTML(countLabel)}</div>
           ${tapHint}
         </button>`;
@@ -38765,7 +38848,9 @@ nav.tabs > button,
           const blob = [
             p.player,
             p.team,
+            teamAbbrToSearchText(p.team, p.league),
             p.opponent,
+            teamAbbrToSearchText(p.opponent, p.league),
             propMarketText(p),
             propLineText(p),
             p.league
@@ -38861,7 +38946,52 @@ nav.tabs > button,
                 </div>`;
     }
 
+    function buildGameBetRowHTML(prop) {
+      const market = prop.prop || 'Game Bet';
+      const leagueBadge = prop.league ? `<span class="propai-market-league">${escapeHTML(prop.league)}</span>` : '';
+      const lineStr = prop.line !== undefined && prop.line !== null
+        ? (prop.direction === 'COVER' ? (prop.line >= 0 ? '+' + prop.line : String(prop.line)) : prop.direction + ' ' + prop.line)
+        : prop.direction;
+      const oddsDisplay = prop.odds ? (prop.odds > 0 ? '+' + prop.odds : String(prop.odds)) : 'n/a';
+      // Juice indicator: if absolute odds < 115 on a side bet, it's well-priced
+      const juice = prop.odds ? Math.abs(prop.odds) : 110;
+      const juiceClass = juice <= 108 ? 'game-bet-juice--sharp' : juice <= 115 ? 'game-bet-juice--fair' : 'game-bet-juice--heavy';
+      return `
+        <div class="propai-market-row propai-market-row--deck propai-market-row--game-bet tier-1">
+          <div class="propai-deck-spine" aria-hidden="true"></div>
+          <div class="propai-deck-inner">
+            <div class="propai-market-player">
+              <div class="game-bet-logos" aria-hidden="true">
+                ${getTeamLogo(prop.team, prop.league)}
+                <span class="game-bet-logo-vs">@</span>
+                ${getTeamLogo(prop.opponent, prop.league)}
+              </div>
+              <div>
+                <div class="propai-market-name">${leagueBadge}${leagueBadge ? ' ' : ''}${escapeHTML(prop.gameLabel || `${prop.team} vs ${prop.opponent}`)}</div>
+                <div class="propai-market-sub">${escapeHTML(market)} · ${escapeHTML(lineStr)} · ${escapeHTML(prop.bookSource || 'DraftKings')}</div>
+              </div>
+            </div>
+            <div class="propai-deck-hero-row">
+              <div class="propai-market-iq-block">
+                <div class="game-bet-odds-badge ${juiceClass}">
+                  <span class="game-bet-odds-num">${escapeHTML(oddsDisplay)}</span>
+                  <span class="game-bet-odds-label">odds</span>
+                </div>
+              </div>
+            </div>
+            <div class="propai-deck-odds-strip propai-market-odds-callout">
+              <span class="propai-market-odds-num">${escapeHTML(oddsDisplay)}</span>
+              <span class="propai-market-odds-book-tag">${escapeHTML(prop.bookSource || 'DraftKings')}</span>
+              <span class="propai-deck-odds-caption">Game Line</span>
+            </div>
+            ${buildMarketRowActionsHTML(prop)}
+          </div>
+        </div>`;
+    }
+
     function buildPropAIMarketRowHTML(prop) {
+      if (prop.isGameBet) return buildGameBetRowHTML(prop);
+      const headshot = getPlayerHeadshot(prop.player, prop.league);
       const market = propAIMarketCategory(prop);
       const iq = propIQValue(prop);
       const iqClass = propIQTierClass(iq);
@@ -38879,35 +39009,14 @@ nav.tabs > button,
       const livePill = bookFromLive && state.fdLinesSource === 'live'
         ? '<span class="propai-live-odds-pill">Live</span>'
         : '';
-
-      // Game-bet props (Totals, Moneyline, etc) show team logos; player props show headshots
-      let imageHTML = '';
-      let displayName = '';
-      if (prop.isGameBet) {
-        // Game-bet: show both team logos
-        const homeTeam = prop.opponent || '';
-        const awayTeam = prop.team || '';
-        const homeLogo = getTeamLogo(homeTeam, prop.league);
-        const awayLogo = getTeamLogo(awayTeam, prop.league);
-        imageHTML = `<div style="display:flex;gap:4px;align-items:center;">${awayLogo}${homeLogo}</div>`;
-        displayName = prop.gameLabel || `${awayTeam} @ ${homeTeam}`;
-      } else {
-        // Player prop: show player headshot
-        const headshot = getPlayerHeadshot(prop.player, prop.league);
-        imageHTML = headshot
-          ? `<img src="${escapeHTML(headshot)}" alt="${escapeHTML(prop.player || '')}" data-player-headshot-key="${escapeHTML(playerHeadshotKey(prop.player || '', prop.league || ''))}" data-player="${escapeHTML(prop.player || '')}" data-league="${escapeHTML(prop.league || '')}" onerror="handlePlayerHeadshotError(this)">`
-          : headshotPlaceholderHTML(prop.player || 'Player', prop.league || '', 'prop');
-        displayName = prop.player || 'Player';
-      }
-
       return `
           <div class="propai-market-row propai-market-row--deck tier-${badgeTier}">
             <div class="propai-deck-spine" aria-hidden="true"></div>
             <div class="propai-deck-inner">
               <div class="propai-market-player">
-                ${imageHTML}
+                ${headshot ? `<img src="${escapeHTML(headshot)}" alt="${escapeHTML(prop.player || '')}" data-player-headshot-key="${escapeHTML(playerHeadshotKey(prop.player || '', prop.league || ''))}" data-player="${escapeHTML(prop.player || '')}" data-league="${escapeHTML(prop.league || '')}" onerror="handlePlayerHeadshotError(this)">` : headshotPlaceholderHTML(prop.player || 'Player', prop.league || '', 'prop')}
                 <div>
-                  <div class="propai-market-name">${leagueBadge}${leagueBadge ? ' ' : ''}${escapeHTML(displayName)}</div>
+                  <div class="propai-market-name">${leagueBadge}${leagueBadge ? ' ' : ''}${escapeHTML(prop.player || 'Player')}</div>
                   <div class="propai-market-sub">${escapeHTML(`${prop.team || ''} · ${market === 'ALL' ? (prop.prop || prop.stat || 'Prop') : market} · ${propLineText(prop)}`)}</div>
                 </div>
               </div>
@@ -39156,7 +39265,7 @@ nav.tabs > button,
       });
       if (state.gameFilter) {
         state.gameFilter = null;
-        renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL]);
+        renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL, ...(state.games.WNBA || [])]);
       }
       if (state.marketsGameFilter) state.marketsGameFilter = null;
       syncMarketsFilterUI();
@@ -39278,20 +39387,7 @@ nav.tabs > button,
       };
     }
 
-    // Auto-resize generative analyst iframe when content height changes.
-    // Gate: only apply if height changed by >20px to break ResizeObserver feedback loop
-    // (parent sets height → iframe viewport changes → ResizeObserver fires → loop → jitter).
-    var _genFrameLastH = 0;
-    window.addEventListener('message', function(e) {
-      if (e.data && e.data.type === 'propedge-frame-height' && typeof e.data.height === 'number') {
-        var frame = document.getElementById('propedgeGenerativeAnalystFrame');
-        var newH = Math.max(720, e.data.height + 48);
-        if (frame && Math.abs(newH - _genFrameLastH) > 20) {
-          _genFrameLastH = newH;
-          frame.style.height = newH + 'px';
-        }
-      }
-    });
+    // Iframe is fixed-height (calc(100svh - 300px)) — no auto-resize needed.
 
     // ── Native Generative Analyst (mobile) ────────────────────────────────────
     var _genLeague = 'ALL';
@@ -39445,14 +39541,15 @@ nav.tabs > button,
       debouncedRenderMarketsView();
     }
 
-    const ALT_GAME_MARKETS = new Set(['Alt Total', 'Alt Spread', '1H', '1Q']);
+    const ALT_MARKET_CHIPS = new Set(['Alt Total', '1Q', '1H']);
 
     function toggleMarketsMarket(market) {
       state.marketsMarketTypes = _toggleMultiFilter(state.marketsMarketTypes, market);
       _marketsDisplayCap = getMarketsBoardRenderCap();
       syncMarketsFilterUI();
-      if (ALT_GAME_MARKETS.has(market)) {
-        loadGameOddsAlt().catch(e => console.warn('[PropEdge] Alt market odds fetch failed:', e.message));
+      // Lazy-load alt/period markets on first request — avoids Odds API calls on normal page load
+      if (ALT_MARKET_CHIPS.has(market) && !state.gameOddsAltLoaded) {
+        loadGameOddsAlt().catch(e => console.warn('[game-odds-alt]', e.message));
       }
       debouncedRenderMarketsView();
       renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
@@ -40899,15 +40996,6 @@ nav.tabs > button,
       nav.style.bottom = '0';
     }
 
-    function syncMobileViewportHeight() {
-      if (window.innerWidth >= 1024) {
-        document.documentElement.style.removeProperty('--pe-vvh');
-        return;
-      }
-      const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-      document.documentElement.style.setProperty('--pe-vvh', `${Math.round(h)}px`);
-    }
-
     function syncMobileShellLayout() {
       const isMobile = window.innerWidth < 1024;
       document.documentElement.classList.toggle('site-mobile-active', isMobile);
@@ -40917,7 +41005,6 @@ nav.tabs > button,
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
       document.body.classList.toggle('no-content-visibility', isIOS || isSafari || isMobile);
       if (!isMobile) toggleMobileMoreMenu(false);
-      syncMobileViewportHeight();
       syncMobileStickyHeaderOffset();
       syncMobileBottomNavOffset();
     }
@@ -41043,6 +41130,14 @@ nav.tabs > button,
       setDisplay('sortBar', showPropsSurface ? 'flex' : 'none');
       setDisplay('propiqGradingGuide', showPropsSurface ? 'block' : 'none');
 
+      // On mobile parlay tab, hide .main-content entirely so #parlayContainer
+      // floats to the top instead of rendering below the empty content area.
+      // On desktop (≥1024px), showPropsSurface is true for parlay, so main-content stays.
+      const mainContentEl = document.querySelector('.main-content');
+      if (mainContentEl) {
+        mainContentEl.style.display = (view === 'parlay' && !showPropsSurface) ? 'none' : '';
+      }
+
       const liveGamesEl = document.querySelector('.live-games');
       if (liveGamesEl) {
         liveGamesEl.style.display = (view === 'props' || view === 'recommendations') ? 'block' : 'none';
@@ -41155,7 +41250,7 @@ nav.tabs > button,
 
           if (state.gameFilter) {
             state.gameFilter = null;
-            renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL]);
+            renderTicker([...state.games.NBA, ...state.games.NHL, ...state.games.MLB, ...state.games.NFL, ...(state.games.WNBA || [])]);
           }
 
           runAfterPaint(() => {
@@ -41244,15 +41339,6 @@ nav.tabs > button,
       });
       syncMobileShellLayout();
       syncShellNavState();
-      // iOS Safari: --pe-vvh must track toolbar collapse/expand, which only
-      // visualViewport resize reports reliably (window resize can miss it).
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', syncMobileViewportHeight);
-        window.visualViewport.addEventListener('scroll', syncMobileViewportHeight);
-      }
-      window.addEventListener('orientationchange', () => {
-        requestAnimationFrame(syncMobileViewportHeight);
-      });
       requestAnimationFrame(() => {
         syncMobileStickyHeaderOffset();
         syncMobileBottomNavOffset();
@@ -41406,18 +41492,15 @@ nav.tabs > button,
       
       document.getElementById('statPrime').textContent = state.props.filter(p => p.tier === 'prime' || p.tier === 'ultimate').length;
       document.getElementById('statValue').textContent = state.props.filter(p => p.isValue).length;
-      document.getElementById('statVigFree').textContent = state.props.filter(p => p.isVigFree === true).length;
 
       const shellStatTotal = document.getElementById('shellStatTotal');
       const shellStatGames = document.getElementById('shellStatGames');
       const shellStatPrime = document.getElementById('shellStatPrime');
       const shellStatValue = document.getElementById('shellStatValue');
-      const shellStatVigFree = document.getElementById('shellStatVigFree');
       if (shellStatTotal) shellStatTotal.textContent = String(state.props.length);
       if (shellStatGames) shellStatGames.textContent = String(uniqueGames.size);
       if (shellStatPrime) shellStatPrime.textContent = String(state.props.filter(p => p.tier === 'prime' || p.tier === 'ultimate').length);
       if (shellStatValue) shellStatValue.textContent = String(state.props.filter(p => p.isValue).length);
-      if (shellStatVigFree) shellStatVigFree.textContent = String(state.props.filter(p => p.isVigFree === true).length);
     }
 
     function showLoading() {
@@ -41542,7 +41625,7 @@ nav.tabs > button,
       const game = getGameInfo(p.team, p.league);
       if (game && game.status === 'live') {
         const diff = Math.abs(game.homeScore - game.awayScore);
-        const isLate = (p.league === 'NBA' && game.period >= 4) || (p.league === 'NHL' && game.period >= 3);
+        const isLate = (p.league === 'NBA' && game.period >= 4) || (p.league === 'WNBA' && game.period >= 4) || (p.league === 'NHL' && game.period >= 3);
         
         if (isLate) {
           if (diff <= 5) {
@@ -42811,6 +42894,23 @@ nav.tabs > button,
             if (gameInfo.outs !== null) sportCtxHtml += `<span class="detail-live-chip pace edge">${gameInfo.outs} out${gameInfo.outs !== 1 ? 's' : ''}</span>`;
             if (gameInfo.balls !== null && gameInfo.strikes !== null) sportCtxHtml += `<span class="detail-live-chip count">${gameInfo.balls}–${gameInfo.strikes} count</span>`;
 
+          } else if (prop.league === 'WNBA') {
+            const pts = getVal('points');
+            const reb = getVal('rebounds') ?? getVal('totalRebounds');
+            const ast = getVal('assists');
+            const min = getVal('minutes') ?? getVal('MIN');
+            const fg  = getVal('fieldGoalsMade') !== null ? `${getVal('fieldGoalsMade')}/${getVal('fieldGoalsAttempted')}` : null;
+            const tp  = getVal('threePointFieldGoalsMade') !== null ? `${getVal('threePointFieldGoalsMade')}/${getVal('threePointFieldGoalsAttempted')}` : null;
+            if (pts !== null) extraStats.push({ label: 'PTS', val: pts });
+            if (reb !== null) extraStats.push({ label: 'REB', val: reb });
+            if (ast !== null) extraStats.push({ label: 'AST', val: ast });
+            if (fg)           extraStats.push({ label: 'FG',  val: fg  });
+            if (tp)           extraStats.push({ label: '3PM', val: tp  });
+            if (min !== null) extraStats.push({ label: 'MIN', val: min });
+            const qLabel = gameInfo.period <= 4 ? `Q${gameInfo.period}` : `OT${gameInfo.period - 4}`;
+            sportCtxHtml = `<span class="detail-live-chip pace">${qLabel}</span>`;
+            if (gameInfo.displayClock) sportCtxHtml += `<span class="detail-live-chip pace edge" data-detail-clock>⏱ ${gameInfo.displayClock}</span>`;
+
           } else if (prop.league === 'NFL') {
             const pyds = getVal('passingYards')    ?? getVal('YDS');
             const ryds = getVal('rushingYards')    ?? getVal('YDS');
@@ -42845,6 +42945,12 @@ nav.tabs > button,
           const clockParts = (gameInfo.displayClock || '12:00').split(':');
           const minsRem = parseInt(clockParts[0]) + (parseInt(clockParts[1] || 0) / 60);
           elapsed = Math.max(1, minsInPeriod + (12 - minsRem));
+        } else if (prop.league === 'WNBA') {
+          total = 40; // 4 × 10-min quarters
+          const minsInPeriod = (gameInfo.period - 1) * 10;
+          const clockParts = (gameInfo.displayClock || '10:00').split(':');
+          const minsRem = parseInt(clockParts[0]) + (parseInt(clockParts[1] || 0) / 60);
+          elapsed = Math.max(1, minsInPeriod + (10 - minsRem));
         } else if (prop.league === 'NHL') {
           total = 60;
           const minsInPeriod = (gameInfo.period - 1) * 20;
@@ -43394,7 +43500,7 @@ nav.tabs > button,
       _stopLiveTickerPoll();   // also calls _stopTickerClockCountdown
       const liveGames = [
         ...(state.games.NBA || []), ...(state.games.NHL || []),
-        ...(state.games.MLB || []), ...(state.games.NFL || []), ...(state.games.WNBA || []),
+        ...(state.games.MLB || []), ...(state.games.NFL || []),
       ].filter(g => g.status === 'live');
       if (liveGames.length) {
         _startLiveTickerPoll();  // also calls _startTickerClockCountdown
@@ -45667,14 +45773,7 @@ Return a single raw JSON object (no code fences) matching the system schema. In 
 
     function buildConvictionBadgeHTML(signal) {
       if (!signal) return '';
-      // Calculate Unit Size based on signal key
-      let unit = '';
-      if (signal.key === 'lock') unit = ' • 💰 2.0u';
-      else if (signal.key === 'hammer') unit = ' • 💰 1.5u';
-      else if (signal.key === 'go' || signal.key === 'play') unit = ' • 💰 1.0u';
-      else if (signal.key === 'lean') unit = ' • 💰 0.5u';
-      
-      return `<span class="prop-badge conviction ${signal.cls}" title="${escapeHTML(signal.title)}">${signal.label}${unit}</span>`;
+      return `<span class="prop-badge conviction ${signal.cls}" title="${escapeHTML(signal.title)}">${signal.label}</span>`;
     }
 
     function propDirectionText(p) {
@@ -47557,27 +47656,10 @@ Return a single raw JSON object (no code fences) matching the system schema. In 
     }
 
     function getOverUnderRecommendation(prop) {
-      const edge = parseFloat(prop?.edge) || 0;
-      const l10Pct = parseFloat(prop?.l10Pct) || 50;
-      const l5Pct = parseFloat(prop?.l5Pct) || 50;
-      const confidence = parseFloat(prop?.confidence) || 0;
-
-      // Primary: edge signal (positive = OVER, negative = UNDER)
-      if (Math.abs(edge) > 2) {
-        return edge > 0 ? 'OVER' : 'UNDER';
-      }
-
-      // Secondary: L5 trend direction (more recent = more weight)
-      const recent = (l5Pct * 0.7 + l10Pct * 0.3) / 100;
-      if (recent > 0.55) return 'OVER';
-      if (recent < 0.45) return 'UNDER';
-
-      // Tertiary: confidence as tiebreaker (high conf = go with trend)
-      if (confidence > 65) {
-        return l5Pct > 50 ? 'OVER' : 'UNDER';
-      }
-
-      // Default: neutral case
+      // Use the prop's stored direction (parsed from PropFinder prop string — "o..." = OVER, "u..." = UNDER).
+      // Do NOT recompute from edge/l5Pct — edge is relative to the listed direction, not absolute OVER/UNDER.
+      const stored = String(prop?.direction || '').toUpperCase();
+      if (stored === 'OVER' || stored === 'UNDER') return stored;
       return 'OVER';
     }
 
@@ -47880,7 +47962,7 @@ Keep it concise, cite real numbers.`;
 
     async function fetchESPNDFSByLeague(league) {
       try {
-        const sportPath = league === 'nba' ? 'basketball/nba' : league === 'nhl' ? 'hockey/nhl' : 'baseball/mlb';
+        const sportPath = league === 'nba' ? 'basketball/nba' : league === 'nhl' ? 'hockey/nhl' : league === 'wnba' ? 'basketball/wnba' : 'baseball/mlb';
 
         // Fetch scoreboard (CORS-enabled, works from browser)
         const scoreboardData = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${sportPath}/scoreboard`).then(r => r.json()).catch(() => ({}));
