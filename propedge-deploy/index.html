@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.209 — Fix: body height from visualViewport (--pe-vvh) kills blank band under nav on iOS; flex-shrink:0 on main column sections stops game board/chips crush — 2026-06-09 LIVE DEPLOY -->
+<!-- PropEdge v7.211 — Fix: unify mobile/desktop home view — always use buildDesktopHomeDashboardHTML (CSS collapses two-col to single-col on mobile via max-width:1199px) — 2026-06-10 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
 <meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.209">
+  <meta name="app-version" content="v7.211">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
@@ -7413,6 +7413,27 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       }
       .site-home-left-col .propai-feature-player { font-size: 26px !important; }
       .site-home-left-col .propai-feature-confidence { display: block !important; }
+    }
+
+    /* Mobile phone: stack hero vertically — art as small headshot, copy full width below */
+    @media (max-width: 767px) {
+      .site-home-left-col .site-home-featured-full .propai-feature-hero,
+      .site-home-left-col .propai-feature-hero {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        padding: 12px 14px !important;
+      }
+      .site-home-left-col .site-home-featured-full .propai-feature-art,
+      .site-home-left-col .propai-feature-art {
+        width: 80px !important;
+        min-height: 80px !important;
+        max-height: 100px !important;
+        align-self: flex-start !important;
+      }
+      .site-home-left-col .propai-feature-copy { width: 100%; min-width: 0; overflow: hidden; }
+      .site-home-left-col .propai-feature-player { font-size: 18px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+      .site-home-left-col .propai-feature-confidence { display: none !important; }
     }
 
     .site-home-dashboard .ai-context-empty {
@@ -35552,17 +35573,7 @@ nav.tabs > button,
           ` : '';
 
       if (state.view === 'props') {
-        container.innerHTML = isDesktopHome
-          ? buildDesktopHomeDashboardHTML(props)
-          : `
-          <div class="site-mobile-props-board">
-            <div class="props-grid" id="propsGridList">
-              ${cardsHtml}
-            </div>
-            ${loadMoreBlock}
-          </div>
-        `;
-        if (!isDesktopHome) setupPropsLoadMore(props.length, currentLimit);
+        container.innerHTML = buildDesktopHomeDashboardHTML(props);
       } else {
         container.innerHTML = `
           <div class="props-grid" id="propsGridList">
