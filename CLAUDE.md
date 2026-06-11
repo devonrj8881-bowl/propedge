@@ -62,5 +62,28 @@ grep -q "/favicon.svg" propedge-deploy/index.html && echo "OK"
 - If a local dev server is not running, start it (`cd analyst-app && npm run dev` or open index.html directly).
 - Report verification result ("tsc clean, tested locally on mobile sim") before requesting deploy approval.
 
+### 6) Post-Deploy Sync (after every `./deploy-prod.sh`)
+**REQUIRED after every successful Netlify deploy — no exceptions.**
+
+```bash
+# 1. Sync deploy copy to root
+cp propedge-deploy/index.html index.html
+
+# 2. Stage both + any changed Netlify functions
+git add propedge-deploy/index.html index.html
+git add netlify/functions/   # if any functions changed
+
+# 3. Commit with version bump message
+git commit -m "deploy: vX.XXX — <description>"
+
+# 4. Push to GitHub
+git push
+```
+
+#### Rule
+- GitHub must always reflect exactly what is live on Netlify.
+- Do not consider a deploy "done" until the commit is pushed.
+- If the user says "sync" or "commit and push" after a deploy, run all four steps above.
+
 ### Practical quality signal
 - These rules are working when diffs are smaller, fewer rewrites are needed, and clarifying questions happen before implementation mistakes.
