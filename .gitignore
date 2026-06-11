@@ -47,3 +47,4 @@ scraper-v13.js
 logs/
 *.VERIFIED
 scraper-status.json
+.vercel

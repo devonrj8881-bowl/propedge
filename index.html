@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.231 — Fix iOS nav gap: !important on body overflow:hidden so main stylesheet overflow-y:auto can't override it — 2026-06-11 LIVE DEPLOY -->
+<!-- PropEdge v7.236 — iOS nav gap: black root bg + black nav box-shadow to match system safe-area — 2026-06-11 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -19,62 +19,16 @@
         --bg-secondary: rgb(3, 8, 18);
       }
 
-      /*
-       * iOS Safari viewport fix — the only reliable way to prevent content
-       * bleeding under the fixed bottom nav bar.
-       *
-       * Problem: iOS Safari's dynamic toolbar makes window.innerHeight and
-       * 100svh/100dvh report the *layout* viewport (full height with toolbar
-       * hidden), not the *visual* viewport (what the user actually sees).
-       * position:fixed elements anchor to the layout viewport, so the nav bar
-       * lands in the dead zone below the visible area.
-       *
-       * Fix: lock html+body to height:100% + overflow:hidden so the layout
-       * viewport cannot exceed the visual viewport. The shell becomes the
-       * single bounded flex column; .site-shell-main is the only scroller.
-       * The nav stays position:fixed but now lands exactly at the bottom of
-       * what the user sees.
-       */
-      html {
-        height: 100dvh;
-        /* NO overflow:hidden on html — WebKit clips position:fixed inside
-           overflow:hidden on the root element (bug present in iOS Safari).
-           Body handles scroll containment; html just sets the color. */
-        background: rgb(3, 8, 18) !important;
-      }
-
       html, body {
         background: rgb(3, 8, 18) !important;
         background-image: none !important;
         padding: 0 !important;
         margin: 0;
       }
-
-      body {
-        /* !important needed — main stylesheet's overflow-y:auto loads later
-           and wins without it, leaving body scrollable on iOS Safari */
-        height: 100dvh !important;
-        overflow: hidden !important;
-        overscroll-behavior: none !important;
-      }
-
-      .site-rebuild-shell {
-        display: flex !important;
-        flex-direction: column !important;
-        grid-template-columns: none !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        height: 100% !important;
-        min-height: 0 !important;
-        max-height: 100% !important;
-        padding: 0 !important;
-        gap: 0 !important;
-        overflow: hidden !important;
-      }
     }
   </style>
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.231">
+  <meta name="app-version" content="v7.236">
   <script>
     (function () {
       if (window.innerWidth >= 1024) return;
@@ -1551,7 +1505,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       max-width: 100vw;
       overflow-x: hidden;
       overflow-y: auto;
-      padding-bottom: env(safe-area-inset-bottom);
+      padding-bottom: 0; /* nav handles safe-area-inset-bottom directly */
       background-attachment: scroll;
       overscroll-behavior: auto;
       scroll-behavior: auto;
@@ -1592,6 +1546,21 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       html.site-mobile-active,
       html.site-mobile-active body {
         padding-bottom: 0 !important;
+      }
+
+      html.site-mobile-active,
+      body.site-mobile-active {
+        height: auto;
+        min-height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+
+      body.site-mobile-active {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        min-height: 100vh;
       }
     }
 
@@ -2841,9 +2810,9 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         grid-template-columns: none !important;
         width: 100% !important;
         max-width: 100% !important;
-        height: 100% !important;
-        max-height: 100% !important;
-        min-height: 0 !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        max-height: none !important;
         padding: 0 !important;
         gap: 0 !important;
         position: relative;
@@ -18237,9 +18206,60 @@ nav.tabs > button,
         display: none;
       }
 
-      html.pe-ios-mobile,
-      body.pe-ios-mobile {
-        background: rgb(3, 8, 18) !important;
+      /* Debug confirmed: safe area zone shows iOS system #000000 (not any of our
+         page layers). env(safe-area-inset-bottom) resolves to 0 so CSS padding
+         never covers that zone. Fix: paint html root black so it matches the
+         system color in the safe area zone, then extend nav box-shadow in black
+         so the nav background blends seamlessly into the safe area. */
+      html.pe-ios-mobile {
+        background: #000000 !important;
+      }
+
+      html.pe-ios-mobile body.pe-ios-mobile {
+        background: #000000 !important;
+      }
+
+      /* iOS WebKit-specific layout lock.
+         height:100% on html/body references the initial containing block
+         (layout viewport) — more stable than 100dvh on iOS Safari where
+         dvh can mismatch with position:fixed anchoring. */
+      html.pe-ios-mobile {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      html.pe-ios-mobile body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      html.pe-ios-mobile .site-rebuild-shell {
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+      }
+
+      /* env(safe-area-inset-bottom) resolves to 0 on this device so CSS padding
+         alone can't cover the home-indicator zone. Use a large black box-shadow
+         so the nav visually bleeds into the system-black safe area below it. */
+      html.pe-ios-mobile .site-mobile-bottom-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding-bottom: env(safe-area-inset-bottom, 34px);
+        background-color: #000000;
+        background-image: none;
+        box-shadow: 0 60px 0 40px #000000;
+      }
+
+      @media (min-width: 768px) and (max-width: 1023px) {
+        html.pe-ios-mobile .site-mobile-bottom-nav {
+          padding-bottom: env(safe-area-inset-bottom, 34px);
+        }
       }
 
       @media (min-width: 768px) and (max-width: 1023px) {
