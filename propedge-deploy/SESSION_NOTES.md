@@ -63,6 +63,36 @@ Blue band below bottom nav on iPhone Safari/PWA. Not reproducible in Chromium em
 
 ---
 
+## Session: 2026-06-11 — SESSION WRAP ✅
+
+**Production:** `v7.237` at https://propedgemasters.netlify.app
+**GitHub `main`:** `7ae1c585` — clean working tree, all files synced
+
+### Shipped this session
+
+| Version | What |
+|---------|------|
+| **v7.236** | iOS nav gap: color-match fix — `#000000` on html/body/nav + large black box-shadow bleeds into safe area. Debug confirmed safe area zone is iOS system `#000000` (env(safe-area-inset-bottom)=0 on device), so color-matching eliminates the visible band. |
+| **v7.237** | WNBA headshot slug fix — `espnHeadshotLeagueSlug()` now returns `'wnba'` instead of falling through to `'nba'`, fixing broken ESPN CDN headshot URLs for all WNBA players. |
+
+### Repo cleanup
+- `netlify/functions/enrich-pitcher-era.js` — tracked for first time (was untracked since June 6 deploy)
+- `.DS_Store` — removed from git tracking, added to `.gitignore`
+- `.cursor/` — added to `.gitignore`
+- `CLAUDE.md §6` — new post-deploy sync rule: cp + commit + push required after every deploy
+
+### Key commits
+- `14f5180a` — v7.236 iOS nav gap fix (sync commit)
+- `35fe563b` — v7.237 WNBA headshot slug fix
+- `2d6f3516` — chore: track enrich-pitcher-era.js + .gitignore update
+- `57d32651` — chore: untrack .DS_Store
+- `7ae1c585` — docs: CLAUDE.md §6 post-deploy sync rule
+
+### iOS nav gap — RESOLVED ✅
+Debug confirmed: safe area zone is painted by iOS system at `#000000`. `env(safe-area-inset-bottom)` resolves to 0 (viewport-fit=cover not extending layout). Color-match fix blends the nav background with the system zone. User confirmed: "looks better now."
+
+---
+
 ## Session: 2026-06-10 (UI & Gambly Fixes)
 
 ---
