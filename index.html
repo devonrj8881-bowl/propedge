@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.230 — Fix iOS nav gap: position:fixed nav, remove html overflow:hidden (WebKit clips fixed), restore scroll padding — 2026-06-10 LIVE DEPLOY -->
+<!-- PropEdge v7.231 — Fix iOS nav gap: !important on body overflow:hidden so main stylesheet overflow-y:auto can't override it — 2026-06-11 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -51,9 +51,11 @@
       }
 
       body {
-        height: 100dvh;
-        overflow: hidden;
-        /* Nav is position:fixed — no flex needed on body */
+        /* !important needed — main stylesheet's overflow-y:auto loads later
+           and wins without it, leaving body scrollable on iOS Safari */
+        height: 100dvh !important;
+        overflow: hidden !important;
+        overscroll-behavior: none !important;
       }
 
       .site-rebuild-shell {
@@ -72,7 +74,7 @@
     }
   </style>
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.230">
+  <meta name="app-version" content="v7.231">
   <script>
     (function () {
       if (window.innerWidth >= 1024) return;
