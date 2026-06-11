@@ -30,6 +30,13 @@ propedge-deploy/netlify/functions/node_modules/
 *.log
 
 
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# IDE config
+.cursor/
+
 # Local Netlify folder
 .netlify
 
