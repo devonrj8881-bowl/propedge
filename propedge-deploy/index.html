@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.229 — Fix iOS nav gap: use 100dvh + body flex-column so nav anchors to visual viewport — 2026-06-10 LIVE DEPLOY -->
+<!-- PropEdge v7.230 — Fix iOS nav gap: position:fixed nav, remove html overflow:hidden (WebKit clips fixed), restore scroll padding — 2026-06-10 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -36,10 +36,10 @@
        * what the user sees.
        */
       html {
-        /* 100dvh = dynamic viewport height — shrinks when Safari toolbar is
-           visible, so layout viewport never exceeds the visual viewport. */
         height: 100dvh;
-        overflow: hidden;
+        /* NO overflow:hidden on html — WebKit clips position:fixed inside
+           overflow:hidden on the root element (bug present in iOS Safari).
+           Body handles scroll containment; html just sets the color. */
         background: rgb(3, 8, 18) !important;
       }
 
@@ -51,11 +51,9 @@
       }
 
       body {
-        /* Flex column: shell grows to fill space, nav stays pinned at bottom */
-        display: flex;
-        flex-direction: column;
         height: 100dvh;
         overflow: hidden;
+        /* Nav is position:fixed — no flex needed on body */
       }
 
       .site-rebuild-shell {
@@ -64,11 +62,9 @@
         grid-template-columns: none !important;
         width: 100% !important;
         max-width: 100% !important;
-        /* flex:1 fills the body minus the nav's natural height */
-        flex: 1 1 0% !important;
-        height: auto !important;
+        height: 100% !important;
         min-height: 0 !important;
-        max-height: none !important;
+        max-height: 100% !important;
         padding: 0 !important;
         gap: 0 !important;
         overflow: hidden !important;
@@ -76,7 +72,7 @@
     }
   </style>
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.229">
+  <meta name="app-version" content="v7.230">
   <script>
     (function () {
       if (window.innerWidth >= 1024) return;
@@ -2870,12 +2866,8 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         overflow-y: auto;
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
-        /*
-         * Since nav is now a flex child at the bottom of the shell (not fixed),
-         * .site-shell-main naturally sits above it. We don't need padding to
-         * clear the nav height anymore, just a little breathing room.
-         */
-        padding-bottom: 24px !important;
+        /* Nav is position:fixed — pad bottom so content scrolls above it */
+        padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px)) !important;
       }
 
       /* Size board columns to content so .site-shell-main stays the one
@@ -18206,8 +18198,10 @@ nav.tabs > button,
 
       .site-mobile-bottom-nav {
         display: flex;
-        /* iOS Safari flex container layout — don't use position:fixed to avoid layout/visual viewport detached bottom edge */
-        position: relative;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
         z-index: 120;
         align-items: stretch;
         justify-content: space-around;
@@ -18231,13 +18225,7 @@ nav.tabs > button,
         backdrop-filter: none;
       }
 
-      body.site-mobile-active .site-mobile-more-row {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 100%; /* Anchor to top of relative nav container */
-        z-index: 121;
-      }
+      /* more-row uses position:fixed from its own rule — no override needed */
 
       body.site-mobile-active .propai-page {
         min-height: auto !important;
