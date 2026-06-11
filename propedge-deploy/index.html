@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.236 — iOS nav gap: black root bg + black nav box-shadow to match system safe-area — 2026-06-11 LIVE DEPLOY -->
+<!-- PropEdge v7.237 — Fix WNBA headshot slug (was 'nba', now 'wnba') — 2026-06-11 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -28,7 +28,7 @@
     }
   </style>
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.236">
+  <meta name="app-version" content="v7.237">
   <script>
     (function () {
       if (window.innerWidth >= 1024) return;
@@ -28039,7 +28039,7 @@ nav.tabs > button,
 
     function espnHeadshotLeagueSlug(league) {
       const lg = String(league || '').toUpperCase();
-      return lg === 'MLB' ? 'mlb' : lg === 'NHL' ? 'nhl' : lg === 'NFL' ? 'nfl' : 'nba';
+      return lg === 'MLB' ? 'mlb' : lg === 'NHL' ? 'nhl' : lg === 'NFL' ? 'nfl' : lg === 'WNBA' ? 'wnba' : 'nba';
     }
 
     function playerInitials(playerName) {
