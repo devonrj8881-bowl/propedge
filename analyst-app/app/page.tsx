@@ -6,6 +6,7 @@ const LEAGUES = ["ALL", "MLB", "NBA", "NHL", "NFL", "WNBA"];
 interface Analysis {
   article_title: string;
   featured_intro: string;
+  series_state?: string;
   matchup_analysis: string;
   key_numbers_breakdown: string;
   confidence_rating: number;
@@ -117,7 +118,7 @@ export default function Home() {
   const conf = a ? Math.max(1, Math.min(10, Math.round(Number(a.confidence_rating) || 7))) : 0;
 
   return (
-    <main style={{ minHeight: "100vh", background: "#0f1117", color: "#e2e8f0", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", padding: "32px 16px" }}>
+    <main style={{ minHeight: "100vh", background: "#071228", color: "#e2e8f0", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", padding: "32px 16px" }}>
       <div style={{ maxWidth: 780, margin: "0 auto" }}>
 
         {/* Header */}
@@ -201,6 +202,13 @@ export default function Home() {
                 color: "#22c55e", fontSize: 11, fontWeight: 900
               }}>{conf}/10 Confidence</span>
             </div>
+
+            {/* Series state badge */}
+            {a.series_state && (
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(56,189,248,0.1)", border: "1px solid rgba(56,189,248,0.3)", borderRadius: 999, padding: "5px 14px", color: "#38bdf8", fontSize: 12, fontWeight: 700, letterSpacing: "0.02em" }}>
+                📊 {a.series_state}
+              </div>
+            )}
 
             {/* Title + intro card */}
             <div style={{ background: "linear-gradient(135deg,rgba(34,197,94,0.07),rgba(56,189,248,0.04))", border: "1px solid rgba(34,197,94,0.18)", borderRadius: 16, padding: "22px 24px" }}>

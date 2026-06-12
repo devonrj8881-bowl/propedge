@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.237 — Fix WNBA headshot slug (was 'nba', now 'wnba') — 2026-06-11 LIVE DEPLOY -->
+<!-- PropEdge v7.238 — Blue background, generative series state + auto-refresh — 2026-06-12 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -11,16 +11,16 @@
   <link rel="alternate icon" type="image/png" href="/favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
-<meta name="theme-color" content="#030812">
+<meta name="theme-color" content="#071228">
   <style>
     @media (max-width: 1023px) {
       :root {
-        --bg-primary: rgb(3, 8, 18);
-        --bg-secondary: rgb(3, 8, 18);
+        --bg-primary: rgb(7, 18, 40);
+        --bg-secondary: rgb(7, 18, 40);
       }
 
       html, body {
-        background: rgb(3, 8, 18) !important;
+        background: rgb(7, 18, 40) !important;
         background-image: none !important;
         padding: 0 !important;
         margin: 0;
@@ -1440,11 +1440,11 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #020617;
-      --bg-secondary: #020617;
-      --bg-tertiary: #0b1224;
-      --bg-card: #0f172a;
-      --bg-card-hover: #111c34;
+      --bg-primary: #071228;
+      --bg-secondary: #071228;
+      --bg-tertiary: #0e1a36;
+      --bg-card: #101e3a;
+      --bg-card-hover: #13223e;
 
       --text-primary: #f9fafb;
       --text-secondary: #c7d2e6;
@@ -1497,7 +1497,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       background:
         radial-gradient(circle at top left, rgba(56, 189, 248, 0.07), transparent 45%),
         radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.08), transparent 50%),
-        #020617;
+        #071228;
       color: var(--text-primary);
       min-height: 100vh;
       min-height: 100dvh;
@@ -1515,18 +1515,18 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
     @media (max-width: 1023px) {
       :root {
-        --bg-primary: rgb(3, 8, 18);
-        --bg-secondary: rgb(3, 8, 18);
+        --bg-primary: rgb(7, 18, 40);
+        --bg-secondary: rgb(7, 18, 40);
       }
 
       html {
-        background: rgb(3, 8, 18) !important;
+        background: rgb(7, 18, 40) !important;
         overflow-x: hidden;
       }
 
       html,
       body {
-        background: rgb(3, 8, 18) !important;
+        background: rgb(7, 18, 40) !important;
         background-image: none !important;
         padding-bottom: 0 !important;
       }
@@ -1578,7 +1578,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       gap: 18px;
       padding: 20px 16px;
       border-radius: 24px;
-      background: linear-gradient(180deg, rgba(4, 10, 23, 0.98), rgba(3, 10, 21, 0.98));
+      background: linear-gradient(180deg, rgba(7, 18, 40, 0.98), rgba(7, 18, 40, 0.98));
       border: 1px solid rgba(255,255,255,0.08);
       box-shadow: var(--shadow-lg);
       position: sticky;
@@ -2794,14 +2794,14 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
     @media (max-width: 1023px) {
       html.site-mobile-active {
-        background: rgb(3, 8, 18);
+        background: rgb(7, 18, 40);
         overscroll-behavior: none;
       }
 
       body.site-mobile-active {
         padding: 0 !important;
         overscroll-behavior: none;
-        background: rgb(3, 8, 18) !important;
+        background: rgb(7, 18, 40) !important;
       }
 
       .site-rebuild-shell {
@@ -3910,7 +3910,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       flex-direction: column;
       gap: 14px;
       padding: 18px 14px;
-      background: linear-gradient(to bottom, #020617, #020617 40%, #030712);
+      background: linear-gradient(to bottom, #071228, #071228 40%, #0d1830);
       border: 1px solid rgba(15, 23, 42, 0.9);
       border-radius: 20px;
       box-shadow: var(--shadow-lg);
@@ -9536,6 +9536,13 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     .propai-gen-section-label {
       color: var(--accent-green, #00f0a0); font-size: 10px; font-weight: 900;
       letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px;
+    }
+    .propai-gen-series-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3);
+      color: var(--accent-blue, #38bdf8); font-size: 11px; font-weight: 700;
+      padding: 4px 12px; border-radius: 999px; margin-bottom: 10px;
+      letter-spacing: 0.02em;
     }
 
     .propai-generative-setup {
@@ -18178,8 +18185,8 @@ nav.tabs > button,
         justify-content: space-around;
         gap: 4px;
         padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
-        background-color: rgb(3, 8, 18);
-        background-image: linear-gradient(180deg, rgba(4, 10, 22, 0.98), rgba(3, 8, 18, 1));
+        background-color: rgb(7, 18, 40);
+        background-image: linear-gradient(180deg, rgba(7, 18, 40, 0.98), rgba(7, 18, 40, 1));
         border-top: 1px solid rgba(255, 255, 255, 0.08);
         flex-shrink: 0;
         width: 100%;
@@ -18187,7 +18194,7 @@ nav.tabs > button,
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
         /* Fills safe area nicely if flex column shifts slightly */
-        box-shadow: 0 48px 0 0 rgb(3, 8, 18);
+        box-shadow: 0 48px 0 0 rgb(7, 18, 40);
       }
 
       body.pe-ios-mobile .site-mobile-bottom-nav,
@@ -39558,7 +39565,9 @@ nav.tabs > button,
         if (d.slateDate) metaText += ' · ' + d.slateDate;
         if (d.kimi_fallback_reason && d.provider !== 'kimi') metaText += ' · Kimi: ' + String(d.kimi_fallback_reason).slice(0, 48);
         var html = '<div class="propai-gen-meta"><span>' + metaText + '</span><span class="propai-gen-conf-badge">' + conf + '/10 Confidence</span></div>';
-        html += '<div class="propai-gen-intro-card"><div class="propai-gen-intro-label">Model Assessment</div><div class="propai-gen-intro-title">' + (a.article_title || '').replace(/</g,'&lt;') + '</div><p class="propai-gen-intro-text">' + (a.featured_intro || '').replace(/</g,'&lt;') + '</p></div>';
+        var seriesBadge = a.series_state ? '<div class="propai-gen-series-badge">📊 ' + (a.series_state || '').replace(/</g,'&lt;') + '</div>' : '';
+        html += '<div class="propai-gen-intro-card"><div class="propai-gen-intro-label">Model Assessment</div>' + seriesBadge + '<div class="propai-gen-intro-title">' + (a.article_title || '').replace(/</g,'&lt;') + '</div><p class="propai-gen-intro-text">' + (a.featured_intro || '').replace(/</g,'&lt;') + '</p></div>';
+        resultEl.dataset.genTs = String(Date.now());
         html += '<div class="propai-gen-analysis-card">' + _renderGenProse(a.matchup_analysis) + '</div>';
         if (a.key_numbers_breakdown) {
           html += '<div class="propai-gen-analysis-card"><div class="propai-gen-section-label">Key Variances &amp; Splits</div>' + _renderGenProse(a.key_numbers_breakdown) + '</div>';
@@ -39587,7 +39596,18 @@ nav.tabs > button,
         if (state.propaiSection !== next) return;
         if (next === 'markets') renderMarketsView();
         if (next === 'slate') renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
-        if (next === 'generative') initGenerativeAnalystFrame();
+        if (next === 'generative') {
+          initGenerativeAnalystFrame();
+          // Auto-refresh on mobile if result is empty or older than 30 minutes
+          if (window.innerWidth < 1024) {
+            const resultEl = document.getElementById('propedgeGenResult');
+            const ts = resultEl && resultEl.dataset.genTs ? Number(resultEl.dataset.genTs) : 0;
+            const stale = !ts || (Date.now() - ts) > 30 * 60 * 1000;
+            if (stale && resultEl && !resultEl.querySelector('.propai-gen-intro-card')) {
+              runGenerativeAnalysis();
+            }
+          }
+        }
       });
     }
 

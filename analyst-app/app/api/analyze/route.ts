@@ -89,7 +89,9 @@ FOR EACH PICK — READ THE BOARD FIRST, THEN LAYER TRAINING DATA:
 - Then add sport context you know: NBA pace/ORTG/DRTG/rest; MLB Statcast/splits/park; NHL goalie/PP; NFL target share/weather.
 - If L5 >> L20/season: flag regression risk. If L5 << L20: flag bounce-back.
 
-OUTPUT JSON keys: article_title, featured_intro, matchup_analysis, key_numbers_breakdown, confidence_rating (1-10).
+OUTPUT JSON keys: article_title, featured_intro, series_state, matchup_analysis, key_numbers_breakdown, confidence_rating (1-10).
+
+series_state: One concise line capturing the current playoff/series context (e.g. "NBA Finals — Spurs lead series 2-1, Game 4 at San Antonio"). For non-playoff slates write the dominant narrative (e.g. "MLB — Mid-season slate, 8 games"). Always include league and specific game/series status.
 
 article_title: Specific slate headline with date and featured matchup(s).
 
@@ -211,7 +213,7 @@ type ActiveSlate = {
   dateDisplay: string;
   timezone: string;
   activeTeams: Record<string, string[]>;
-  games: Array<{ league?: string; home?: string; away?: string; label?: string; status?: string }>;
+  games: Array<{ league?: string; home?: string; away?: string; label?: string; status?: string; seriesNote?: string | null; isSeries?: boolean }>;
 };
 
 async function fetchActiveSlate(league: string): Promise<ActiveSlate | null> {
@@ -474,7 +476,10 @@ function formatSlateContext(slate: ActiveSlate | null, league: string): string {
     lines.push(`${lg}: ${teams.length ? teams.join(", ") : `NO GAMES — exclude all ${lg} props`}`);
     const games = (slate.games || []).filter((g) => g.league === lg);
     for (const g of games.slice(0, 12)) {
-      if (g.home && g.away) lines.push(`  ${g.away} @ ${g.home}${g.status ? ` (${g.status})` : ""}`);
+      if (g.home && g.away) {
+        const seriesPart = g.seriesNote ? ` — ${g.seriesNote}` : "";
+        lines.push(`  ${g.away} @ ${g.home}${g.status ? ` (${g.status})` : ""}${seriesPart}`);
+      }
     }
   }
   lines.push("Use ONLY the date above in titles. Do NOT recommend players from teams not listed.");
@@ -513,7 +518,7 @@ function repairJson(raw: string): string {
 function extractJsonFields(raw: string): Record<string, string | number> | null {
   const s = stripJsonFence(raw);
   const out: Record<string, string | number> = {};
-  const stringFields = ["article_title", "featured_intro", "matchup_analysis", "key_numbers_breakdown"] as const;
+  const stringFields = ["article_title", "featured_intro", "series_state", "matchup_analysis", "key_numbers_breakdown"] as const;
 
   for (const key of stringFields) {
     const marker = `"${key}"`;
@@ -551,11 +556,12 @@ function normalizeAnalysis(parsed: Record<string, unknown>) {
   const out: Record<string, string | number> = {
     article_title: String(parsed.article_title || "PropEdge Analyst Report"),
     featured_intro: String(parsed.featured_intro || ""),
+    series_state: String(parsed.series_state || ""),
     matchup_analysis: String(parsed.matchup_analysis || ""),
     key_numbers_breakdown: String(parsed.key_numbers_breakdown || ""),
     confidence_rating: Number(parsed.confidence_rating) || 7,
   };
-  for (const k of ["matchup_analysis", "key_numbers_breakdown", "featured_intro", "article_title"] as const) {
+  for (const k of ["matchup_analysis", "key_numbers_breakdown", "featured_intro", "article_title", "series_state"] as const) {
     if (typeof out[k] === "string") out[k] = unescapeJsonString(out[k]);
   }
   return out;
@@ -663,11 +669,12 @@ async function callGeminiModel(
         properties: {
           article_title: { type: "string" },
           featured_intro: { type: "string" },
+          series_state: { type: "string" },
           matchup_analysis: { type: "string" },
           key_numbers_breakdown: { type: "string" },
           confidence_rating: { type: "number" },
         },
-        required: ["article_title", "featured_intro", "matchup_analysis", "key_numbers_breakdown", "confidence_rating"],
+        required: ["article_title", "featured_intro", "series_state", "matchup_analysis", "key_numbers_breakdown", "confidence_rating"],
       },
     },
   };
