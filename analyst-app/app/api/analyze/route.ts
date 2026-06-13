@@ -9,11 +9,7 @@ const CORS_HEADERS = {
 };
 
 const PROP_FEED_URL =
-  process.env.PROPEDGE_FEED_URL ||
   "https://propedgemasters.netlify.app/.netlify/functions/prop-feed?sheet=propedge-main";
-
-const PROP_FEED_GVIZ_FALLBACK =
-  "https://docs.google.com/spreadsheets/d/1e53GcCS9alxJhzDQPqkH55mpllEjVUShPKyP63R-BeY/gviz/tq?tqx=out:csv&sheet=propedge-main";
 
 const ASK_ANALYST_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/ask-analyst";
@@ -24,155 +20,32 @@ const GAME_FILTER_URL =
 const GAME_ODDS_URL =
   "https://propedgemasters.netlify.app/.netlify/functions/game-odds";
 
+const KIMI_API_KEY = process.env.MOONSHOT_API_KEY || process.env.KIMI_API_KEY || "";
+const KIMI_BASE_URL = (process.env.MOONSHOT_API_BASE || "https://api.moonshot.ai/v1").replace(/\/$/, "");
+const KIMI_MODEL = process.env.KIMI_MODEL || "kimi-k2-turbo-preview";
+
 const GEMINI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
-const MOONSHOT_API_KEY = process.env.MOONSHOT_API_KEY || process.env.KIMI_API_KEY || "";
-
-type KimiBackend = "openrouter" | "moonshot";
-
-function resolveKimiConfig(): {
-  apiKey: string;
-  apiUrl: string;
-  model: string;
-  backend: KimiBackend;
-} | null {
-  if (OPENROUTER_API_KEY) {
-    return {
-      apiKey: OPENROUTER_API_KEY,
-      apiUrl: process.env.KIMI_API_URL || "https://openrouter.ai/api/v1/chat/completions",
-      model: process.env.KIMI_MODEL || "moonshotai/kimi-k2-0905",
-      backend: "openrouter",
-    };
-  }
-  if (MOONSHOT_API_KEY) {
-    return {
-      apiKey: MOONSHOT_API_KEY,
-      apiUrl: process.env.KIMI_API_URL || "https://api.moonshot.ai/v1/chat/completions",
-      model: process.env.KIMI_MODEL || "kimi-k2.5",
-      backend: "moonshot",
-    };
-  }
-  return null;
-}
-
 const GEMINI_MODEL_FALLBACKS = [
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
-  "gemini-2.0-flash",
+  "gemini-3.1-flash-image",
+  "gemini-3-pro-image",
+  "gemini-2.5-flash-image",
 ];
 
 const PRIMARY_MODEL = process.env.GEMINI_MODEL || GEMINI_MODEL_FALLBACKS[0];
 const MODEL_CHAIN = Array.from(new Set([PRIMARY_MODEL, ...GEMINI_MODEL_FALLBACKS]));
-const MAX_PROPS = 6;
+const MAX_PROPS = 4;
 const MAX_GEMINI_ATTEMPTS = 3;
-const KIMI_TIMEOUT_MS = Number(process.env.KIMI_TIMEOUT_MS || 90000);
-const KIMI_MAX_OUTPUT_TOKENS = Number(process.env.KIMI_MAX_OUTPUT_TOKENS || 8192);
-const GEMINI_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 8192);
-
-export const maxDuration = 300;
-
-function buildAnalystSystemPrompt(slateDateDisplay: string, maxProps: number): string {
-  return `You are a sharp sports betting analyst writing a premium PropEdge +EV report — linemaker tone, data-driven, no fluff.
-
-TODAY is ${slateDateDisplay} (US Eastern). Use this exact date in article_title — never tomorrow's date.
-
-Use ONLY players/lines/odds from the PropEdge board payload. Add matchup/splits context from your training knowledge, but never invent props.
-
-LINEMAKER PRINCIPLES — APPLY ON EVERY PICK:
-1. REGRESSION: Hot L5 streaks on cold L20/season baselines are traps — call out explicitly.
-2. CONVERGENCE: Best plays have PropIQ + hit-rate windows + matchup all aligned; flag conflicts.
-3. JUICE GATE: Heavy juice (≤-180) needs bigger cushion; say FADE when grade is elite but price kills ROI.
-4. MARKET SOFTNESS: Rebounds/assists/combos = softer; points = sharper — adjust thesis accordingly.
-
-FOR EACH PICK — READ THE BOARD FIRST, THEN LAYER TRAINING DATA:
-- Start with payload: PropIQ, L5/L10/L20, H2H, ev_pct, line cushion, propiq_signals/risks.
-- Then add sport context you know: NBA pace/ORTG/DRTG/rest; MLB Statcast/splits/park; NHL goalie/PP; NFL target share/weather.
-- If L5 >> L20/season: flag regression risk. If L5 << L20: flag bounce-back.
-
-OUTPUT JSON keys: article_title, featured_intro, series_state, matchup_analysis, key_numbers_breakdown, confidence_rating (1-10).
-
-series_state: One concise line capturing the current playoff/series context (e.g. "NBA Finals — Spurs lead series 2-1, Game 4 at San Antonio"). For non-playoff slates write the dominant narrative (e.g. "MLB — Mid-season slate, 8 games"). Always include league and specific game/series status.
-
-article_title: Specific slate headline with date and featured matchup(s).
-
-featured_intro: 4-6 sentences. Set the slate narrative — pace, key matchups, where PropIQ clusters (overs/unders, stars, totals). Premium betting preview lede.
-
-matchup_analysis — use this EXACT markdown outline. **Top Player Prop Values MUST be the first ## section.**
-
-## Top Player Prop Values
-Cover all ${maxProps} picks from the payload. For EACH pick:
-
-**Player (TEAM) — Over/Under X.X Market (+odds)**
-One dense 4-6 sentence paragraph in this style (cite ONLY numbers from payload):
-"Carries PropIQ [score] with [N]% cushion over the [line] — averaging [l5_avg] over his last five ([l5_pct] hit rate). [L10/L20 context]. [If h2h: 'Holds [h2h] head-to-head vs [opponent]'.] [If matchup_scalar: 'Matchup scalar [X] signals favorable/tough environment'.] [If szn_matchup: cite defensive rank.] [If odds ≤-200: note parlay-leg vs straight-bet value.] End with BUY/LEAN/PASS/FADE + one-line thesis."
-
-Blank line between picks. Every pick MUST mention PropIQ, cushion or l5_avg vs line, and at least two of: L5/L10 hit %, H2H, matchup_scalar, szn_matchup.
-
-## Matchup Context
-For EACH game on the board (group props by team vs opponent): 2-3 sentences on opponent profile, pace/total environment, and how it frames the prop cluster. Cite szn_matchup, matchup_scalar, opponent from payload.
-
-## Game Line & Alternate Plays
-If GAME LINES or GAME_LINES_JSON present — for EACH game recommend:
-- **Best Alt Total — Over/Under X.X ([+odds])** — 2-3 sentences tying to player-prop thesis (use recommended_alt_totals from JSON first)
-- **Best 1Q or 1H Total** if present
-- Main total/spread lean in one sentence
-Never invent lines.
-
-key_numbers_breakdown: 5-8 markdown bullets (KEY VARIANCES format). One bullet per top pick:
-* **Player**: PropIQ X, Edge Y, L5 Z, L10 W, Cushion N%, H2H, Scalar S, Conf C%
-Use exact payload numbers only.
-
-Do NOT truncate, summarize, or omit sections. Write the complete report every time.
-
-SCORING FIELD GLOSSARY (use when present in payload):
-propiq_score: 0-100 PropIQ grade. ≥80 elite, 65-79 strong, <65 value/marginal.
-propiq_signals / propiq_risks: top supporting and capping factors.
-l5_pct / l10_pct / l20_pct / last_season_pct / season_pct: hit-rate windows.
-l5_avg / l10_avg: recent averages — compare to line for cushion/regression read.
-szn_matchup / matchup: opponent defensive rank or season matchup grade (#1 soft … #30 tough).
-matchup_scalar: >1.0 favorable matchup, <1.0 tough matchup.
-h2h: hit rate vs this opponent. ev_pct: edge above fair value. line_delta: steam/movement.
-opponent: opposing team abbr — use for matchup narrative.`;
-}
-
-function isValidPropFeedCsv(csv: string): boolean {
-  const text = csv.trim();
-  if (!text || text.length < 100) return false;
-  if (text.startsWith("<") || text.startsWith("{")) return false;
-  return text.includes("Player") || text.includes("PF Rating");
-}
-
-async function downloadPropFeedCsv(url: string): Promise<string> {
-  const res = await fetch(url, { cache: "no-store" });
-  const csv = await res.text();
-  if (!res.ok) {
-    throw new Error(`Prop feed HTTP ${res.status} from ${url}`);
-  }
-  if (!isValidPropFeedCsv(csv)) {
-    throw new Error(`Prop feed invalid payload from ${url}`);
-  }
-  return csv;
-}
 
 async function fetchProps(): Promise<Record<string, string>[]> {
-  const sources = [PROP_FEED_URL, PROP_FEED_GVIZ_FALLBACK];
-  let csv = "";
-  let lastErr: Error | null = null;
-
-  for (const url of sources) {
-    try {
-      csv = await downloadPropFeedCsv(url);
-      break;
-    } catch (err) {
-      lastErr = err instanceof Error ? err : new Error(String(err));
-      console.warn("[analyze] prop feed attempt failed:", lastErr.message);
-    }
+  const res = await fetch(PROP_FEED_URL, { cache: "no-store" });
+  const csv = await res.text();
+  if (!csv.includes("Player") && !csv.includes("PF Rating")) {
+    throw new Error("Invalid prop feed response");
   }
-
-  if (!csv) {
-    throw new Error(lastErr?.message || "Invalid prop feed response");
-  }
-
   const lines = csv.trim().split("\n");
   const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
   return lines.slice(1).map((line) => {
@@ -191,20 +64,24 @@ async function fetchProps(): Promise<Record<string, string>[]> {
 const SLATE_TIMEZONE = "America/New_York";
 
 function slateDateParts(timeZone = SLATE_TIMEZONE) {
+  const now = new Date();
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(new Date());
+  }).formatToParts(now);
   const get = (type: string) => parts.find((p) => p.type === type)?.value || "";
   const yyyy = get("year");
   const mm = get("month");
   const dd = get("day");
+  const weekday = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long" }).format(now);
   return {
     iso: `${yyyy}-${mm}-${dd}`,
     espn: `${yyyy}${mm}${dd}`,
     display: `${Number(mm)}/${Number(dd)}/${yyyy}`,
+    displayFull: `${weekday}, ${Number(mm)}/${Number(dd)}/${yyyy}`,
+    weekday,
     timezone: timeZone,
   };
 }
@@ -266,30 +143,6 @@ async function fetchGameOdds(leagueFilter: string): Promise<GameBetProp[]> {
 
 const GAME_ODDS_CORE_MARKETS = new Set(["Moneyline", "Spread", "Total", "Alt Total", "1H Total", "1Q Total"]);
 
-function pickAltTotalsForGame(alts: GameBetProp[], mainTotal?: number): GameBetProp[] {
-  if (!alts.length) return [];
-  const playable = alts.filter((b) => {
-    const odds = b.odds ?? 0;
-    return odds >= -220 && odds <= 200;
-  });
-  const pool = playable.length ? playable : alts;
-
-  if (mainTotal != null && Number.isFinite(mainTotal)) {
-    const overs = pool
-      .filter((b) => String(b.direction || "").toUpperCase() === "OVER")
-      .sort((a, b) => Math.abs((a.line ?? 0) - mainTotal) - Math.abs((b.line ?? 0) - mainTotal));
-    const unders = pool
-      .filter((b) => String(b.direction || "").toUpperCase() === "UNDER")
-      .sort((a, b) => Math.abs((a.line ?? 0) - mainTotal) - Math.abs((b.line ?? 0) - mainTotal));
-    const picked = [...unders.slice(0, 2), ...overs.slice(0, 2)];
-    if (picked.length) return picked;
-  }
-
-  return pool
-    .sort((a, b) => Math.abs(Math.abs(a.odds ?? 110) - 110) - Math.abs(Math.abs(b.odds ?? 110) - 110))
-    .slice(0, 4);
-}
-
 function formatGameLinesContext(gameBets: GameBetProp[]): string {
   if (!gameBets.length) return "";
   const core = gameBets.filter((b) => GAME_ODDS_CORE_MARKETS.has(b.prop));
@@ -311,80 +164,15 @@ function formatGameLinesContext(gameBets: GameBetProp[]): string {
     const ml  = get("Moneyline").map((b) => `${b.team} ${fmtOdds(b.odds)}`).join("/");
     const sp  = get("Spread").map((b) => `${b.team}${fmtLine(b.line)} (${fmtOdds(b.odds)})`).join("/");
     const tot = get("Total").map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
-    const mainTotalLine = get("Total").find((b) => b.line != null)?.line;
-    const altPicks = pickAltTotalsForGame(get("Alt Total"), mainTotalLine);
-    const altTot = altPicks.map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
+    // Alt totals: show up to 3 lines nearest to -110 (best value lines)
+    const altTotNear110 = get("Alt Total").sort((a, b) => Math.abs(Math.abs(a.odds ?? 110) - 110) - Math.abs(Math.abs(b.odds ?? 110) - 110)).slice(0, 3);
+    const altTot = altTotNear110.map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
     const h1  = get("1H Total").map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
     const q1  = get("1Q Total").map((b) => `${b.direction} ${b.line} (${fmtOdds(b.odds)})`).join(" ");
     const parts = [ml && `ML: ${ml}`, sp && `Spread: ${sp}`, tot && `Total: ${tot}`, altTot && `AltTot: ${altTot}`, h1 && `1H: ${h1}`, q1 && `1Q: ${q1}`].filter(Boolean);
     if (parts.length) lines.push(`[${league}] ${label}: ${parts.join(" | ")}`);
   }
   return lines.length > 1 ? lines.join("\n") : "";
-}
-
-function buildGameLinesJsonBlock(gameBets: GameBetProp[]): string {
-  if (!gameBets.length) return "";
-  const core = gameBets.filter((b) => GAME_ODDS_CORE_MARKETS.has(b.prop));
-  if (!core.length) return "";
-
-  const byGame = new Map<string, { league: string; label: string; bets: GameBetProp[] }>();
-  for (const b of core) {
-    const key = `${b.league}|${b.gameId || b.gameLabel}`;
-    if (!byGame.has(key)) byGame.set(key, { league: b.league, label: b.gameLabel, bets: [] });
-    byGame.get(key)!.bets.push(b);
-  }
-
-  const games = [];
-  for (const { league, label, bets } of byGame.values()) {
-    const get = (market: string) => bets.filter((b) => b.prop === market);
-    const totals = get("Total");
-    const mainLine = totals.find((b) => b.line != null)?.line;
-    const altBoard = pickAltTotalsForGame(get("Alt Total"), mainLine).map((b) => ({
-      direction: b.direction,
-      line: b.line,
-      odds: b.odds,
-      team: b.team,
-    }));
-    const playableAlts = get("Alt Total")
-      .filter((b) => (b.odds ?? 0) >= -220 && (b.odds ?? 0) <= 200)
-      .sort((a, b) => Math.abs(Math.abs(a.odds ?? 110) - 110) - Math.abs(Math.abs(b.odds ?? 110) - 110))
-      .slice(0, 8)
-      .map((b) => ({ direction: b.direction, line: b.line, odds: b.odds }));
-
-    games.push({
-      league,
-      game: label,
-      moneyline: get("Moneyline").map((b) => ({ team: b.team, odds: b.odds })),
-      spread: get("Spread").map((b) => ({ team: b.team, line: b.line, odds: b.odds })),
-      main_total: totals.map((b) => ({ direction: b.direction, line: b.line, odds: b.odds })),
-      recommended_alt_totals: altBoard,
-      alt_totals_board: playableAlts,
-      first_half_total: get("1H Total").map((b) => ({ direction: b.direction, line: b.line, odds: b.odds })),
-      first_quarter_total: get("1Q Total").map((b) => ({ direction: b.direction, line: b.line, odds: b.odds })),
-    });
-  }
-
-  if (!games.length) return "";
-  return `GAME_LINES_JSON (use ONLY these lines — recommend best alt totals explicitly):\n${JSON.stringify(games, null, 2)}`;
-}
-
-function groupPropsByMatchup(topProps: Record<string, unknown>[]): string {
-  const byGame = new Map<string, Record<string, unknown>[]>();
-  for (const p of topProps) {
-    const team = String(p.team || p.Team || "").toUpperCase();
-    const opp = String(p.opponent || p.Opponent || "").toUpperCase();
-    const key = [team, opp].filter(Boolean).sort().join("|") || "unknown";
-    if (!byGame.has(key)) byGame.set(key, []);
-    byGame.get(key)!.push(p);
-  }
-  const lines = ["PROPS BY MATCHUP (for Matchup Context section):"];
-  for (const [key, props] of byGame.entries()) {
-    const sample = props[0] || {};
-    const team = sample.team || sample.Team || "?";
-    const opp = sample.opponent || sample.Opponent || "?";
-    lines.push(`- ${team} vs ${opp}: ${props.map((p) => `${p.player} ${p.prop || p.market} (${p.direction || ""})`).join("; ")}`);
-  }
-  return lines.join("\n");
 }
 
 function normalizeTeamAbbr(team: string): string {
@@ -477,7 +265,7 @@ function formatSlateContext(slate: ActiveSlate | null, league: string): string {
     const games = (slate.games || []).filter((g) => g.league === lg);
     for (const g of games.slice(0, 12)) {
       if (g.home && g.away) {
-        const seriesPart = g.seriesNote ? ` — ${g.seriesNote}` : "";
+        const seriesPart = g.seriesNote ? ` [${g.seriesNote}]` : "";
         lines.push(`  ${g.away} @ ${g.home}${g.status ? ` (${g.status})` : ""}${seriesPart}`);
       }
     }
@@ -518,7 +306,7 @@ function repairJson(raw: string): string {
 function extractJsonFields(raw: string): Record<string, string | number> | null {
   const s = stripJsonFence(raw);
   const out: Record<string, string | number> = {};
-  const stringFields = ["article_title", "featured_intro", "series_state", "matchup_analysis", "key_numbers_breakdown"] as const;
+  const stringFields = ["article_title", "featured_intro", "matchup_analysis", "key_numbers_breakdown"] as const;
 
   for (const key of stringFields) {
     const marker = `"${key}"`;
@@ -556,59 +344,14 @@ function normalizeAnalysis(parsed: Record<string, unknown>) {
   const out: Record<string, string | number> = {
     article_title: String(parsed.article_title || "PropEdge Analyst Report"),
     featured_intro: String(parsed.featured_intro || ""),
-    series_state: String(parsed.series_state || ""),
     matchup_analysis: String(parsed.matchup_analysis || ""),
     key_numbers_breakdown: String(parsed.key_numbers_breakdown || ""),
     confidence_rating: Number(parsed.confidence_rating) || 7,
   };
-  for (const k of ["matchup_analysis", "key_numbers_breakdown", "featured_intro", "article_title", "series_state"] as const) {
+  for (const k of ["matchup_analysis", "key_numbers_breakdown", "featured_intro", "article_title"] as const) {
     if (typeof out[k] === "string") out[k] = unescapeJsonString(out[k]);
   }
   return out;
-}
-
-function buildKeyNumbersFromProps(topProps: Record<string, unknown>[]): string {
-  return topProps.slice(0, MAX_PROPS).map((p) => {
-    const iq = p.propiq_score ?? p.pfRating ?? "n/a";
-    const edge = p.ev_pct ?? p.edge ?? "n/a";
-    const l5 = p.l5_pct ?? p.l5Pct ?? "n/a";
-    const l10 = p.l10_pct ?? p.l10Pct ?? "n/a";
-    const parts = [
-      `PropIQ ${iq}`,
-      `Edge ${edge}`,
-      `L5 ${l5}`,
-      `L10 ${l10}`,
-      p.cushion_pct != null ? `Cushion ${p.cushion_pct}` : null,
-      p.h2h ? `H2H ${p.h2h}` : null,
-      p.matchup_scalar != null ? `Scalar ${p.matchup_scalar}` : null,
-      p.confidence_pct != null ? `Conf ${p.confidence_pct}%` : null,
-    ].filter(Boolean);
-    return `* **${p.player || "Player"}**: ${parts.join(", ")}`;
-  }).join("\n");
-}
-
-function looksLikeProperVariances(text: string): boolean {
-  const bullets = text.split("\n").filter((l) => /^\*\s+\*\*/.test(l.trim()));
-  return bullets.length >= 3;
-}
-
-function enrichAnalysisFromBoard(
-  parsed: Record<string, string | number>,
-  topProps: Record<string, unknown>[],
-): Record<string, string | number> {
-  let matchup = String(parsed.matchup_analysis || "").trim();
-  if (!matchup) {
-    matchup = "## Top Player Prop Values\n\nAnalysis unavailable — see board.";
-  } else if (!/Top Player Prop/i.test(matchup)) {
-    matchup = `## Top Player Prop Values\n\n${matchup}`;
-  }
-
-  let variances = String(parsed.key_numbers_breakdown || "").trim();
-  if (!variances || variances.length < 60 || !looksLikeProperVariances(variances)) {
-    variances = buildKeyNumbersFromProps(topProps);
-  }
-
-  return { ...parsed, matchup_analysis: matchup, key_numbers_breakdown: variances };
 }
 
 function parseGeminiJson(raw: string) {
@@ -661,7 +404,7 @@ async function callGeminiModel(
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: "user", parts: [{ text: userPrompt }] }],
     generationConfig: {
-      temperature: 0.55,
+      temperature: 0.45,
       maxOutputTokens,
       responseMimeType: "application/json",
       responseSchema: {
@@ -669,12 +412,11 @@ async function callGeminiModel(
         properties: {
           article_title: { type: "string" },
           featured_intro: { type: "string" },
-          series_state: { type: "string" },
           matchup_analysis: { type: "string" },
           key_numbers_breakdown: { type: "string" },
           confidence_rating: { type: "number" },
         },
-        required: ["article_title", "featured_intro", "series_state", "matchup_analysis", "key_numbers_breakdown", "confidence_rating"],
+        required: ["article_title", "featured_intro", "matchup_analysis", "key_numbers_breakdown", "confidence_rating"],
       },
     },
   };
@@ -695,6 +437,45 @@ async function callGeminiModel(
   const finishReason = data?.candidates?.[0]?.finishReason || "";
   if (!raw) throw new Error("Gemini returned empty response");
   return { raw, finishReason };
+}
+
+async function callKimi(
+  systemPrompt: string,
+  userPrompt: string,
+  maxOutputTokens: number,
+) {
+  if (!KIMI_API_KEY) throw new Error("MOONSHOT_API_KEY is not set");
+
+  const jsonContract =
+    "Return ONLY valid JSON with keys: article_title, featured_intro, matchup_analysis, key_numbers_breakdown, confidence_rating (number 1-10). No markdown fences.";
+
+  const res = await fetch(`${KIMI_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${KIMI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: KIMI_MODEL,
+      messages: [
+        { role: "system", content: `${systemPrompt}\n\n${jsonContract}` },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.45,
+      max_tokens: maxOutputTokens,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Kimi API ${res.status}: ${err.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  const raw = data?.choices?.[0]?.message?.content?.trim() || "";
+  const finishReason = data?.choices?.[0]?.finish_reason || "";
+  if (!raw) throw new Error("Kimi returned empty response");
+  return { raw, finishReason, model: KIMI_MODEL };
 }
 
 async function callGeminiWithResilience(
@@ -729,83 +510,27 @@ async function callGeminiWithResilience(
   throw lastErr || new Error("Gemini unavailable");
 }
 
-class KimiApiError extends Error {
-  status: number;
-  body: string;
-
-  constructor(status: number, body: string) {
-    super(`Kimi API ${status}: ${body.slice(0, 300)}`);
-    this.status = status;
-    this.body = body;
-  }
-}
-
-async function callKimiModel(
+async function callAnalysisWithResilience(
   systemPrompt: string,
   userPrompt: string,
   maxOutputTokens: number,
 ) {
-  const cfg = resolveKimiConfig();
-  if (!cfg) throw new Error("No Kimi API key configured (set OPENROUTER_API_KEY or MOONSHOT_API_KEY)");
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${cfg.apiKey}`,
-  };
-  if (cfg.backend === "openrouter") {
-    headers["HTTP-Referer"] = process.env.OPENROUTER_REFERER || "https://propedgemasters.netlify.app";
-    headers["X-Title"] = process.env.OPENROUTER_APP_NAME || "PropEdge Generative Analyst";
-  }
-
-  const res = await fetch(cfg.apiUrl, {
-    method: "POST",
-    headers,
-    signal: AbortSignal.timeout(KIMI_TIMEOUT_MS),
-    body: JSON.stringify({
-      model: cfg.model,
-      messages: [
-        {
-          role: "system",
-          content: `${systemPrompt}\n\nReturn valid JSON only with keys: article_title, featured_intro, matchup_analysis, key_numbers_breakdown, confidence_rating.`,
-        },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.55,
-      max_tokens: maxOutputTokens,
-      response_format: { type: "json_object" },
-      ...(cfg.backend === "openrouter"
-        ? { provider: { sort: "latency" } }
-        : {}),
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new KimiApiError(res.status, err);
-  }
-
-  const data = await res.json();
-  const message = data?.choices?.[0]?.message || {};
-  const raw = String(message.content || message.reasoning || "").trim();
-  if (!raw) throw new Error("Kimi returned empty response");
-  return { raw, finishReason: data?.choices?.[0]?.finish_reason || "stop", model: cfg.model };
-}
-
-async function callKimiWithResilience(
-  systemPrompt: string,
-  userPrompt: string,
-  maxOutputTokens: number,
-) {
-  try {
-    const result = await callKimiModel(systemPrompt, userPrompt, maxOutputTokens);
-    return { ...result, fallback: false };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (err instanceof Error && err.name === "TimeoutError") {
-      throw new Error(`Kimi timed out after ${Math.round(KIMI_TIMEOUT_MS / 1000)}s`);
+  if (KIMI_API_KEY) {
+    try {
+      const kimi = await callKimi(systemPrompt, userPrompt, maxOutputTokens);
+      return { ...kimi, provider: "kimi" as const, fallback: false };
+    } catch (kimiErr) {
+      console.warn("[analyze] Kimi failed, falling back to Gemini:", kimiErr instanceof Error ? kimiErr.message : kimiErr);
+      if (!GEMINI_API_KEY) throw kimiErr;
     }
-    throw err instanceof Error ? err : new Error(msg);
   }
+
+  const gemini = await callGeminiWithResilience(systemPrompt, userPrompt, maxOutputTokens);
+  return {
+    ...gemini,
+    provider: "gemini" as const,
+    fallback: !!KIMI_API_KEY || !!gemini.fallback,
+  };
 }
 
 function csvRowToAnalystProp(row: Record<string, string>, league: string) {
@@ -837,7 +562,7 @@ function rowToBoardProp(row: Record<string, string>, league: string): BoardProp 
     league: row["League"] || league || undefined,
     player: row["Player"] || "",
     team: row["Team"] || undefined,
-    opponent: row["Opponent"] || row["Opp"] || row["opponent_est"] || undefined,
+    opponent: row["opponent_est"] || undefined,
     pos: row["Pos"] || undefined,
     prop: propType || propStr,
     stat: propType || propStr,
@@ -866,71 +591,29 @@ function rowToBoardProp(row: Record<string, string>, league: string): BoardProp 
 function enrichRow(
   row: Record<string, string>,
   league: string,
-  boardRank?: number,
 ): Record<string, unknown> {
   const base = csvRowToAnalystProp(row, league);
   const bp = rowToBoardProp(row, league);
   const payload = buildPropEdgeLlmPayload(bp);
-  const confPct = parseFloat(row["Confidence %"]);
-  const edgeRaw = row["Edge %"] || row["Edge"] || "";
-  const lineNum = bp.line;
-  const dir = String(bp.direction || "OVER").toUpperCase();
-  let cushionPct: string | undefined;
-  if (bp.l5Avg != null && Number.isFinite(bp.l5Avg) && lineNum != null && Number.isFinite(lineNum) && lineNum > 0) {
-    const cushion = dir === "OVER"
-      ? (bp.l5Avg - lineNum) / lineNum
-      : (lineNum - bp.l5Avg) / lineNum;
-    cushionPct = `${Math.round(cushion * 100)}%`;
-  }
-  if (!payload) {
-    return {
-      ...base,
-      ...(boardRank != null && { board_rank: boardRank }),
-      ...(bp.opponent && { opponent: bp.opponent }),
-      ...(bp.h2h && { h2h: bp.h2h }),
-      ...(cushionPct && { cushion_pct: cushionPct }),
-      ...(Number.isFinite(confPct) && { confidence_pct: Math.round(confPct) }),
-      ...(edgeRaw && { edge: edgeRaw }),
-    };
-  }
+  if (!payload) return base;
   const a = payload.analytics;
   const m = payload.market;
-  const l10Pct = a.hit_rate_last_10 != null ? `${Math.round(a.hit_rate_last_10 * 100)}%` : undefined;
-  const l30Pct = a.hit_rate_last_30 != null ? `${Math.round(a.hit_rate_last_30 * 100)}%` : undefined;
-  const seasonPct = a.season_hit_rate != null ? `${Math.round(a.season_hit_rate)}%` : undefined;
   return {
     ...base,
-    ...(boardRank != null && { board_rank: boardRank }),
-    ...(bp.opponent && { opponent: bp.opponent }),
-    ...(bp.sznMatchup && { szn_matchup: bp.sznMatchup }),
-    ...(bp.h2h && { h2h: bp.h2h }),
-    ...(bp.matchup_scalar != null && Number.isFinite(bp.matchup_scalar) && { matchup_scalar: bp.matchup_scalar }),
-    ...(bp.l5Avg != null && Number.isFinite(bp.l5Avg) && { l5_avg: bp.l5Avg }),
-    ...(bp.l10Avg != null && Number.isFinite(bp.l10Avg) && { l10_avg: bp.l10Avg }),
-    ...(cushionPct && { cushion_pct: cushionPct }),
-    ...(Number.isFinite(confPct) && { confidence_pct: Math.round(confPct) }),
-    ...(edgeRaw && { edge: edgeRaw }),
-    ...(bp.l5Pct && { l5_hit: bp.l5Pct }),
-    ...(bp.l10Pct && { l10_hit: bp.l10Pct }),
-    ...(bp.l20Pct && { l20_hit: bp.l20Pct }),
-    ...(bp.streak != null && Number.isFinite(bp.streak) && { streak: bp.streak }),
     ...(a.hit_rate_last_5 != null && { l5_pct: `${Math.round(a.hit_rate_last_5 * 100)}%` }),
-    ...(l10Pct && { l10_pct: l10Pct }),
     ...(a.hit_rate_last_20 != null && { l20_pct: `${Math.round(a.hit_rate_last_20 * 100)}%` }),
-    ...(l30Pct && { l30_pct: l30Pct }),
-    ...(seasonPct && { season_pct: seasonPct }),
     ...(a.ev_percentage != null && { ev_pct: `${(Math.round(a.ev_percentage * 10) / 10).toFixed(1)}%` }),
+    // Use board's PF Rating as canonical score — matches what the board shows.
+    // computePortablePropIq score is kept only for factor/signal text generation.
     ...(parseFloat(row["PF Rating"]) > 0 && { propiq_score: parseFloat(row["PF Rating"]) }),
-    ...(a.propiq_for_factors?.length && { propiq_signals: a.propiq_for_factors.slice(0, 4) }),
-    ...(a.propiq_against_factors?.length && { propiq_risks: a.propiq_against_factors.slice(0, 3) }),
+    ...(a.propiq_for_factors?.length && { propiq_signals: a.propiq_for_factors.slice(0, 3) }),
+    ...(a.propiq_against_factors?.length && { propiq_risks: a.propiq_against_factors.slice(0, 2) }),
     ...(payload.matchup_context.defensive_rank != null && { matchup: payload.matchup_context.defensive_rank }),
     ...(payload.matchup_context.h2h_history != null && { h2h: payload.matchup_context.h2h_history }),
     ...(bp.lastSeasonPct != null && { last_season_pct: bp.lastSeasonPct }),
     ...(a.pitcher_era != null && { pitcher_era: a.pitcher_era }),
-    ...(a.pitcher_xera != null && { pitcher_xera: a.pitcher_xera }),
     ...(m.opening_line != null && { opening_line: m.opening_line }),
     ...(m.book_delta != null && { line_delta: m.book_delta }),
-    ...(a.projected_value != null && { projected_avg: a.projected_value }),
   };
 }
 
@@ -992,7 +675,9 @@ export async function POST(req: NextRequest) {
   try {
     const { question, league = "ALL" } = await req.json();
 
-    if (!GEMINI_API_KEY) throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not set");
+    if (!KIMI_API_KEY && !GEMINI_API_KEY) {
+      throw new Error("MOONSHOT_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY is not set");
+    }
 
     const [rows, slate, gameOddsBets] = await Promise.all([
       fetchProps(),
@@ -1018,74 +703,77 @@ export async function POST(req: NextRequest) {
 
     const slateContext = formatSlateContext(slate, league);
     const gameLinesContext = formatGameLinesContext(gameOddsBets);
-    const gameLinesJson = buildGameLinesJsonBlock(gameOddsBets);
-    const slateDateDisplay = slate?.dateDisplay || slateDateParts().display;
 
     // Enrich top props with full PropIQ scoring signals
-    const topProps = topRows.map((row, i) => enrichRow(row, league, i + 1));
-    const propsByMatchup = groupPropsByMatchup(topProps);
+    const topProps = topRows.map((row) => enrichRow(row, league));
 
-    const systemPrompt = buildAnalystSystemPrompt(slateDateDisplay, MAX_PROPS);
+    const systemPrompt = `You are a sharp sports betting analyst writing a premium prop report.
+
+TODAY is ${slate?.dateDisplay ? `${slateDateParts().weekday}, ${slate.dateDisplay}` : slateDateParts().displayFull} (US Eastern). Use this exact date and day name throughout ALL fields (article_title, featured_intro, matchup_analysis). NEVER write "Thursday", "Friday", or any other day unless it matches the day above. Do not infer the day of week from any other source.
+
+Use the PropEdge board as foundation, then add Statcast/splits context you know.
+Keep JSON compact: 2-3 sentence paragraphs per pick, max ${MAX_PROPS} picks.
+
+FORMAT inside matchup_analysis:
+## Top Player Prop Values
+**Player (TEAM) — Over/Under X.X Market (+odds)**
+Short paragraph per pick. Blank line between picks.
+
+key_numbers_breakdown: short markdown bullets only.
+Do NOT fabricate players, lines, or odds not in the board payload.
+Do NOT include eliminated or off-slate teams (e.g. NBA teams with no game today).
+Do NOT state a playoff series record, series score, or game number unless it is explicitly shown in the TEAMS PLAYING TODAY section (e.g. "[SA leads series 2-1]"). If no series note is present, omit series record entirely.
+
+SCORING FIELDS (when present in payload):
+propiq_score: composite 0-100 signal. ≥80 = elite, 65-79 = strong, <65 = value/marginal. Always cite score by name ("PropIQ 83").
+propiq_signals: top scoring factors — lead with 1-2 strongest in your pick paragraph.
+propiq_risks: capping factors — note the primary risk if present.
+l5_pct / l20_pct: supplement l10 hit rate. Hot L5 vs cold L20 = trending up. Cold L5 = cooling.
+h2h: player's hit rate vs this specific opponent this season (e.g. "3/5" = 3 for 5). Strong or weak matchup history — always cite when present.
+last_season_pct: prior season hit rate for this prop type. Compare to current season — divergence signals regression or breakout.
+line_delta: line movement since open. Negative = movement toward under (steam indicator).
+ev_pct: edge above fair value — positive = value, cite if > 3%.
+
+GAME LINES: If a GAME LINES section is present, use it to surface game-level plays (totals, ML, spreads, 1Q totals). Cite the line and odds exactly as shown. If no GAME LINES, skip game-level picks. Never invent lines not in that section.`;
 
     const userPrompt = `${question || `What are the best ${league} props today?`}
 
 LEAGUE: ${league}
-${slateContext ? `\n${slateContext}\n` : ""}${gameLinesContext ? `\n${gameLinesContext}\n` : ""}${gameLinesJson ? `\n${gameLinesJson}\n` : ""}
-${propsByMatchup}
-
-PROPEDGE BOARD (today's active slate only — each prop includes matchup, split, and PropIQ fields):
+${slateContext ? `\n${slateContext}\n` : ""}${gameLinesContext ? `\n${gameLinesContext}\n` : ""}
+PROPEDGE BOARD (today's active slate only):
 ${JSON.stringify(topProps, null, 2)}
 
-Return valid JSON only. Write the COMPLETE report — matchup_analysis with Top Player Prop Values FIRST (data-dense paragraphs citing PropIQ, cushion, L5 avg, H2H, matchup scalar), Matchup Context, Game Line & Alternate Plays; plus key_numbers_breakdown bullets. Do not truncate.`;
+Return valid JSON only. Keep prose concise so the full JSON completes.`;
 
     let raw = "";
     let finishReason = "";
-    let modelUsed = PRIMARY_MODEL;
-    let providerUsed: "kimi" | "gemini" | "propedge" = "gemini";
+    let modelUsed = KIMI_API_KEY ? KIMI_MODEL : PRIMARY_MODEL;
     let usedFallback = false;
-    let kimiFallbackReason: string | undefined;
+    let provider: "kimi" | "gemini" = KIMI_API_KEY ? "kimi" : "gemini";
 
-    if (resolveKimiConfig()) {
-      try {
-        const kimi = await callKimiWithResilience(systemPrompt, userPrompt, KIMI_MAX_OUTPUT_TOKENS);
-        raw = kimi.raw;
-        finishReason = kimi.finishReason;
-        modelUsed = kimi.model;
-        providerUsed = "kimi";
-      } catch (kimiErr) {
-        kimiFallbackReason = kimiErr instanceof Error ? kimiErr.message : String(kimiErr);
-        console.warn("[analyze] Kimi failed, falling back to Gemini:", kimiFallbackReason);
-        usedFallback = true;
-      }
-    } else {
-      kimiFallbackReason = "OPENROUTER_API_KEY or MOONSHOT_API_KEY not configured on server";
-    }
-
-    if (!raw) {
-      try {
-        const gemini = await callGeminiWithResilience(systemPrompt, userPrompt, GEMINI_MAX_OUTPUT_TOKENS);
-        raw = gemini.raw;
-        finishReason = gemini.finishReason;
-        modelUsed = gemini.model;
-        providerUsed = "gemini";
-        usedFallback = usedFallback || !!gemini.fallback;
-      } catch (geminiErr) {
-        console.warn("[analyze] Gemini exhausted retries:", geminiErr instanceof Error ? geminiErr.message : geminiErr);
-        const backup = await callPropEdgeAskAnalystFallback(
-          question || `What are the best ${league} props today?`,
-          league,
-          topRows,
-        );
-        return NextResponse.json({
-          ok: true,
-          analysis: backup.parsed,
-          model: backup.model,
-          provider: "propedge",
-          propCount: topRows.length,
-          fallback: true,
-          fallback_reason: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
-        }, { headers: CORS_HEADERS });
-      }
+    try {
+      const analysis = await callAnalysisWithResilience(systemPrompt, userPrompt, 8192);
+      raw = analysis.raw;
+      finishReason = analysis.finishReason;
+      modelUsed = analysis.model;
+      usedFallback = analysis.fallback;
+      provider = analysis.provider;
+    } catch (analysisErr) {
+      console.warn("[analyze] Primary analysis exhausted:", analysisErr instanceof Error ? analysisErr.message : analysisErr);
+      const backup = await callPropEdgeAskAnalystFallback(
+        question || `What are the best ${league} props today?`,
+        league,
+        topRows,
+      );
+      return NextResponse.json({
+        ok: true,
+        analysis: backup.parsed,
+        model: backup.model,
+        provider: "propedge",
+        propCount: topRows.length,
+        fallback: true,
+        fallback_reason: analysisErr instanceof Error ? analysisErr.message : String(analysisErr),
+      }, { headers: CORS_HEADERS });
     }
 
     let parsed;
@@ -1093,19 +781,13 @@ Return valid JSON only. Write the COMPLETE report — matchup_analysis with Top 
       parsed = parseGeminiJson(raw);
     } catch (firstErr) {
       if (finishReason === "MAX_TOKENS" || finishReason === "length") {
-        const retryProps = buildTopProps(slateRows, league, question || "", 4);
-        const retryPrompt = `${userPrompt}\n\nIMPORTANT: Prioritize complete JSON. Cover top ${retryProps.length} picks with full section outline but slightly shorter paragraphs.`;
-        if (providerUsed === "kimi" && resolveKimiConfig()) {
-          const retry = await callKimiWithResilience(systemPrompt, retryPrompt, KIMI_MAX_OUTPUT_TOKENS);
-          parsed = parseGeminiJson(retry.raw);
-          modelUsed = retry.model;
-          finishReason = retry.finishReason;
-        } else {
-          const retry = await callGeminiWithResilience(systemPrompt, retryPrompt, GEMINI_MAX_OUTPUT_TOKENS);
-          parsed = parseGeminiJson(retry.raw);
-          modelUsed = retry.model;
-          usedFallback = usedFallback || !!retry.fallback;
-        }
+        const retryProps = buildTopProps(slateRows, league, question || "", 3);
+        const retryPrompt = `${userPrompt}\n\nIMPORTANT: Cover only the top ${retryProps.length} picks with shorter paragraphs.`;
+        const retry = await callAnalysisWithResilience(systemPrompt, retryPrompt, 8192);
+        parsed = parseGeminiJson(retry.raw);
+        modelUsed = retry.model;
+        usedFallback = usedFallback || retry.fallback;
+        provider = retry.provider;
       } else {
         throw firstErr;
       }
@@ -1113,14 +795,11 @@ Return valid JSON only. Write the COMPLETE report — matchup_analysis with Top 
 
     return NextResponse.json({
       ok: true,
-      analysis: enrichAnalysisFromBoard(parsed, topProps),
+      analysis: parsed,
       model: modelUsed,
-      provider: providerUsed,
+      provider,
       propCount: topRows.length,
       fallback: usedFallback,
-      ...(kimiFallbackReason && providerUsed !== "kimi" ? { kimi_fallback_reason: kimiFallbackReason } : {}),
-      gameOddsCount: gameOddsBets.length,
-      gameLinesInPrompt: Boolean(gameLinesContext),
       slateDate: slate?.dateDisplay || slate?.date,
       filteredOut: usedFullBoard ? rows.length - rawSlateCount : rows.length - slateRows.length,
     }, { headers: CORS_HEADERS });
@@ -1128,7 +807,7 @@ Return valid JSON only. Write the COMPLETE report — matchup_analysis with Top 
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[analyze]", msg);
     const friendly = /503|429|UNAVAILABLE|high demand/i.test(msg)
-      ? "Gemini is temporarily busy. Please wait a few seconds and try again."
+      ? "Analysis models are temporarily busy. Please wait a few seconds and try again."
       : /404|not found/i.test(msg)
         ? "Analysis model unavailable — please try again."
         : msg;

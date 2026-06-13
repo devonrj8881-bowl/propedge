@@ -390,8 +390,8 @@ function buildGameScopedNewsContext(newsContext, question, props, league) {
   const seriesState = newsContext?.series_record
     ? newsContext.series_record
     : teams.length >= 2
-      ? `Series record not available — ${teams[0]} vs ${teams[1]} (${String(league || "NBA").toUpperCase()}); ${top.length || 0} matchup-relevant news items loaded.`
-      : `Series record not available — ${String(league || "NBA").toUpperCase()} slate; ${top.length || 0} relevant news items loaded.`;
+      ? `${teams[0]} vs ${teams[1]} (${String(league || "NBA").toUpperCase()}); series record not available`
+      : `Series record not available`;
 
   const lines = top.map((a) => `- ${a.source || "Source"}: ${String(a.summary || a.article_excerpt || a.title || "").slice(0, 240)}`);
   return { teams, top, headline, seriesState, lines };
@@ -570,16 +570,11 @@ TEAM MATCHUP ANALYSIS format:
 
 Rules:
 - Synthesize article/news context into one game-specific read; cover BOTH teams.
-- SERIES STATE: copy the supplied series_record verbatim if provided. If not provided, write "Series record not available." NEVER invent or guess series standings, game leads, or scores.
+- SERIES STATE: copy the provided "Series state seed" verbatim. If it says "series record not available", write that. NEVER invent or guess series standings, game numbers, or series leads.
 - Include PropIQ scores and confidence for all props (use supplied data; never invent).
 - If a metric is unknown, write n/a and keep moving.
-- Do not invent injuries, odds, player lines, or series standings not in the payload.
-- Always compare both teams; never favor one side without explaining why.
-DATA INTEGRITY — NON-NEGOTIABLE:
-- Prop rankings MUST follow PropIQ score order from the payload. Never re-rank based on news narrative or your training data.
-- Hit rates (L5/L10/L20/L30/season_hit_pct) are authoritative. News and narrative are framing only — they cannot override a prop's supplied metrics.
-- If L5/L10/L20 trend data is absent for a prop, write "trend data not available" — never infer or estimate trends from context.
-- Never blend or average real supplied metrics with guessed values. Either use the number provided or write n/a.`;
+- Do not invent injuries, odds, or player lines not in the payload.
+- Always compare both teams; never favor one side without explaining why.`;
 
   const compactProps = compactPropsForClaude(validatedProps);
   const articleBlock = [
@@ -588,13 +583,9 @@ DATA INTEGRITY — NON-NEGOTIABLE:
   ].filter(Boolean).join("\n\n");
 
   const scopedNews = buildGameScopedNewsContext(newsContext, question, validatedProps, league);
-  const slateSeriesBlock = (newsContext?.slate_series?.length)
-    ? `Playoff series standings (ESPN live):\n${newsContext.slate_series.map(l => `  ${l}`).join('\n')}`
-    : '';
-  const newsBlockContent = newsContext ? `LIVE NEWS CONTEXT (${newsContext.league || league}):
+  const newsBlockContent = newsContext ? `LIVE NEWS CONTEXT (${newsContext.league}):
 Teams: ${scopedNews.teams.join(' vs ') || 'Unknown'}
 Series state seed: ${scopedNews.seriesState}
-${slateSeriesBlock}
 Recent matchup headlines: ${scopedNews.headline || 'No matchup-relevant headlines found'}
 ${scopedNews.lines.length ? `Matchup notes:\n${scopedNews.lines.join('\n')}` : ''}
 
@@ -659,12 +650,6 @@ function buildEvDetailSystemPrompt() {
     'key_numbers_breakdown: markdown bullet list — threshold stats, split gates, trend windows, and edge drivers for top picks.',
     '',
     'Do not fabricate players, lines, or odds. Only recommend picks in the board payload. All enrichment from your training knowledge about real players.',
-    'DATA INTEGRITY — NON-NEGOTIABLE:',
-    '  - Prop rankings MUST follow PropIQ score order from the payload. Never re-rank based on news narrative or training-data intuition.',
-    '  - Hit rates (L5/L10/L20/L30/season_hit_pct) are authoritative. Narrative context is framing only — it cannot override supplied metrics.',
-    '  - If L5/L10/L20 data is absent for a prop, write "trend data not available." Never infer or estimate trends from context or training data.',
-    '  - Never blend supplied metrics with guessed values. Use the number from the payload or write n/a.',
-    '  - Series standings: use only what is in the payload. Never invent game scores, series leads, or standings.',
     '',
     'JSON schema:',
     '{',
@@ -774,25 +759,7 @@ exports.handler = async function handler(event) {
   if (!Array.isArray(sourceContext)) sourceContext = [];
 
   // Phase 4: News context from client polling
-  // Enrich newsContext with series records from slate_game_intel so all leagues
-  // get real ESPN playoff series data, not just the focused game.
-  const rawNewsContext = body.news_context || null;
-  const slateGameIntel = Array.isArray(body.intelligence_bundle?.slate_game_intel)
-    ? body.intelligence_bundle.slate_game_intel
-    : (Array.isArray(body.slate_game_intel) ? body.slate_game_intel : []);
-  const slateSeriesLines = slateGameIntel
-    .filter(g => g?.series_record)
-    .map(g => `${g.away} vs ${g.home}: ${g.series_record}`);
-  const newsContext = rawNewsContext
-    ? {
-        ...rawNewsContext,
-        series_record: rawNewsContext.series_record ||
-          (slateSeriesLines.length ? slateSeriesLines.join(' | ') : null),
-        slate_series: slateSeriesLines.length ? slateSeriesLines : undefined
-      }
-    : (slateSeriesLines.length
-        ? { league, teams: [], series_record: null, slate_series: slateSeriesLines, articles: [] }
-        : null);
+  const newsContext = body.news_context || null;
 
   const sourceSummary = sourceContext.length
     ? [...new Set(sourceContext.filter(s => s?.source).map(s => s.source))].join(", ")

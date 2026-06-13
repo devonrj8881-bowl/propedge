@@ -41,11 +41,11 @@ After any patch, also update:
 ## Deploy command (run from repo root)
 ```bash
 cd /Users/devonjohnson/Documents/Claude/Projects/PropEdge
-./deploy-prod.sh                 # → wraps deploy-with-token.sh
+pe-deploy                        # → wraps deploy-with-token.sh
 # fallback (CLI broken):
-bash repair-netlify-cli.sh && ./deploy-prod.sh
+bash repair-netlify-cli.sh && pe-deploy
 # static-only emergency (skips functions):
-bash deploy-static-api.sh
+SKIP_FUNCTIONS=1 pe-deploy
 ```
 - Site ID: `838cca00-a711-4175-b00e-95203cda9900` (propedgemasters)
 - Auth: `NETLIFY_AUTH_TOKEN` from `../.env`
