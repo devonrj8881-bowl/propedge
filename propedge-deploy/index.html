@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.225 — Fix Jose Alvarado headshot + blocks misclassified as pitcher K — 2026-06-13 LIVE DEPLOY -->
+<!-- PropEdge v7.226 — Fix cross-league headshot collisions: Ben Brown, Taylor Ward, Will Smith — 2026-06-13 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -27902,9 +27902,14 @@ nav.tabs > button,
     const _pendingHeadshotLookups = new Set();
     const PLAYER_IDS_BY_LEAGUE = {
       NBA: {
-        "Jose Alvarado": "4277869"  // NBA guard — flat PLAYER_IDS has MLB pitcher (36063) with same name
+        "Jose Alvarado": "4277869"   // NBA guard — flat table has MLB pitcher (36063) with same name
+      },
+      NHL: {
+        "Taylor Ward": "4781650",    // NHL — flat table overwritten by MLB outfielder (34923)
+        "Will Smith": "5149155"      // NHL — flat table overwritten by MLB catcher (38309)
       },
       MLB: {
+        "Ben Brown": "41516",        // MLB pitcher — flat table overwritten by NFL OL (4362890)
         "Henry Bolte": "5080756",
         "Nick Kurtz": "4966637",
         "Ryan Kreidler": "42701",
