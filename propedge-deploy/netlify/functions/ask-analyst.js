@@ -574,7 +574,12 @@ Rules:
 - Include PropIQ scores and confidence for all props (use supplied data; never invent).
 - If a metric is unknown, write n/a and keep moving.
 - Do not invent injuries, odds, player lines, or series standings not in the payload.
-- Always compare both teams; never favor one side without explaining why.`;
+- Always compare both teams; never favor one side without explaining why.
+DATA INTEGRITY — NON-NEGOTIABLE:
+- Prop rankings MUST follow PropIQ score order from the payload. Never re-rank based on news narrative or your training data.
+- Hit rates (L5/L10/L20/L30/season_hit_pct) are authoritative. News and narrative are framing only — they cannot override a prop's supplied metrics.
+- If L5/L10/L20 trend data is absent for a prop, write "trend data not available" — never infer or estimate trends from context.
+- Never blend or average real supplied metrics with guessed values. Either use the number provided or write n/a.`;
 
   const compactProps = compactPropsForClaude(validatedProps);
   const articleBlock = [
@@ -583,9 +588,13 @@ Rules:
   ].filter(Boolean).join("\n\n");
 
   const scopedNews = buildGameScopedNewsContext(newsContext, question, validatedProps, league);
-  const newsBlockContent = newsContext ? `LIVE NEWS CONTEXT (${newsContext.league}):
+  const slateSeriesBlock = (newsContext?.slate_series?.length)
+    ? `Playoff series standings (ESPN live):\n${newsContext.slate_series.map(l => `  ${l}`).join('\n')}`
+    : '';
+  const newsBlockContent = newsContext ? `LIVE NEWS CONTEXT (${newsContext.league || league}):
 Teams: ${scopedNews.teams.join(' vs ') || 'Unknown'}
 Series state seed: ${scopedNews.seriesState}
+${slateSeriesBlock}
 Recent matchup headlines: ${scopedNews.headline || 'No matchup-relevant headlines found'}
 ${scopedNews.lines.length ? `Matchup notes:\n${scopedNews.lines.join('\n')}` : ''}
 
@@ -650,6 +659,12 @@ function buildEvDetailSystemPrompt() {
     'key_numbers_breakdown: markdown bullet list — threshold stats, split gates, trend windows, and edge drivers for top picks.',
     '',
     'Do not fabricate players, lines, or odds. Only recommend picks in the board payload. All enrichment from your training knowledge about real players.',
+    'DATA INTEGRITY — NON-NEGOTIABLE:',
+    '  - Prop rankings MUST follow PropIQ score order from the payload. Never re-rank based on news narrative or training-data intuition.',
+    '  - Hit rates (L5/L10/L20/L30/season_hit_pct) are authoritative. Narrative context is framing only — it cannot override supplied metrics.',
+    '  - If L5/L10/L20 data is absent for a prop, write "trend data not available." Never infer or estimate trends from context or training data.',
+    '  - Never blend supplied metrics with guessed values. Use the number from the payload or write n/a.',
+    '  - Series standings: use only what is in the payload. Never invent game scores, series leads, or standings.',
     '',
     'JSON schema:',
     '{',
@@ -759,7 +774,25 @@ exports.handler = async function handler(event) {
   if (!Array.isArray(sourceContext)) sourceContext = [];
 
   // Phase 4: News context from client polling
-  const newsContext = body.news_context || null;
+  // Enrich newsContext with series records from slate_game_intel so all leagues
+  // get real ESPN playoff series data, not just the focused game.
+  const rawNewsContext = body.news_context || null;
+  const slateGameIntel = Array.isArray(body.intelligence_bundle?.slate_game_intel)
+    ? body.intelligence_bundle.slate_game_intel
+    : (Array.isArray(body.slate_game_intel) ? body.slate_game_intel : []);
+  const slateSeriesLines = slateGameIntel
+    .filter(g => g?.series_record)
+    .map(g => `${g.away} vs ${g.home}: ${g.series_record}`);
+  const newsContext = rawNewsContext
+    ? {
+        ...rawNewsContext,
+        series_record: rawNewsContext.series_record ||
+          (slateSeriesLines.length ? slateSeriesLines.join(' | ') : null),
+        slate_series: slateSeriesLines.length ? slateSeriesLines : undefined
+      }
+    : (slateSeriesLines.length
+        ? { league, teams: [], series_record: null, slate_series: slateSeriesLines, articles: [] }
+        : null);
 
   const sourceSummary = sourceContext.length
     ? [...new Set(sourceContext.filter(s => s?.source).map(s => s.source))].join(", ")
