@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.238 — Blue background, generative series state + auto-refresh — 2026-06-12 LIVE DEPLOY -->
+<!-- PropEdge v7.214 — iOS safe-area gap fix + WNBA headshot slug fix — 2026-06-13 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -11,47 +11,20 @@
   <link rel="alternate icon" type="image/png" href="/favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
   <link rel="icon" type="image/png" href="/favicon-512.png" sizes="512x512">
-<meta name="theme-color" content="#071228">
-  <style>
-    @media (max-width: 1023px) {
-      :root {
-        --bg-primary: rgb(7, 18, 40);
-        --bg-secondary: rgb(7, 18, 40);
-      }
-
-      html, body {
-        background: rgb(7, 18, 40) !important;
-        background-image: none !important;
-        padding: 0 !important;
-        margin: 0;
-      }
-    }
-  </style>
+<meta name="theme-color" content="#ff6a00">
   <title>PropEdge</title>
-  <meta name="app-version" content="v7.237">
+  <meta name="app-version" content="v7.213-series-record-fix">
+  <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
+    // iOS detection — runs synchronously before first paint so CSS rules
+    // that key on html.pe-ios-mobile fire without a layout flash.
     (function () {
-      if (window.innerWidth >= 1024) return;
-      document.documentElement.classList.add('site-mobile-active');
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+      var ua = navigator.userAgent || '';
+      if (/iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
         document.documentElement.classList.add('pe-ios-mobile');
-      } else if (/Android/i.test(navigator.userAgent)) {
-        document.documentElement.classList.add('pe-android-mobile');
       }
-      function markBodyMobile() {
-        if (!document.body) return;
-        document.body.classList.add('site-mobile-active');
-        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-          document.body.classList.add('pe-ios-mobile');
-        } else if (/Android/i.test(navigator.userAgent)) {
-          document.body.classList.add('pe-android-mobile');
-        }
-      }
-      if (document.body) markBodyMobile();
-      else document.addEventListener('DOMContentLoaded', markBodyMobile, { once: true });
     })();
   </script>
-  <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
   <script>
     // PropEdge storage adapter
     // Runs before all app code so stable features and newer features can share
@@ -1440,11 +1413,11 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #071228;
-      --bg-secondary: #071228;
-      --bg-tertiary: #0e1a36;
-      --bg-card: #101e3a;
-      --bg-card-hover: #13223e;
+      --bg-primary: #020617;
+      --bg-secondary: #020617;
+      --bg-tertiary: #0b1224;
+      --bg-card: #0f172a;
+      --bg-card-hover: #111c34;
 
       --text-primary: #f9fafb;
       --text-secondary: #c7d2e6;
@@ -1497,7 +1470,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       background:
         radial-gradient(circle at top left, rgba(56, 189, 248, 0.07), transparent 45%),
         radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.08), transparent 50%),
-        #071228;
+        #020617;
       color: var(--text-primary);
       min-height: 100vh;
       min-height: 100dvh;
@@ -1505,63 +1478,12 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       max-width: 100vw;
       overflow-x: hidden;
       overflow-y: auto;
-      padding-bottom: 0; /* nav handles safe-area-inset-bottom directly */
+      /* safe-area-inset-bottom is owned by the fixed nav; do not double-apply here */
       background-attachment: scroll;
       overscroll-behavior: auto;
       scroll-behavior: auto;
       -webkit-font-smoothing: antialiased;
       -webkit-tap-highlight-color: transparent;
-    }
-
-    @media (max-width: 1023px) {
-      :root {
-        --bg-primary: rgb(7, 18, 40);
-        --bg-secondary: rgb(7, 18, 40);
-      }
-
-      html {
-        background: rgb(7, 18, 40) !important;
-        overflow-x: hidden;
-      }
-
-      html,
-      body {
-        background: rgb(7, 18, 40) !important;
-        background-image: none !important;
-        padding-bottom: 0 !important;
-      }
-
-      body {
-        min-height: 100svh;
-        min-height: -webkit-fill-available;
-        overflow-x: hidden;
-        margin: 0;
-      }
-
-      .site-mobile-bottom-nav {
-        flex: 0 0 auto;
-        width: 100%;
-      }
-
-      html.site-mobile-active,
-      html.site-mobile-active body {
-        padding-bottom: 0 !important;
-      }
-
-      html.site-mobile-active,
-      body.site-mobile-active {
-        height: auto;
-        min-height: 100%;
-        overflow: hidden;
-        overscroll-behavior: none;
-      }
-
-      body.site-mobile-active {
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        min-height: 100vh;
-      }
     }
 
     .site-rebuild-shell {
@@ -1578,7 +1500,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       gap: 18px;
       padding: 20px 16px;
       border-radius: 24px;
-      background: linear-gradient(180deg, rgba(7, 18, 40, 0.98), rgba(7, 18, 40, 0.98));
+      background: linear-gradient(180deg, rgba(4, 10, 23, 0.98), rgba(3, 10, 21, 0.98));
       border: 1px solid rgba(255,255,255,0.08);
       box-shadow: var(--shadow-lg);
       position: sticky;
@@ -2793,30 +2715,42 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     }
 
     @media (max-width: 1023px) {
-      html.site-mobile-active {
-        background: rgb(7, 18, 40);
+      html.site-mobile-active,
+      body.site-mobile-active {
+        height: 100%;
+        min-height: 100dvh; /* Enforce full screen */
+        overflow: hidden;
         overscroll-behavior: none;
       }
 
       body.site-mobile-active {
-        padding: 0 !important;
-        overscroll-behavior: none;
-        background: rgb(7, 18, 40) !important;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        /* Prioritize calculated JS height, but clamp it to at least full screen */
+        height: var(--pe-vvh, 100dvh);
+        min-height: 100dvh;
+        flex: 1;
       }
 
       .site-rebuild-shell {
-        display: flex !important;
-        flex-direction: column !important;
-        grid-template-columns: none !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        height: auto !important;
-        min-height: 100vh !important;
-        max-height: none !important;
-        padding: 0 !important;
-        gap: 0 !important;
-        position: relative;
-        overflow: hidden !important;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        height: 100svh;
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      /* Nav lives in normal flow as a flex footer (iOS Safari fails to
+         reposition position:fixed elements when its toolbar collapses
+         during inner-scroller scroll). Shell flexes to fill remaining
+         height; 100dvh on body tracks the toolbar. */
+      body.site-mobile-active .site-rebuild-shell {
+        height: auto;
+        flex: 1 1 auto;
+        min-height: 0;
       }
 
       .site-sidebar-shell {
@@ -2824,21 +2758,16 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       }
 
       .site-shell-main {
-        flex: 1 1 auto;
         display: flex;
         flex-direction: column;
         gap: 0;
         min-width: 0;
+        flex: 1 1 auto;
         min-height: 0;
-        /* Let it grow to fill available flex space, never exceed it */
-        height: 0;
-        max-height: none;
         overflow-x: hidden;
         overflow-y: auto;
         overscroll-behavior-y: contain;
-        -webkit-overflow-scrolling: touch;
-        /* Nav is position:fixed — pad bottom so content scrolls above it */
-        padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: 16px;
       }
 
       /* Size board columns to content so .site-shell-main stays the one
@@ -3910,7 +3839,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       flex-direction: column;
       gap: 14px;
       padding: 18px 14px;
-      background: linear-gradient(to bottom, #071228, #071228 40%, #0d1830);
+      background: linear-gradient(to bottom, #020617, #020617 40%, #030712);
       border: 1px solid rgba(15, 23, 42, 0.9);
       border-radius: 20px;
       box-shadow: var(--shadow-lg);
@@ -9034,7 +8963,7 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
     @media (max-width: 760px) {
       #recommendationsContainer {
-        padding-bottom: 120px;
+        padding-bottom: calc(68px + env(safe-area-inset-bottom));
       }
       .propai-unified {
         padding-top: 8px;
@@ -9241,6 +9170,9 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       border-top: 1px solid rgba(255,255,255,0.08);
       padding: 14px 18px 18px;
       backdrop-filter: blur(14px);
+    }
+    @media (max-width: 767px) {
+      .ai-input-panel { bottom: 72px; }
     }
 
     .ai-input-row {
@@ -9482,9 +9414,9 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       transition: all 0.15s; touch-action: manipulation;
     }
     .propai-gen-league-btn.active {
-      border-color: var(--accent-green, #00f0a0);
-      background: rgba(0,240,160,0.12);
-      color: var(--accent-green, #00f0a0);
+      border-color: var(--accent-blue, #38bdf8);
+      background: rgba(56,189,248,0.12);
+      color: var(--accent-blue, #38bdf8);
     }
     .propai-gen-search-row {
       display: flex; gap: 8px; margin-bottom: 24px;
@@ -9510,16 +9442,16 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     }
     .propai-gen-conf-badge {
       padding: 4px 12px; border-radius: 999px;
-      border: 1px solid rgba(0,240,160,0.3); background: rgba(0,240,160,0.08);
-      color: var(--accent-green, #00f0a0); font-size: 11px; font-weight: 900;
+      border: 1px solid rgba(56,189,248,0.4); background: rgba(56,189,248,0.1);
+      color: var(--accent-blue, #38bdf8); font-size: 11px; font-weight: 900;
     }
     .propai-gen-intro-card {
-      background: linear-gradient(135deg,rgba(0,240,160,0.07),rgba(56,189,248,0.04));
-      border: 1px solid rgba(0,240,160,0.18); border-radius: 16px;
+      background: linear-gradient(135deg,rgba(56,189,248,0.09),rgba(99,102,241,0.05));
+      border: 1px solid rgba(56,189,248,0.22); border-radius: 16px;
       padding: 20px 22px; margin-bottom: 14px;
     }
     .propai-gen-intro-label {
-      color: var(--accent-green, #00f0a0); font-size: 10px; font-weight: 900;
+      color: var(--accent-blue, #38bdf8); font-size: 10px; font-weight: 900;
       letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;
     }
     .propai-gen-intro-title {
@@ -9527,22 +9459,15 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
     }
     .propai-gen-intro-text {
       color: #cbd5e1; font-size: 14px; line-height: 1.75; margin: 0;
-      border-left: 3px solid var(--accent-green, #00f0a0); padding-left: 14px;
+      border-left: 3px solid var(--accent-blue, #38bdf8); padding-left: 14px;
     }
     .propai-gen-analysis-card {
-      background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(56,189,248,0.03); border: 1px solid rgba(56,189,248,0.1);
       border-radius: 16px; padding: 22px 24px; margin-bottom: 14px;
     }
     .propai-gen-section-label {
-      color: var(--accent-green, #00f0a0); font-size: 10px; font-weight: 900;
+      color: var(--accent-blue, #38bdf8); font-size: 10px; font-weight: 900;
       letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px;
-    }
-    .propai-gen-series-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3);
-      color: var(--accent-blue, #38bdf8); font-size: 11px; font-weight: 700;
-      padding: 4px 12px; border-radius: 999px; margin-bottom: 10px;
-      letter-spacing: 0.02em;
     }
 
     .propai-generative-setup {
@@ -10815,7 +10740,9 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       #getAlertsBtn { width: 26px !important; height: 26px !important; min-width: 26px !important; min-height: 26px !important; line-height: 24px !important; font-size: 12px !important; }
       .live-indicator { max-width: 74px; padding: 3px 5px; font-size: 8.5px; white-space: nowrap; }
       .nav-tabs { padding: 8px 4px; }
-      .props-container { padding: 8px; padding-bottom: 100px; }
+      /* nav in flex flow → no fixed nav to clear; propai-mode handled below */
+      .props-container { padding: 8px; padding-bottom: 24px; }
+      body.propai-mode .props-container { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
       .prop-card { padding: 12px; margin-bottom: 8px; }
       h1 { font-size: 20px; }
       h2 { font-size: 16px; }
@@ -10835,7 +10762,8 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       .header-actions { max-width: 48vw; }
       #emailPillBtn { max-width: 96px !important; }
       .live-indicator { max-width: 86px; white-space: nowrap; }
-      .props-container { padding: 12px; padding-bottom: 120px; }
+      .props-container { padding: 12px; padding-bottom: 24px; }
+      body.propai-mode .props-container { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
       .prop-card { padding: 14px; }
       h1 { font-size: 22px; }
       h2 { font-size: 17px; }
@@ -11025,8 +10953,23 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
         padding-left: max(12px, env(safe-area-inset-left));
         padding-right: max(12px, env(safe-area-inset-right));
       }
-      .nav-tabs { padding-left: max(4px, env(safe-area-inset-left)); padding-right: max(4px, env(safe-area-inset-right)); }
-      .props-container { padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
+      .nav-tabs {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        padding-left: max(4px, env(safe-area-inset-left));
+        padding-right: max(4px, env(safe-area-inset-right));
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      .props-container {
+        padding-left: max(8px, env(safe-area-inset-left));
+        padding-right: max(8px, env(safe-area-inset-right));
+        padding-bottom: 80px;
+      }
     }
 
     @media (min-width: 1200px) {
@@ -18159,7 +18102,7 @@ nav.tabs > button,
       }
 
       html.site-mobile-active {
-        scroll-padding-bottom: 8px;
+        scroll-padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 8px);
       }
 
       body.site-mobile-active {
@@ -18167,7 +18110,7 @@ nav.tabs > button,
       }
 
       body.site-mobile-active .site-shell-main {
-        scroll-padding-bottom: 8px;
+        scroll-padding-bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 8px);
       }
 
       .nav-tabs {
@@ -18177,106 +18120,42 @@ nav.tabs > button,
       .site-mobile-bottom-nav {
         display: flex;
         position: fixed;
-        bottom: 0;
         left: 0;
         right: 0;
+        bottom: 0;
         z-index: 120;
         align-items: stretch;
         justify-content: space-around;
         gap: 4px;
         padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
-        background-color: rgb(7, 18, 40);
-        background-image: linear-gradient(180deg, rgba(7, 18, 40, 0.98), rgba(7, 18, 40, 1));
+        background: linear-gradient(180deg, rgba(4, 10, 22, 0.92), rgba(3, 8, 18, 0.98));
         border-top: 1px solid rgba(255, 255, 255, 0.08);
-        flex-shrink: 0;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+      }
+
+      /* In-flow flex footer once the mobile shell is active — see
+         body.site-mobile-active flex column above. */
+      body.site-mobile-active .site-mobile-bottom-nav {
+        position: relative;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        flex: 0 0 auto;
         width: 100%;
         box-sizing: border-box;
-        -webkit-backdrop-filter: none;
-        backdrop-filter: none;
-        /* Fills safe area nicely if flex column shifts slightly */
-        box-shadow: 0 48px 0 0 rgb(7, 18, 40);
+        padding-bottom: 0 !important; /* nav is in-flow; body handles safe area */
       }
 
-      body.pe-ios-mobile .site-mobile-bottom-nav,
-      body.pe-android-mobile .site-mobile-bottom-nav {
-        -webkit-backdrop-filter: none;
-        backdrop-filter: none;
+      /* Anchor the More popup to the body box (position:relative, 100dvh)
+         instead of the viewport — same iOS toolbar-collapse quirk as the
+         nav. Toast stays fixed: its hidden translateY state would overflow
+         the body box and create phantom scroll height. */
+      body.site-mobile-active .site-mobile-more-row {
+        position: absolute;
       }
-
-      /* more-row uses position:fixed from its own rule — no override needed */
-
-      body.site-mobile-active .propai-page {
-        min-height: auto !important;
-      }
-
-      body.site-mobile-active .site-mobile-bottom-nav::after {
-        display: none;
-      }
-
-      /* Debug confirmed: safe area zone shows iOS system #000000 (not any of our
-         page layers). env(safe-area-inset-bottom) resolves to 0 so CSS padding
-         never covers that zone. Fix: paint html root black so it matches the
-         system color in the safe area zone, then extend nav box-shadow in black
-         so the nav background blends seamlessly into the safe area. */
-      html.pe-ios-mobile {
-        background: #000000 !important;
-      }
-
-      html.pe-ios-mobile body.pe-ios-mobile {
-        background: #000000 !important;
-      }
-
-      /* iOS WebKit-specific layout lock.
-         height:100% on html/body references the initial containing block
-         (layout viewport) — more stable than 100dvh on iOS Safari where
-         dvh can mismatch with position:fixed anchoring. */
-      html.pe-ios-mobile {
-        height: 100%;
-        overflow: hidden;
-      }
-
-      html.pe-ios-mobile body {
-        height: 100%;
-        overflow: hidden;
-        overscroll-behavior: none;
-        margin: 0;
-        padding: 0;
-      }
-
-      html.pe-ios-mobile .site-rebuild-shell {
-        height: 100% !important;
-        min-height: 0 !important;
-        max-height: 100% !important;
-      }
-
-      /* env(safe-area-inset-bottom) resolves to 0 on this device so CSS padding
-         alone can't cover the home-indicator zone. Use a large black box-shadow
-         so the nav visually bleeds into the system-black safe area below it. */
-      html.pe-ios-mobile .site-mobile-bottom-nav {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        padding-bottom: env(safe-area-inset-bottom, 34px);
-        background-color: #000000;
-        background-image: none;
-        box-shadow: 0 60px 0 40px #000000;
-      }
-
-      @media (min-width: 768px) and (max-width: 1023px) {
-        html.pe-ios-mobile .site-mobile-bottom-nav {
-          padding-bottom: env(safe-area-inset-bottom, 34px);
-        }
-      }
-
-      @media (min-width: 768px) and (max-width: 1023px) {
-        .site-mobile-bottom-nav {
-          padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px));
-          gap: 8px;
-        }
-      }
-
-      /* More popup anchored above in-grid nav */
 
       .site-mobile-nav-btn {
         flex: 1 1 0;
@@ -18355,7 +18234,7 @@ nav.tabs > button,
       }
 
       .toast {
-        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + var(--pe-device-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--pe-nav-bottom-gap, 0px) + 12px);
+        bottom: calc(var(--pe-mobile-bottom-nav-h, 64px) + env(safe-area-inset-bottom, 0px) + 12px);
       }
 
       .app-layout,
@@ -18497,19 +18376,9 @@ nav.tabs > button,
       }
     }
 
-    /* v7.69 / v7.71 / v7.212 — iPhone safe-area: no body bottom padding (nav owns inset) */
+    /* v7.69 / v7.71 — iPhone safe-area: header padding only (no body double-offset) */
     body.site-mobile-active {
       padding-top: 0;
-      padding-bottom: 0 !important;
-    }
-
-    /* Keyboard open — keep grid shell stable */
-    body.site-mobile-keyboard-active.site-mobile-active {
-      overflow: hidden !important;
-    }
-
-    body.site-mobile-keyboard-active .site-rebuild-shell {
-      overflow: hidden;
     }
 
     body.site-mobile-active .header {
@@ -18568,6 +18437,28 @@ nav.tabs > button,
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* iOS safe-area gap fix — pe-ios-mobile class injected before first paint.
+     env(safe-area-inset-bottom) resolves to 0 on some devices when the
+     viewport doesn't reach the physical screen bottom; the system paints
+     that zone black (#000), so we match it and extend the nav shadow into it. */
+  html.pe-ios-mobile {
+    background: #000000;
+    height: 100%;
+  }
+  html.pe-ios-mobile body {
+    height: 100%;
+  }
+  html.pe-ios-mobile .site-rebuild-shell {
+    height: 100%;
+  }
+  @media (max-width: 1023px) {
+    html.pe-ios-mobile .site-mobile-bottom-nav {
+      background: #000000;
+      padding-bottom: env(safe-area-inset-bottom, 34px);
+      box-shadow: 0 60px 0 40px #000000;
     }
   }
   </style>
@@ -19654,39 +19545,39 @@ nav.tabs > button,
   </div> <!-- End .app-layout -->
       </div> <!-- End .site-shell-content -->
     </main>
-  </div> <!-- End .site-rebuild-shell -->
+  </div>
 
-    <div class="site-mobile-more-row" id="siteMobileMoreRow">
-      <button type="button" class="site-mobile-more-chip" data-target-view="games" onclick="triggerShellView('games'); toggleMobileMoreMenu(false);">Games</button>
-      <button type="button" class="site-mobile-more-chip" data-target-view="news" onclick="triggerShellView('news'); toggleMobileMoreMenu(false);">News</button>
-      <button type="button" class="site-mobile-more-chip" data-target-view="injuries" onclick="triggerShellView('injuries'); toggleMobileMoreMenu(false);">Injuries</button>
-      <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); showEmailModal();">Sign In</button>
-      <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); showEmailModal();">Settings</button>
-      <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); requestPushAlerts();">Alerts</button>
-    </div>
+  <div class="site-mobile-more-row" id="siteMobileMoreRow">
+    <button type="button" class="site-mobile-more-chip" data-target-view="games" onclick="triggerShellView('games'); toggleMobileMoreMenu(false);">Games</button>
+    <button type="button" class="site-mobile-more-chip" data-target-view="news" onclick="triggerShellView('news'); toggleMobileMoreMenu(false);">News</button>
+    <button type="button" class="site-mobile-more-chip" data-target-view="injuries" onclick="triggerShellView('injuries'); toggleMobileMoreMenu(false);">Injuries</button>
+    <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); showEmailModal();">Sign In</button>
+    <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); showEmailModal();">Settings</button>
+    <button type="button" class="site-mobile-more-chip" onclick="toggleMobileMoreMenu(false); requestPushAlerts();">Alerts</button>
+  </div>
 
-    <nav class="site-mobile-bottom-nav" id="siteMobileBottomNav" aria-label="Main navigation">
-      <button type="button" class="site-mobile-nav-btn active" data-target-view="props" onclick="triggerShellView('props', this); toggleMobileMoreMenu(false);">
-        <span class="site-mobile-nav-icon" data-shell-icon="home"></span>
-        <span>Home</span>
-      </button>
-      <button type="button" class="site-mobile-nav-btn" data-target-view="markets" onclick="triggerShellView('markets', this); toggleMobileMoreMenu(false);">
-        <span class="site-mobile-nav-icon" data-shell-icon="markets"></span>
-        <span>Markets</span>
-      </button>
-      <button type="button" class="site-mobile-nav-btn" data-target-view="recommendations" onclick="triggerShellView('recommendations', this); toggleMobileMoreMenu(false);">
-        <span class="site-mobile-nav-icon" data-shell-icon="propai"></span>
-        <span>PropAI</span>
-      </button>
-      <button type="button" class="site-mobile-nav-btn" data-target-view="parlay" onclick="triggerShellView('parlay', this); toggleMobileMoreMenu(false);">
-        <span class="site-mobile-nav-icon" data-shell-icon="parlay"></span>
-        <span>Parlay</span>
-      </button>
-      <button type="button" class="site-mobile-nav-btn" data-target-view="more" id="siteMobileMoreBtn" onclick="toggleMobileMoreMenu()">
-        <span class="site-mobile-nav-icon" data-shell-icon="games"></span>
-        <span>More</span>
-      </button>
-    </nav>
+  <nav class="site-mobile-bottom-nav" id="siteMobileBottomNav" aria-label="Main navigation">
+    <button type="button" class="site-mobile-nav-btn active" data-target-view="props" onclick="triggerShellView('props', this); toggleMobileMoreMenu(false);">
+      <span class="site-mobile-nav-icon" data-shell-icon="home"></span>
+      <span>Home</span>
+    </button>
+    <button type="button" class="site-mobile-nav-btn" data-target-view="markets" onclick="triggerShellView('markets', this); toggleMobileMoreMenu(false);">
+      <span class="site-mobile-nav-icon" data-shell-icon="markets"></span>
+      <span>Markets</span>
+    </button>
+    <button type="button" class="site-mobile-nav-btn" data-target-view="recommendations" onclick="triggerShellView('recommendations', this); toggleMobileMoreMenu(false);">
+      <span class="site-mobile-nav-icon" data-shell-icon="propai"></span>
+      <span>PropAI</span>
+    </button>
+    <button type="button" class="site-mobile-nav-btn" data-target-view="parlay" onclick="triggerShellView('parlay', this); toggleMobileMoreMenu(false);">
+      <span class="site-mobile-nav-icon" data-shell-icon="parlay"></span>
+      <span>Parlay</span>
+    </button>
+    <button type="button" class="site-mobile-nav-btn" data-target-view="more" id="siteMobileMoreBtn" onclick="toggleMobileMoreMenu()">
+      <span class="site-mobile-nav-icon" data-shell-icon="games"></span>
+      <span>More</span>
+    </button>
+  </nav>
 
   <!-- Toast -->
   <div class="toast" id="toast"></div>
@@ -28814,6 +28705,9 @@ nav.tabs > button,
       // Stale-data tracking — mark when we last saw a live update
       const lastUpdate = isLive ? Date.now() : null;
 
+      // Playoff series record — ESPN includes competition.series during postseason
+      const seriesSummary = competition.series?.summary || null;
+
       return {
         id: event.id,
         league,
@@ -28840,7 +28734,7 @@ nav.tabs > button,
         weather: competition.venue?.weather || null,
         venue: competition.venue?.fullName || 'TBD',
         lastUpdate,
-        seriesSummary: competition.series?.summary || null,
+        seriesSummary,
       };
     }
 
@@ -36169,17 +36063,12 @@ nav.tabs > button,
     function dockParlayToFeaturedPick() {
       // Only dock on non-wide-desktop (wide desktop uses the sidebar rail instead)
       if (window.innerWidth >= 1400) return;
-      // Dedicated Parlay tab — keep full-width at app-layout level (not inside hidden props/home)
-      if (state.view === 'parlay') {
-        undockParlay();
-        return;
-      }
       const parlay = document.getElementById('parlayContainer');
       if (!parlay) return;
 
       // Find the featured pick panel in the home dashboard
       const anchor = document.querySelector('.site-home-dashboard .site-home-featured-full');
-      if (!anchor || anchor.offsetParent === null || anchor.nextElementSibling === parlay) return;
+      if (!anchor || anchor.nextElementSibling === parlay) return; // already docked
 
       // Save original position so we can restore it later
       if (!_parlayOriginalParent) {
@@ -36735,17 +36624,13 @@ nav.tabs > button,
         `${p.player} ${p.direction} ${p.line} ${p.prop}`
       ).join(', ');
       
-      // Copy to clipboard first, then clear slip
+      // Copy to clipboard first
       navigator.clipboard.writeText(picks).then(() => {
         showToast('Picks copied! Paste in Gambly chat');
+        // Open Gambly bot page
         window.open('https://gambly.com/gambly-bot', '_blank');
-        // Clear parlay so next ticket starts fresh
-        state.parlay = [];
-        saveParlay();
-        renderParlay();
-        renderProps();
       }).catch(() => {
-        // If clipboard fails, just open Gambly (don't clear — user may need to retry)
+        // If clipboard fails, just open Gambly
         window.open('https://gambly.com/', '_blank');
         showToast('Opening Gambly...');
       });
@@ -36783,15 +36668,6 @@ nav.tabs > button,
       const smsUrl = `sms:+${phoneNumber}${separator}body=${encodeURIComponent(message)}`;
       window.location.href = smsUrl;
       showToast(`Opening Gambly Bot for ${label}...`);
-
-      // Clear parlay after sending so next slip starts fresh
-      setTimeout(function() {
-        state.parlay = [];
-        saveParlay();
-        renderParlay();
-        renderProps();
-        showToast('Slip sent — parlay cleared for next ticket');
-      }, 800);
     }
 
     function logParlay() {
@@ -38032,7 +37908,7 @@ nav.tabs > button,
         injuries,
         newsExcerpt,
         topProps,
-        series_record: game.seriesSummary || null
+        seriesSummary: game.seriesSummary || null,
       };
     }
 
@@ -38319,8 +38195,7 @@ nav.tabs > button,
             news_excerpt: newsExcerpt || bundle?.newsExcerpt || null,
             top_prop_edges: topProps,
             away_pitcher: pitcherRow?.away_pitcher || null,
-            home_pitcher: pitcherRow?.home_pitcher || null,
-            series_record: bundle?.series_record || null
+            home_pitcher: pitcherRow?.home_pitcher || null
           };
         });
     }
@@ -39533,13 +39408,9 @@ nav.tabs > button,
     function runGenerativeAnalysis() {
       var btn = document.getElementById('propedgeGenAnalyzeBtn');
       var resultEl = document.getElementById('propedgeGenResult');
-      var questionEl = document.getElementById('propedgeGenQuestion');
-      var question = (questionEl || {}).value || '';
+      var question = (document.getElementById('propedgeGenQuestion') || {}).value || '';
       question = question.trim();
       if (!btn || !resultEl) return;
-
-      if (questionEl && typeof questionEl.blur === 'function') questionEl.blur();
-      if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
 
       btn.textContent = 'Analyzing…';
       btn.disabled = true;
@@ -39557,32 +39428,24 @@ nav.tabs > button,
         btn.disabled = false;
         if (!d.ok) {
           resultEl.innerHTML = '<div style="color:#fca5a5;padding:14px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;font-size:13px">' + (d.error || 'Analysis failed') + '</div>';
-          if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
           return;
         }
         var a = d.analysis || {};
         var conf = Math.max(1, Math.min(10, Math.round(Number(a.confidence_rating) || 7)));
         var providerLabel = d.provider === 'kimi' ? 'Kimi' : (d.provider === 'propedge' || d.fallback ? 'Gemini backup' : 'Gemini');
-        var metaText = providerLabel + ' · ' + (d.model || '') + ' · ' + (d.propCount || 0) + ' props';
-        if (d.gameOddsCount) metaText += ' · ' + d.gameOddsCount + ' game lines';
-        if (d.slateDate) metaText += ' · ' + d.slateDate;
-        if (d.kimi_fallback_reason && d.provider !== 'kimi') metaText += ' · Kimi: ' + String(d.kimi_fallback_reason).slice(0, 48);
+        var metaText = providerLabel + ' · ' + (d.model || '') + ' · ' + (d.propCount || 0) + ' props' + (d.slateDate ? ' · ' + d.slateDate : '');
         var html = '<div class="propai-gen-meta"><span>' + metaText + '</span><span class="propai-gen-conf-badge">' + conf + '/10 Confidence</span></div>';
-        var seriesBadge = a.series_state ? '<div class="propai-gen-series-badge">📊 ' + (a.series_state || '').replace(/</g,'&lt;') + '</div>' : '';
-        html += '<div class="propai-gen-intro-card"><div class="propai-gen-intro-label">Model Assessment</div>' + seriesBadge + '<div class="propai-gen-intro-title">' + (a.article_title || '').replace(/</g,'&lt;') + '</div><p class="propai-gen-intro-text">' + (a.featured_intro || '').replace(/</g,'&lt;') + '</p></div>';
-        resultEl.dataset.genTs = String(Date.now());
+        html += '<div class="propai-gen-intro-card"><div class="propai-gen-intro-label">Model Assessment</div><div class="propai-gen-intro-title">' + (a.article_title || '').replace(/</g,'&lt;') + '</div><p class="propai-gen-intro-text">' + (a.featured_intro || '').replace(/</g,'&lt;') + '</p></div>';
         html += '<div class="propai-gen-analysis-card">' + _renderGenProse(a.matchup_analysis) + '</div>';
         if (a.key_numbers_breakdown) {
           html += '<div class="propai-gen-analysis-card"><div class="propai-gen-section-label">Key Variances &amp; Splits</div>' + _renderGenProse(a.key_numbers_breakdown) + '</div>';
         }
         resultEl.innerHTML = html;
-        if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
       })
       .catch(function(e) {
         btn.textContent = 'Analyze';
         btn.disabled = false;
         resultEl.innerHTML = '<div style="color:#fca5a5;padding:14px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;font-size:13px">' + e.message + '</div>';
-        if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
       });
     }
     // ── End Native Generative Analyst ─────────────────────────────────────────
@@ -39599,18 +39462,7 @@ nav.tabs > button,
         if (state.propaiSection !== next) return;
         if (next === 'markets') renderMarketsView();
         if (next === 'slate') renderPropAIDashboard(state.propAIContextQuestion || '', state.propAIContextPicks || [], state.propAIContextOpts || {});
-        if (next === 'generative') {
-          initGenerativeAnalystFrame();
-          // Auto-refresh on mobile if result is empty or older than 30 minutes
-          if (window.innerWidth < 1024) {
-            const resultEl = document.getElementById('propedgeGenResult');
-            const ts = resultEl && resultEl.dataset.genTs ? Number(resultEl.dataset.genTs) : 0;
-            const stale = !ts || (Date.now() - ts) > 30 * 60 * 1000;
-            if (stale && resultEl && !resultEl.querySelector('.propai-gen-intro-card')) {
-              runGenerativeAnalysis();
-            }
-          }
-        }
+        if (next === 'generative') initGenerativeAnalystFrame();
       });
     }
 
@@ -41100,253 +40952,31 @@ nav.tabs > button,
       const nav = document.getElementById('siteMobileBottomNav');
       if (!nav || window.innerWidth >= 1024) {
         document.documentElement.style.removeProperty('--pe-mobile-bottom-nav-h');
+        if (nav) nav.style.bottom = '';
         return;
       }
       const navH = Math.ceil(nav.getBoundingClientRect().height);
       document.documentElement.style.setProperty('--pe-mobile-bottom-nav-h', `${navH || 64}px`);
-    }
-
-    function isMobileInputFocused() {
-      const el = document.activeElement;
-      if (!el) return false;
-      const tag = String(el.tagName || '').toUpperCase();
-      return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
-    }
-
-    function isStandalonePWA() {
-      return !!(window.matchMedia && (
-        window.matchMedia('(display-mode: standalone)').matches
-        || window.matchMedia('(display-mode: fullscreen)').matches
-      )) || window.navigator.standalone === true;
-    }
-
-    function isIOSMobile() {
-      return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    }
-
-    function isAndroidMobile() {
-      return /Android/i.test(navigator.userAgent);
-    }
-
-    function isTabletViewport() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const short = Math.min(w, h);
-      if (w >= 768 && w < 1024) return true;
-      if (isIOSMobile() && navigator.maxTouchPoints > 1 && short >= 744) return true;
-      return false;
-    }
-
-    /* Recommended viewport profiles — portrait logical px (2024–2026 devices) */
-    const PE_DEVICE_PROFILES = [
-      { id: 'iphone-17-pro-max', form: 'phone', platform: 'ios', w: 440, h: 956, safeTop: 59, safeBottom: 34, navH: 49 },
-      { id: 'iphone-17-pro', form: 'phone', platform: 'ios', w: 402, h: 874, safeTop: 59, safeBottom: 34, navH: 49 },
-      { id: 'iphone-17-air', form: 'phone', platform: 'ios', w: 420, h: 912, safeTop: 59, safeBottom: 34, navH: 49 },
-      { id: 'iphone-17', form: 'phone', platform: 'ios', w: 393, h: 852, safeTop: 59, safeBottom: 34, navH: 49 },
-      { id: 'iphone-16-pro-max', form: 'phone', platform: 'ios', w: 440, h: 956, safeTop: 59, safeBottom: 34, navH: 49 },
-      { id: 'iphone-16-pro', form: 'phone', platform: 'ios', w: 402, h: 874, safeTop: 59, safeBottom: 34, navH: 49 },
-      { id: 'iphone-16-plus', form: 'phone', platform: 'ios', w: 430, h: 932, safeTop: 59, safeBottom: 34, navH: 49 },
-      { id: 'iphone-16', form: 'phone', platform: 'ios', w: 393, h: 852, safeTop: 59, safeBottom: 34, navH: 49 },
-      { id: 'iphone-15-pro-max', form: 'phone', platform: 'ios', w: 430, h: 932, safeTop: 59, safeBottom: 34, navH: 49 },
-      { id: 'iphone-15-pro', form: 'phone', platform: 'ios', w: 393, h: 852, safeTop: 59, safeBottom: 34, navH: 49 },
-      { id: 'iphone-se', form: 'phone', platform: 'ios', w: 375, h: 667, safeTop: 20, safeBottom: 0, navH: 49 },
-      { id: 'pixel-9-pro-xl', form: 'phone', platform: 'android', w: 448, h: 997, safeTop: 24, safeBottom: 24, navH: 49 },
-      { id: 'pixel-9-pro', form: 'phone', platform: 'android', w: 412, h: 915, safeTop: 24, safeBottom: 24, navH: 49 },
-      { id: 'pixel-9', form: 'phone', platform: 'android', w: 412, h: 892, safeTop: 24, safeBottom: 24, navH: 49 },
-      { id: 'galaxy-s25-ultra', form: 'phone', platform: 'android', w: 412, h: 915, safeTop: 28, safeBottom: 20, navH: 49 },
-      { id: 'galaxy-s25-plus', form: 'phone', platform: 'android', w: 384, h: 854, safeTop: 28, safeBottom: 20, navH: 49 },
-      { id: 'galaxy-s25', form: 'phone', platform: 'android', w: 360, h: 780, safeTop: 28, safeBottom: 20, navH: 49 },
-      { id: 'galaxy-z-fold-cover', form: 'phone', platform: 'android', w: 374, h: 832, safeTop: 28, safeBottom: 20, navH: 49 },
-      { id: 'ipad-pro-13', form: 'tablet', platform: 'ios', w: 1032, h: 1376, safeTop: 24, safeBottom: 20, navH: 56 },
-      { id: 'ipad-pro-11', form: 'tablet', platform: 'ios', w: 834, h: 1194, safeTop: 24, safeBottom: 20, navH: 56 },
-      { id: 'ipad-air-11', form: 'tablet', platform: 'ios', w: 820, h: 1180, safeTop: 24, safeBottom: 20, navH: 56 },
-      { id: 'ipad-mini', form: 'tablet', platform: 'ios', w: 744, h: 1133, safeTop: 24, safeBottom: 20, navH: 56 },
-      { id: 'ipad-10', form: 'tablet', platform: 'ios', w: 820, h: 1180, safeTop: 24, safeBottom: 20, navH: 56 },
-      { id: 'galaxy-tab-s9', form: 'tablet', platform: 'android', w: 800, h: 1280, safeTop: 24, safeBottom: 16, navH: 56 },
-      { id: 'pixel-tablet', form: 'tablet', platform: 'android', w: 800, h: 1280, safeTop: 24, safeBottom: 16, navH: 56 },
-      { id: 'android-tablet-lg', form: 'tablet', platform: 'android', w: 900, h: 1440, safeTop: 24, safeBottom: 16, navH: 56 }
-    ];
-
-    function resolveDeviceProfile() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const short = Math.min(w, h);
-      const long = Math.max(w, h);
-      const tablet = isTabletViewport();
-      const ios = isIOSMobile();
-      const android = isAndroidMobile();
-      let best = null;
-      let bestScore = Infinity;
-      PE_DEVICE_PROFILES.forEach((p) => {
-        if (p.form === 'tablet' && !tablet) return;
-        if (p.form === 'phone' && tablet) return;
-        if (p.platform === 'ios' && !ios) return;
-        if (p.platform === 'android' && !android) return;
-        const score = Math.abs(short - p.w) + Math.abs(long - p.h);
-        if (score < bestScore) {
-          bestScore = score;
-          best = p;
-        }
-      });
-      if (best && bestScore > 120) best = null;
-      if (best) return best;
-      return {
-        id: tablet ? 'tablet-generic' : 'phone-generic',
-        form: tablet ? 'tablet' : 'phone',
-        platform: ios ? 'ios' : (android ? 'android' : 'any'),
-        w: short,
-        h: long,
-        safeTop: ios ? (short >= 390 ? 59 : 20) : 24,
-        safeBottom: ios ? (short >= 390 ? 34 : 0) : 20,
-        navH: tablet ? 56 : 49
-      };
-    }
-
-    function measureNavBottomGap() {
-      const nav = document.getElementById('siteMobileBottomNav');
-      if (!nav || window.innerWidth >= 1024) return 0;
-      const rect = nav.getBoundingClientRect();
-      const vv = window.visualViewport;
-      const visBottom = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
-      return Math.max(0, Math.round(visBottom - rect.bottom));
-    }
-
-    function readSafeAreaInset(which) {
-      try {
-        const probe = document.createElement('div');
-        probe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padding-' + which + ':env(safe-area-inset-' + which + ', 0px);';
-        document.documentElement.appendChild(probe);
-        const val = parseInt(getComputedStyle(probe).getPropertyValue('padding-' + which) || '0', 10);
-        probe.remove();
-        return isNaN(val) ? 0 : val;
-      } catch (_) {
-        return 0;
-      }
-    }
-
-    function syncDeviceViewportProfile() {
-      if (window.innerWidth >= 1024) {
-        ['--pe-device-safe-bottom', '--pe-device-safe-top', '--pe-nav-bottom-gap', '--pe-device-id'].forEach((k) => {
-          document.documentElement.style.removeProperty(k);
-        });
-        delete document.documentElement.dataset.peNavGap;
-        delete document.documentElement.dataset.peSafeBottom;
-        document.body.classList.remove('pe-device-phone', 'pe-device-tablet');
-        delete document.body.dataset.peDevice;
-        return;
-      }
-      const profile = resolveDeviceProfile();
-      const innerH = Math.round(window.innerHeight || 0);
-      const vv = window.visualViewport;
-      const visH = vv && vv.height > 0 ? Math.round(vv.offsetTop + vv.height) : innerH;
-      const viewportH = Math.max(innerH, visH);
-      const safeBottomProbe = readSafeAreaInset('bottom');
-      const safeTopProbe = readSafeAreaInset('top');
-      const safeBottom = Math.max(profile.safeBottom, safeBottomProbe);
-      const safeTop = Math.max(profile.safeTop, safeTopProbe);
-
-      document.documentElement.style.setProperty('--pe-device-safe-bottom', safeBottom + 'px');
-      document.documentElement.style.setProperty('--pe-device-safe-top', safeTop + 'px');
-      document.documentElement.style.setProperty('--pe-device-id', profile.id);
-
-      document.body.classList.toggle('pe-device-phone', !isTabletViewport());
-      document.body.classList.toggle('pe-device-tablet', isTabletViewport());
-      document.body.dataset.peDevice = profile.id;
-
-      syncMobileBottomNavOffset();
-      const gap = measureNavBottomGap();
-      document.documentElement.style.setProperty('--pe-nav-bottom-gap', gap + 'px');
-      document.documentElement.dataset.peNavGap = String(gap);
-      document.documentElement.dataset.peSafeBottom = String(safeBottom);
-    }
-
-    function measureVisibleViewportHeight() {
-      const inner = Math.round(window.innerHeight || 0);
-      const vv = window.visualViewport;
-      if (!vv || vv.height <= 0) return inner;
-      const visual = Math.round(vv.height + (vv.offsetTop || 0));
-      if (isIOSMobile()) return Math.max(inner, visual);
-      return visual;
-    }
-
-    function clearMobileShellHeightLock() {
-      document.documentElement.style.removeProperty('--pe-vvh');
-      document.body.style.removeProperty('--pe-vvh');
-      const shell = document.querySelector('.site-rebuild-shell');
-      if (shell) shell.style.removeProperty('max-height');
-    }
-
-    function syncAppHeight() {
-      if (window.innerWidth >= 1024) {
-        clearMobileShellHeightLock();
-        return;
-      }
-      if (!document.body.classList.contains('site-mobile-keyboard-active')) {
-        clearMobileShellHeightLock();
-        return;
-      }
-      const shell = document.querySelector('.site-rebuild-shell');
-      const vv = window.visualViewport;
-      const h = vv && vv.height > 0 ? Math.round(vv.height) : Math.round(window.innerHeight || 0);
-      if (h < 200) return;
-      document.documentElement.style.setProperty('--pe-vvh', h + 'px');
-      if (shell) shell.style.maxHeight = h + 'px';
+      nav.style.bottom = '0';
     }
 
     function syncMobileViewportHeight() {
       if (window.innerWidth >= 1024) {
-        clearMobileShellHeightLock();
+        document.documentElement.style.removeProperty('--pe-vvh');
         return;
       }
-      clearMobileShellHeightLock();
-      syncDeviceViewportProfile();
-    }
-
-    function restoreMobileShellAfterKeyboard() {
-      if (window.innerWidth >= 1024) return;
-      document.body.classList.remove('site-mobile-keyboard-active');
-      window._peVvhLocked = null;
-      clearMobileShellHeightLock();
-      syncDeviceViewportProfile();
-      syncMobileStickyHeaderOffset();
-    }
-
-    function scheduleRestoreMobileShell() {
-      if (typeof restoreMobileShellAfterKeyboard !== 'function') return;
-      restoreMobileShellAfterKeyboard();
-      requestAnimationFrame(restoreMobileShellAfterKeyboard);
-      setTimeout(restoreMobileShellAfterKeyboard, 120);
-      setTimeout(restoreMobileShellAfterKeyboard, 400);
-    }
-
-    function initMobileKeyboardShellGuard() {
-      if (window._peMobileKeyboardGuardInit) return;
-      window._peMobileKeyboardGuardInit = true;
-
-      document.addEventListener('focusin', (e) => {
-        if (window.innerWidth >= 1024) return;
-        const t = e.target;
-        if (!t || !t.closest || !t.closest('input, textarea, [contenteditable="true"]')) return;
-        document.body.classList.add('site-mobile-keyboard-active');
-      }, true);
-
-      document.addEventListener('focusout', () => {
-        if (window.innerWidth >= 1024) return;
-        setTimeout(() => {
-          if (isMobileInputFocused()) return;
-          restoreMobileShellAfterKeyboard();
-        }, 360);
-      }, true);
+      const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      // Ignore large shrinks — those are the soft keyboard opening, not toolbar collapse.
+      // Toolbar collapse is ~50px; keyboard open is ~250-350px. Threshold 150px separates them.
+      const current = parseInt(document.documentElement.style.getPropertyValue('--pe-vvh') || '0', 10);
+      if (current > 0 && (current - h) > 150) return;
+      document.documentElement.style.setProperty('--pe-vvh', `${Math.round(h)}px`);
     }
 
     function syncMobileShellLayout() {
       const isMobile = window.innerWidth < 1024;
       document.documentElement.classList.toggle('site-mobile-active', isMobile);
       document.body.classList.toggle('site-mobile-active', isMobile);
-      document.documentElement.classList.toggle('pe-ios-mobile', isMobile && isIOSMobile());
-      document.body.classList.toggle('pe-ios-mobile', isMobile && isIOSMobile());
-      document.documentElement.classList.toggle('pe-android-mobile', isMobile && isAndroidMobile());
-      document.body.classList.toggle('pe-android-mobile', isMobile && isAndroidMobile());
       // Detect iOS/Safari: disable content-visibility to prevent scroll position jumps
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -41354,7 +40984,7 @@ nav.tabs > button,
       if (!isMobile) toggleMobileMoreMenu(false);
       syncMobileViewportHeight();
       syncMobileStickyHeaderOffset();
-      syncDeviceViewportProfile();
+      syncMobileBottomNavOffset();
     }
 
     function toggleMobileMoreMenu(forceOpen) {
@@ -41494,7 +41124,6 @@ nav.tabs > button,
         // Desktop keeps the parlay sidebar next to props, but it should not cover
         // Injuries, Games, or other full-width views.
         parlayEl.classList.toggle('view-force-hidden', !showParlayRail);
-        parlayEl.classList.toggle('show', !!showParlayRail);
         parlayEl.style.display = showParlayRail ? 'block' : 'none';
       }
 
@@ -41504,7 +41133,6 @@ nav.tabs > button,
         syncMobileShellLayout();
         syncMobileStickyHeaderOffset();
         renderAIFastModeToggle();
-        if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
       };
       if (typeof requestIdleCallback !== 'undefined') {
         requestIdleCallback(deferShellChrome, { timeout: 100 });
@@ -41622,7 +41250,6 @@ nav.tabs > button,
           const scrollRoot = getMobileScrollRoot();
           if (scrollRoot && scrollRoot.scrollTop > 0) scrollRoot.scrollTo({ top: 0, behavior: 'auto' });
           applyViewVisibility();
-          if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
 
           runAfterPaint(() => {
             const view = state.view;
@@ -41631,11 +41258,11 @@ nav.tabs > button,
             if (view === 'news') { refreshLeagueNews(false); resumeTicker(); }
             if (view === 'injuries') { fetchAllInjuries(); resumeTicker(); }
             if (view === 'parlay') {
-              undockParlay();
               renderParlay();
               generateSuggestedParlays();
               // Defer heavy work so the tab switch stays responsive
               if (window.innerWidth >= 1024) queueUserPropsRender('parlay-view', 200);
+              dockParlayToFeaturedPick(); // deferred internally via requestIdleCallback
               resumeTicker();
             }
             if (view === 'strategy') { undockParlay(); renderStrategy(); resumeTicker(); }
@@ -41682,47 +41309,18 @@ nav.tabs > button,
       });
       syncMobileShellLayout();
       syncShellNavState();
-      initMobileKeyboardShellGuard();
-      window.addEventListener('resize', () => {
-        if (window.innerWidth < 1024) {
-          clearMobileShellHeightLock();
-          syncDeviceViewportProfile();
-        }
-      });
+      // iOS Safari: --pe-vvh must track toolbar collapse/expand, which only
+      // visualViewport resize reports reliably (window resize can miss it).
       if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-          if (window.innerWidth >= 1024) return;
-          if (document.body.classList.contains('site-mobile-keyboard-active')) {
-            syncAppHeight();
-          } else {
-            clearMobileShellHeightLock();
-            syncDeviceViewportProfile();
-          }
-        });
-        window.visualViewport.addEventListener('scroll', () => {
-          if (window.innerWidth < 1024 && !document.body.classList.contains('site-mobile-keyboard-active')) {
-            syncDeviceViewportProfile();
-          } else if (window.innerWidth < 1024 && document.body.classList.contains('site-mobile-keyboard-active')) {
-            syncAppHeight();
-          }
-        });
+        window.visualViewport.addEventListener('resize', syncMobileViewportHeight);
+        window.visualViewport.addEventListener('scroll', syncMobileViewportHeight);
       }
       window.addEventListener('orientationchange', () => {
-        clearMobileShellHeightLock();
-        if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
-      });
-      window.addEventListener('pageshow', (e) => {
-        if (e.persisted && typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
-      });
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible' && typeof scheduleRestoreMobileShell === 'function') {
-          scheduleRestoreMobileShell();
-        }
+        requestAnimationFrame(syncMobileViewportHeight);
       });
       requestAnimationFrame(() => {
         syncMobileStickyHeaderOffset();
-        syncDeviceViewportProfile();
-        if (typeof scheduleRestoreMobileShell === 'function') scheduleRestoreMobileShell();
+        syncMobileBottomNavOffset();
       });
     }
 
@@ -41867,10 +41465,10 @@ nav.tabs > button,
     function updateStats() {
       document.getElementById('statTotal').textContent = state.props.length;
       
-      const uniqueGames = new Set();
-      state.props.forEach(p => uniqueGames.add(`${p.team}-${p.league}`));
-      document.getElementById('statGames').textContent = uniqueGames.size;
-      
+      const uniqueTeams = new Set();
+      state.props.forEach(p => uniqueTeams.add(`${p.team}-${p.league}`));
+      document.getElementById('statGames').textContent = Math.round(uniqueTeams.size / 2);
+
       document.getElementById('statPrime').textContent = state.props.filter(p => p.tier === 'prime' || p.tier === 'ultimate').length;
       document.getElementById('statValue').textContent = state.props.filter(p => p.isValue).length;
 
@@ -41879,7 +41477,7 @@ nav.tabs > button,
       const shellStatPrime = document.getElementById('shellStatPrime');
       const shellStatValue = document.getElementById('shellStatValue');
       if (shellStatTotal) shellStatTotal.textContent = String(state.props.length);
-      if (shellStatGames) shellStatGames.textContent = String(uniqueGames.size);
+      if (shellStatGames) shellStatGames.textContent = String(Math.round(uniqueTeams.size / 2));
       if (shellStatPrime) shellStatPrime.textContent = String(state.props.filter(p => p.tier === 'prime' || p.tier === 'ultimate').length);
       if (shellStatValue) shellStatValue.textContent = String(state.props.filter(p => p.isValue).length);
     }
@@ -46598,12 +46196,13 @@ Return a single raw JSON object (no code fences) matching the system schema. In 
         const sourceContext = buildAnalystSourceContext(question, compactPicks, slateGames);
         const focusBundle = state.gameFilter ? getGameContextBundle(state.gameFilter, livePicks) : null;
         const matchupArticles = Object.values(state.propAIMatchupNews || {}).flatMap(entry => entry?.articles || []).filter(a => a && a.status === 'ok');
-        const news_context = focusBundle || matchupArticles.length ? {
+        const _seriesRecord = focusBundle?.seriesSummary || state.gameFilter?.seriesSummary || null;
+        const news_context = focusBundle || matchupArticles.length || _seriesRecord ? {
           league: league || state.league || 'ALL',
           teams: state.gameFilter ? [state.gameFilter.awayTeam, state.gameFilter.homeTeam] : [],
           summary: sanitizeContextSnippet(focusBundle?.newsExcerpt || matchupArticles.map(a => a.title || a.article_excerpt || a.summary).filter(Boolean).slice(0, 3).join(' · ')),
           articles: matchupArticles.slice(0, 4),
-          series_record: focusBundle?.series_record || null
+          series_record: _seriesRecord,
         } : null;
         const slatePayload = slateGames.slice(0, 12).map(game => ({
           league: game.league,
