@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.221 — iOS gap fix: #000 color match + debug overlay removed — 2026-06-13 LIVE DEPLOY -->
+<!-- PropEdge v7.224 — iOS: body #000 for toolbar zone, shell navy for section gaps — 2026-06-13 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -18448,9 +18448,14 @@ nav.tabs > button,
      is invisible. Nav gets the same color + a tall box-shadow so the last
      pixel of web content also blends. */
   @media (max-width: 1023px) {
-    html.pe-ios-mobile,
+    /* iOS uses body background-color for the Safari toolbar zone below the
+       web viewport. Set body to #000 so that zone is black, not blue.
+       Re-apply navy on the shell so section gaps between cards stay navy. */
     html.pe-ios-mobile body {
       background: #000000;
+    }
+    html.pe-ios-mobile .site-rebuild-shell {
+      background: rgb(7, 18, 40);
     }
     html.pe-ios-mobile .site-mobile-bottom-nav {
       background: #000000 !important;
