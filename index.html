@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.214 — iOS safe-area gap fix + WNBA headshot slug fix — 2026-06-13 LIVE DEPLOY -->
+<!-- PropEdge v7.221 — iOS gap fix: #000 color match + debug overlay removed — 2026-06-13 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -18440,25 +18440,21 @@ nav.tabs > button,
     }
   }
 
-  /* iOS safe-area gap fix — pe-ios-mobile class injected before first paint.
-     env(safe-area-inset-bottom) resolves to 0 on some devices when the
-     viewport doesn't reach the physical screen bottom; the system paints
-     that zone black (#000), so we match it and extend the nav shadow into it. */
-  html.pe-ios-mobile {
-    background: #000000;
-    height: 100%;
-  }
-  html.pe-ios-mobile body {
-    height: 100%;
-  }
-  html.pe-ios-mobile .site-rebuild-shell {
-    height: 100%;
-  }
+  /* iOS gap fix.
+     The 62px strip below the web viewport (screen.h 956 - innerH 894) is
+     iOS Safari's toolbar zone — CSS cannot reach it. Safari paints that zone
+     using the page's background-color on <html>/<body>. Setting both to
+     #000000 (pure black) matches Safari's default toolbar color so the seam
+     is invisible. Nav gets the same color + a tall box-shadow so the last
+     pixel of web content also blends. */
   @media (max-width: 1023px) {
-    html.pe-ios-mobile .site-mobile-bottom-nav {
+    html.pe-ios-mobile,
+    html.pe-ios-mobile body {
       background: #000000;
-      padding-bottom: env(safe-area-inset-bottom, 34px);
-      box-shadow: 0 60px 0 40px #000000;
+    }
+    html.pe-ios-mobile .site-mobile-bottom-nav {
+      background: #000000 !important;
+      box-shadow: 0 80px 0 80px #000000;
     }
   }
   </style>
