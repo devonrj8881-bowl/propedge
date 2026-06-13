@@ -28840,6 +28840,7 @@ nav.tabs > button,
         weather: competition.venue?.weather || null,
         venue: competition.venue?.fullName || 'TBD',
         lastUpdate,
+        seriesSummary: competition.series?.summary || null,
       };
     }
 
@@ -38030,7 +38031,8 @@ nav.tabs > button,
         headlines: headline ? [headline] : [],
         injuries,
         newsExcerpt,
-        topProps
+        topProps,
+        series_record: game.seriesSummary || null
       };
     }
 
@@ -46599,7 +46601,8 @@ Return a single raw JSON object (no code fences) matching the system schema. In 
           league: league || state.league || 'ALL',
           teams: state.gameFilter ? [state.gameFilter.awayTeam, state.gameFilter.homeTeam] : [],
           summary: sanitizeContextSnippet(focusBundle?.newsExcerpt || matchupArticles.map(a => a.title || a.article_excerpt || a.summary).filter(Boolean).slice(0, 3).join(' · ')),
-          articles: matchupArticles.slice(0, 4)
+          articles: matchupArticles.slice(0, 4),
+          series_record: focusBundle?.series_record || null
         } : null;
         const slatePayload = slateGames.slice(0, 12).map(game => ({
           league: game.league,

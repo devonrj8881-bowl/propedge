@@ -387,9 +387,11 @@ function buildGameScopedNewsContext(newsContext, question, props, league) {
 
   const top = ranked.slice(0, 3);
   const headline = top.map((a) => `${a.source || "Source"}: ${String(a.title || a.summary || "").slice(0, 120)}`).join(" | ");
-  const seriesState = teams.length >= 2
-    ? `Matchup focus ${teams[0]} vs ${teams[1]} (${String(league || "NBA").toUpperCase()}); using ${top.length || 0} matchup-relevant news items and current board context.`
-    : `Matchup focus for ${String(league || "NBA").toUpperCase()}; using ${top.length || 0} relevant news items and current board context.`;
+  const seriesState = newsContext?.series_record
+    ? newsContext.series_record
+    : teams.length >= 2
+      ? `Series record not available — ${teams[0]} vs ${teams[1]} (${String(league || "NBA").toUpperCase()}); ${top.length || 0} matchup-relevant news items loaded.`
+      : `Series record not available — ${String(league || "NBA").toUpperCase()} slate; ${top.length || 0} relevant news items loaded.`;
 
   const lines = top.map((a) => `- ${a.source || "Source"}: ${String(a.summary || a.article_excerpt || a.title || "").slice(0, 240)}`);
   return { teams, top, headline, seriesState, lines };
@@ -568,10 +570,10 @@ TEAM MATCHUP ANALYSIS format:
 
 Rules:
 - Synthesize article/news context into one game-specific read; cover BOTH teams.
-- SERIES STATE: concrete status line (injury, lineup, game state, or market shift). No generic filler.
+- SERIES STATE: copy the supplied series_record verbatim if provided. If not provided, write "Series record not available." NEVER invent or guess series standings, game leads, or scores.
 - Include PropIQ scores and confidence for all props (use supplied data; never invent).
 - If a metric is unknown, write n/a and keep moving.
-- Do not invent injuries, odds, or player lines not in the payload.
+- Do not invent injuries, odds, player lines, or series standings not in the payload.
 - Always compare both teams; never favor one side without explaining why.`;
 
   const compactProps = compactPropsForClaude(validatedProps);
