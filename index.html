@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.228 — Fix markets board sort: use PropIQ order instead of blended cachedPropScore — 2026-06-13 LIVE DEPLOY -->
+<!-- PropEdge v7.229 — Remove content-visibility:auto from prop cards to eliminate blue scroll flash — 2026-06-13 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -6544,8 +6544,6 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       padding: 0;
       align-items: stretch;
       overflow: hidden;
-      content-visibility: auto;
-      contain-intrinsic-size: auto 220px;
       contain: layout style;
     }
 
@@ -10907,8 +10905,6 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
     /* Prop card scroll performance — content-visibility defers off-screen paint */
     .prop-card {
-      content-visibility: auto;
-      contain-intrinsic-size: auto 280px;
       contain: layout style;
     }
 
