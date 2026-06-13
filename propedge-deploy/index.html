@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.226 — Fix cross-league headshot collisions: Ben Brown, Taylor Ward, Will Smith — 2026-06-13 LIVE DEPLOY -->
+<!-- PropEdge v7.227 — Fix parlay tab blank: undock before render on parlay view — 2026-06-13 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -41267,11 +41267,13 @@ nav.tabs > button,
             if (view === 'news') { refreshLeagueNews(false); resumeTicker(); }
             if (view === 'injuries') { fetchAllInjuries(); resumeTicker(); }
             if (view === 'parlay') {
+              // Undock first — if user came from home/props, parlayContainer may
+              // be inside the now-hidden propsContainer (docked to featured pick),
+              // which would keep it display:none on the parlay tab.
+              undockParlay();
               renderParlay();
               generateSuggestedParlays();
-              // Defer heavy work so the tab switch stays responsive
               if (window.innerWidth >= 1024) queueUserPropsRender('parlay-view', 200);
-              dockParlayToFeaturedPick(); // deferred internally via requestIdleCallback
               resumeTicker();
             }
             if (view === 'strategy') { undockParlay(); renderStrategy(); resumeTicker(); }
