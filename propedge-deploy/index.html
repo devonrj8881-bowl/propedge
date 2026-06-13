@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.224 — iOS: body #000 for toolbar zone, shell navy for section gaps — 2026-06-13 LIVE DEPLOY -->
+<!-- PropEdge v7.225 — Fix Jose Alvarado headshot + blocks misclassified as pitcher K — 2026-06-13 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -21893,7 +21893,7 @@ nav.tabs > button,
         const propMatchupSensitivity = (() => {
           const pt = propType.toLowerCase();
           if (pt.includes('pts') || pt.includes('points') || pt.includes('goals') || pt.includes('runs')) return 1.00;
-          if (pt.includes('k') || pt.includes('strikeout')) return 0.90;   // pitcher K vs contact tendency
+          if (pt === 'k' || pt === 'ks' || pt.includes('strikeout')) return 0.90;   // pitcher K vs contact tendency
           if (pt.includes('hits') || pt.includes('tb') || pt.includes('bases')) return 0.75;
           if (pt.includes('shots') || pt.includes('saves')) return 0.80;   // NHL
           if (pt.includes('reb') || pt.includes('rebounds')) return 0.65;  // role/position dependent
@@ -27901,6 +27901,9 @@ nav.tabs > button,
     const PLAYER_HEADSHOT_CACHE_KEY = 'propedge_playerHeadshotCache_v1';
     const _pendingHeadshotLookups = new Set();
     const PLAYER_IDS_BY_LEAGUE = {
+      NBA: {
+        "Jose Alvarado": "4277869"  // NBA guard — flat PLAYER_IDS has MLB pitcher (36063) with same name
+      },
       MLB: {
         "Henry Bolte": "5080756",
         "Nick Kurtz": "4966637",
