@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.213 — Fix: real ESPN playoff series record in analyst (no more hallucinated standings) — 2026-06-12 LIVE DEPLOY -->
+<!-- PropEdge v7.231 — Safe-area inset fix for modal close buttons bleeding into Dynamic Island — 2026-06-13 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -15,6 +15,16 @@
   <title>PropEdge</title>
   <meta name="app-version" content="v7.213-series-record-fix">
   <meta name="analyst-app-url" content="https://propedge-generative-analyst.vercel.app">
+  <script>
+    // iOS detection — runs synchronously before first paint so CSS rules
+    // that key on html.pe-ios-mobile fire without a layout flash.
+    (function () {
+      var ua = navigator.userAgent || '';
+      if (/iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+        document.documentElement.classList.add('pe-ios-mobile');
+      }
+    })();
+  </script>
   <script>
     // PropEdge storage adapter
     // Runs before all app code so stable features and newer features can share
@@ -6534,8 +6544,6 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       padding: 0;
       align-items: stretch;
       overflow: hidden;
-      content-visibility: auto;
-      contain-intrinsic-size: auto 220px;
       contain: layout style;
     }
 
@@ -10897,8 +10905,6 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
 
     /* Prop card scroll performance — content-visibility defers off-screen paint */
     .prop-card {
-      content-visibility: auto;
-      contain-intrinsic-size: auto 280px;
       contain: layout style;
     }
 
@@ -11273,8 +11279,13 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       display: grid;
       grid-template-columns: var(--grid-cols, 1fr);
       gap: 16px;
+      /* GPU acceleration for grid layout changes */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: grid-template-columns;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
       /* CSS containment: prevent layout thrashing */
-      /* will-change: grid-template-columns removed — invalid hint, just adds overhead */
       contain: layout;
     }
 
@@ -11306,8 +11317,8 @@ window.PropEdgeAnalyst = { buildAnalystPrompt, askAnalyst, parseStrictAnalystTem
       overflow: hidden;
       transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
                   box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-                  border-color 0.25s ease;
-                  /* background removed: triggers full repaint on every transition frame */
+                  border-color 0.25s ease,
+                  background 0.25s ease;
       /* GPU acceleration for card animations */
       transform: translateZ(0);
       -webkit-transform: translateZ(0);
@@ -18132,8 +18143,6 @@ nav.tabs > button,
         width: 100%;
         box-sizing: border-box;
         padding-bottom: 0 !important; /* nav is in-flow; body handles safe area */
-        backdrop-filter: none; /* in-flow — nothing scrolled behind it; remove compositing cost */
-        -webkit-backdrop-filter: none;
       }
 
       /* Anchor the More popup to the body box (position:relative, 100dvh)
@@ -18424,6 +18433,29 @@ nav.tabs > button,
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* iOS gap fix.
+     The 62px strip below the web viewport (screen.h 956 - innerH 894) is
+     iOS Safari's toolbar zone — CSS cannot reach it. Safari paints that zone
+     using the page's background-color on <html>/<body>. Setting both to
+     #000000 (pure black) matches Safari's default toolbar color so the seam
+     is invisible. Nav gets the same color + a tall box-shadow so the last
+     pixel of web content also blends. */
+  @media (max-width: 1023px) {
+    /* iOS uses body background-color for the Safari toolbar zone below the
+       web viewport. Set body to #000 so that zone is black, not blue.
+       Re-apply navy on the shell so section gaps between cards stay navy. */
+    html.pe-ios-mobile body {
+      background: #000000;
+    }
+    html.pe-ios-mobile .site-rebuild-shell {
+      background: rgb(7, 18, 40);
+    }
+    html.pe-ios-mobile .site-mobile-bottom-nav {
+      background: #000000 !important;
+      box-shadow: 0 80px 0 80px #000000;
     }
   }
   </style>
@@ -21857,7 +21889,7 @@ nav.tabs > button,
         const propMatchupSensitivity = (() => {
           const pt = propType.toLowerCase();
           if (pt.includes('pts') || pt.includes('points') || pt.includes('goals') || pt.includes('runs')) return 1.00;
-          if (pt.includes('k') || pt.includes('strikeout')) return 0.90;   // pitcher K vs contact tendency
+          if (pt === 'k' || pt === 'ks' || pt.includes('strikeout')) return 0.90;   // pitcher K vs contact tendency
           if (pt.includes('hits') || pt.includes('tb') || pt.includes('bases')) return 0.75;
           if (pt.includes('shots') || pt.includes('saves')) return 0.80;   // NHL
           if (pt.includes('reb') || pt.includes('rebounds')) return 0.65;  // role/position dependent
@@ -22702,7 +22734,7 @@ nav.tabs > button,
       player_goals:                     ['goals'],
       player_points:                    ['points','pts'],
       batter_hits:                      ['hits'],
-      pitcher_strikeouts:               ['strikeouts','ks','k'],
+      pitcher_strikeouts:               ['strikeouts','ks'],
       batter_home_runs:                 ['home runs','hr','hrs'],
       batter_rbis:                      ['rbis','rbi'],
       batter_total_bases:               ['total bases','tb'],
@@ -27865,7 +27897,15 @@ nav.tabs > button,
     const PLAYER_HEADSHOT_CACHE_KEY = 'propedge_playerHeadshotCache_v1';
     const _pendingHeadshotLookups = new Set();
     const PLAYER_IDS_BY_LEAGUE = {
+      NBA: {
+        "Jose Alvarado": "4277869"   // NBA guard — flat table has MLB pitcher (36063) with same name
+      },
+      NHL: {
+        "Taylor Ward": "4781650",    // NHL — flat table overwritten by MLB outfielder (34923)
+        "Will Smith": "5149155"      // NHL — flat table overwritten by MLB catcher (38309)
+      },
       MLB: {
+        "Ben Brown": "41516",        // MLB pitcher — flat table overwritten by NFL OL (4362890)
         "Henry Bolte": "5080756",
         "Nick Kurtz": "4966637",
         "Ryan Kreidler": "42701",
@@ -27902,7 +27942,7 @@ nav.tabs > button,
 
     function espnHeadshotLeagueSlug(league) {
       const lg = String(league || '').toUpperCase();
-      return lg === 'MLB' ? 'mlb' : lg === 'NHL' ? 'nhl' : lg === 'NFL' ? 'nfl' : 'nba';
+      return lg === 'MLB' ? 'mlb' : lg === 'NHL' ? 'nhl' : lg === 'NFL' ? 'nfl' : lg === 'WNBA' ? 'wnba' : 'nba';
     }
 
     function playerInitials(playerName) {
@@ -35605,10 +35645,7 @@ nav.tabs > button,
       }
       batchHeadshotLookups(displayProps);
       // Restore scroll — double-rAF so layout is committed before scrollTo fires.
-      // Skip restore when a filter/game switch just intentionally scrolled to top.
-      const _skipRestore = state._filterJustChanged;
-      state._filterJustChanged = false;
-      if (_savedScrollY > 0 && !_skipRestore) {
+      if (_savedScrollY > 0) {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             if (!window._isScrollMomentumActive || !window._isScrollMomentumActive()) {
@@ -36478,10 +36515,6 @@ nav.tabs > button,
       };
       state.view = 'props';
       applyViewVisibility();
-      // Scroll to top before rendering filtered results to avoid position jump.
-      const scrollRoot = getMobileScrollRoot();
-      scrollRoot.scrollTo({ top: 0, behavior: 'instant' });
-      state._filterJustChanged = true;
       renderProps();
       showToast(`Filtering props for ${game.awayTeam} @ ${game.homeTeam}`);
     }
@@ -38640,7 +38673,7 @@ nav.tabs > button,
           return blob.includes(search);
         });
       }
-      return filtered.sort((a, b) => cachedPropScore(b) - cachedPropScore(a));
+      return filtered.sort(comparePropIQProps);
     }
 
     function getMarketsSlateGames() {
@@ -41230,11 +41263,13 @@ nav.tabs > button,
             if (view === 'news') { refreshLeagueNews(false); resumeTicker(); }
             if (view === 'injuries') { fetchAllInjuries(); resumeTicker(); }
             if (view === 'parlay') {
+              // Undock first — if user came from home/props, parlayContainer may
+              // be inside the now-hidden propsContainer (docked to featured pick),
+              // which would keep it display:none on the parlay tab.
+              undockParlay();
               renderParlay();
               generateSuggestedParlays();
-              // Defer heavy work so the tab switch stays responsive
               if (window.innerWidth >= 1024) queueUserPropsRender('parlay-view', 200);
-              dockParlayToFeaturedPick(); // deferred internally via requestIdleCallback
               resumeTicker();
             }
             if (view === 'strategy') { undockParlay(); renderStrategy(); resumeTicker(); }
@@ -41303,11 +41338,6 @@ nav.tabs > button,
           chip.classList.add('active');
           state.filter = chip.dataset.filter;
           state.propDisplayLimit = 100;
-          // Scroll to top immediately so re-render doesn't cause a position jump.
-          // Content changes mean the saved position is meaningless after a filter switch.
-          const scrollRoot = getMobileScrollRoot();
-          scrollRoot.scrollTo({ top: 0, behavior: 'instant' });
-          state._filterJustChanged = true;
           queueUserPropsRender('filter', 70);
         });
       });
@@ -48181,7 +48211,7 @@ Cite REAL edges + DFS values + injury impact. Professional tone, actionable.`;
   <!-- Player Detail Panel -->
   <div class="detail-overlay" id="detailOverlay" onclick="closePlayerDetail()"></div>
   <div class="detail-panel" id="detailPanel">
-    <div style="display:flex; justify-content:space-between; align-items:center; padding: 32px 20px 12px; width: 100%; flex-shrink: 0; background: #1c2033; z-index: 10000; border-bottom: 1px solid rgba(255,255,255,0.05);">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding: max(32px, env(safe-area-inset-top)) 20px 12px; width: 100%; flex-shrink: 0; background: #1c2033; z-index: 10000; border-bottom: 1px solid rgba(255,255,255,0.05);">
        <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8;">Advanced Analysis</div>
        <button class="detail-close-btn" style="width:36px; height:36px; font-size:16px;" onclick="closePlayerDetail(); return false;">✕</button>
     </div>
@@ -48197,7 +48227,7 @@ Cite REAL edges + DFS values + injury impact. Professional tone, actionable.`;
   <div class="game-overlay" id="gameOverlay" onclick="closeGameModal()"></div>
   <div class="game-modal" id="gameModal">
     <!-- NATIVE STATIC APP HEADER FOR COMET BUGFIX -->
-    <div style="display:flex; justify-content:flex-end; padding: 16px 16px 0px; width: 100%; flex-shrink: 0; background: transparent; z-index: 10000; position: relative; pointer-events: none;">
+    <div style="display:flex; justify-content:flex-end; padding: max(16px, env(safe-area-inset-top)) 16px 0px; width: 100%; flex-shrink: 0; background: transparent; z-index: 10000; position: relative; pointer-events: none;">
       <button class="game-modal-close" style="pointer-events: auto;" onclick="closeGameModal(); return false;" ontouchend="closeGameModal(); return false;">✕</button>
     </div>
     <div class="game-modal-scroll" id="gameModalContent">
@@ -48230,7 +48260,7 @@ Cite REAL edges + DFS values + injury impact. Professional tone, actionable.`;
   <!-- Analysis Modal -->
   <div class="game-overlay" id="analysisOverlay" onclick="closeAnalysisModal()" style="display:none;"></div>
   <div class="game-modal" id="analysisModal" style="display:none;max-height:90vh;overflow-y:auto;">
-    <div style="display:flex; justify-content:space-between; align-items:center; padding: 16px; width: 100%; flex-shrink: 0; background: #262d3f; z-index: 10000; border-bottom: 1px solid rgba(0,240,160,0.2); position: sticky; top: 0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding: max(16px, env(safe-area-inset-top)) 16px 16px; width: 100%; flex-shrink: 0; background: #262d3f; z-index: 10000; border-bottom: 1px solid rgba(0,240,160,0.2); position: sticky; top: 0;">
        <div style="font-size: 14px; font-weight: 700; color: #00f0a0;">📊 Full Analysis</div>
        <button style="width:36px; height:36px; font-size:16px; background: none; border: none; color: #8a95ac; cursor: pointer;" onclick="closeAnalysisModal()">✕</button>
     </div>
