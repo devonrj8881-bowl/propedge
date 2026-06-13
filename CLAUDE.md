@@ -10,6 +10,20 @@ _Global source-of-truth for repository-wide working behavior._
 - Prefer stability and correctness over broad refactors.
 - Preserve existing patterns unless a change is explicitly requested.
 
+## Session Start — REQUIRED on Every Device
+**Before editing ANY file on ANY machine, run this first — no exceptions:**
+
+```bash
+git pull
+```
+
+**Why this is critical:** PropEdge is edited on multiple machines (MacBook Pro + MacBook Air). Skipping `git pull` before a session means you're editing a stale checkout. If that stale version gets deployed, it overwrites fixes from other sessions — this has happened before and caused multiple confirmed-good fixes to be lost. A deploy from a stale checkout is worse than no deploy at all.
+
+- Check the version string at line 2 of `propedge-deploy/index.html` after pulling — it should match the latest `deploy: vX.XXX` commit in `git log`.
+- If the version in the file is behind `git log`, do not edit until you've confirmed the pull succeeded.
+
+---
+
 ## Behavioral Guardrails (Caution-First)
 Tradeoff: these rules bias toward caution over speed. For trivial tasks, apply judgment.
 

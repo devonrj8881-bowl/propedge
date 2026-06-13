@@ -89,6 +89,11 @@ npm run build && echo "build OK"
 ```
 Report: "verified locally: [what was tested]" before triggering deploy.
 
+## CRITICAL: Run `git pull` before every session
+**This applies on every machine — MacBook Pro, MacBook Air, or any other device.**
+Deploying from a stale checkout overwrites fixes made in other sessions. This has happened before.
+After pulling, verify the version string at line 2 of `index.html` matches the latest `deploy:` commit in `git log`.
+
 ## Session start checklist (from this folder)
 1. `pwd` → confirm `…/PropEdge/propedge-deploy`.
 2. Read `SESSION_NOTES.md` (latest entry).
