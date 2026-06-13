@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PropEdge v7.227 — Fix parlay tab blank: undock before render on parlay view — 2026-06-13 LIVE DEPLOY -->
+<!-- PropEdge v7.228 — Fix markets board sort: use PropIQ order instead of blended cachedPropScore — 2026-06-13 LIVE DEPLOY -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -38677,7 +38677,7 @@ nav.tabs > button,
           return blob.includes(search);
         });
       }
-      return filtered.sort((a, b) => cachedPropScore(b) - cachedPropScore(a));
+      return filtered.sort(comparePropIQProps);
     }
 
     function getMarketsSlateGames() {
